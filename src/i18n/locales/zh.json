@@ -436,5 +436,6 @@
   "close": "关闭",
   "tourExitTouch": "点按场景即可退出",
   "wxStormHintTouch": "拖动屏幕可自行控制相机——天气继续进行",
-  "swRideHintTouch": "拖动可环顾四周 · 再次点按按钮可离开轿厢"
+  "swRideHintTouch": "拖动可环顾四周 · 再次点按按钮可离开轿厢",
+  "donateAria": "通过 MoMo 请作者喝杯咖啡（在新标签页中打开）"
 }

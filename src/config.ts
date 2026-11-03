@@ -548,7 +548,10 @@ const perfBase = {
    Chế độ gọn bật khi cửa sổ khớp compactQuery: bảng điều khiển thu thành hai tờ (Cài đặt / Góc nhìn) */
 const uiBase = {
   compactQuery: '(max-width: 760px), (max-height: 500px)',   // media query bật chế độ gọn: điện thoại dọc (≤ 760 px rộng) hoặc ngang (≤ 500 px cao)
-  resizeDebounceMs: 120   // ms — chờ sau khi đổi cỡ cửa sổ / xoay máy rồi mới tính lại bố cục (ước lượng)
+  resizeDebounceMs: 120,   // ms — chờ sau khi đổi cỡ cửa sổ / xoay máy rồi mới tính lại bố cục (ước lượng)
+  donate: {
+    url: 'https://me.momo.vn/bbk9x'   // URL nhận tiền MoMo; dùng alias riêng, không dùng số điện thoại vì URL nằm trong bundle công khai
+  }
 };
 
 export const CONFIG = {

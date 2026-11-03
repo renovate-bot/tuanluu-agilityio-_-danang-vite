@@ -2,6 +2,7 @@
 //   Mục 1: hạ tầng chế độ gọn (body.compact, sheet).
 //   Mục 2: bố cục gọn — thanh trên, thanh dưới, hai sheet (Cài đặt, Góc nhìn).
 //   Mục 3: chữ hướng dẫn cảm ứng, ẩn Đi bộ, sheet tự đóng khi Tour/bão, vệt mờ cuộn của hàng chip.
+//   Buy me a coffee: URL an toàn, panel Cài đặt, vùng chạm, aria-label 9 ngôn ngữ.
 //
 //   npm run build && npm run test:mobile
 import fs from 'node:fs';
@@ -147,13 +148,29 @@ try {
   });
   check('resize gộp: setSize 1 lần cho 5 sự kiện', nResize === 1);
 
+  // Buy me a coffee (MoMo): ẩn khi URL rỗng/không an toàn, hiện trong tờ Cài đặt
+  const DONATE_URL = 'https://me.momo.vn/bbk9x';
+  check('donate: URL rỗng thì ẩn', await P.page.evaluate(() => window.__app.ui.donate.set('') === false && document.getElementById('donateLink').hidden));
+  check('donate: javascript: bị từ chối', await P.page.evaluate(() => window.__app.ui.donate.set('javascript:alert(1)') === false && document.getElementById('donateLink').hidden && !document.getElementById('donateLink').getAttribute('href')?.startsWith('javascript')));
+  check('donate: http: bị từ chối', await P.page.evaluate(() => window.__app.ui.donate.set('http://me.momo.vn/x') === false && document.getElementById('donateLink').hidden));
+  check('donate: https gắn được', await P.page.evaluate((u) => window.__app.ui.donate.set(u) === true, DONATE_URL));
+  await P.page.evaluate(() => window.__app.ui.openSheet('settings'));
+  await frames(P.page, 2);
+  check('donate: hiện trong tờ Cài đặt', await visibleAll(P.page, ['#donateLink']));
+  check('donate: href, tab mới, rel', await P.page.evaluate((u) => { const a = document.getElementById('donateLink'); return a.href === u && a.target === '_blank' && /noopener/.test(a.rel) && /noreferrer/.test(a.rel); }, DONATE_URL));
+  check('donate: chữ tiếng Anh cố định', await P.page.evaluate(() => document.getElementById('donateLink').textContent.trim() === 'Buy me a coffee'));
+  check('donate: cao ≥ 40 px khi gọn', (await rects(P.page, ['#donateLink']))[0].height >= 40);
+  check('donate: là phần tử cuối của #brandBody', await P.page.evaluate(() => document.getElementById('brandBody').lastElementChild.id === 'donateLink'));
+  await P.page.evaluate(() => window.__app.ui.closeSheets());
+
   // Mục 4 — i18n 9 ngôn ngữ cho khóa mới, không tràn chữ, RTL
   await P.page.evaluate(() => window.__app.ui.closeSheets());
-  const KEYS = ['settings', 'close', 'tourExitTouch', 'wxStormHintTouch', 'swRideHintTouch'];
+  const KEYS = ['settings', 'close', 'tourExitTouch', 'wxStormHintTouch', 'swRideHintTouch', 'donateAria'];
   for (const code of ['vi', 'en', 'ko', 'ja', 'zh', 'th', 'ar', 'hi', 'ru']) {
     const json = JSON.parse(fs.readFileSync(`src/i18n/locales/${code}.json`, 'utf8'));
-    check(`${code}: đủ 5 khóa`, KEYS.every((k) => typeof json[k] === 'string' && json[k].length > 0));
+    check(`${code}: đủ ${KEYS.length} khóa`, KEYS.every((k) => typeof json[k] === 'string' && json[k].length > 0));
     await pick(P.page, '#langSelect', code);
+    check(`${code}: aria donate đã dịch`, await P.page.evaluate((v) => document.getElementById('donateLink').getAttribute('aria-label') === v, json.donateAria));
     for (const sh of ['settings', 'views']) {
       await P.page.evaluate((s) => window.__app.ui.openSheet(s), sh);
       await frames(P.page, 2);
@@ -203,6 +220,8 @@ try {
 
   const D = await openApp(browser, srv.url, { width: 1280, height: 800 });
   check('máy tính 1280×800: không compact', await D.page.evaluate(() => !document.body.classList.contains('compact')));
+  await D.page.evaluate(() => window.__app.ui.donate.set('https://me.momo.vn/bbk9x'));
+  check('máy tính: donate nằm trong .brand', await D.page.evaluate(() => { const a = document.getElementById('donateLink').getBoundingClientRect(), b = document.querySelector('.brand').getBoundingClientRect(); return a.height > 0 && a.top >= b.top && a.bottom <= b.bottom + 1 && a.left >= b.left - 1 && a.right <= b.right + 1; }));
   // máy tính không đổi
   const b = await rects(D.page, ['.brand']);
   check('máy tính: .brand neo trái 14 px, .views rộng 228 px', b.length === 1 && Math.abs(b[0].left - 14) < 1

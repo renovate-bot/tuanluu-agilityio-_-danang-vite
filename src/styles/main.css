@@ -83,6 +83,10 @@ button[aria-pressed="true"]{background:linear-gradient(180deg,var(--gold),var(--
 .seg{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:3px;padding:3px;border:1px solid var(--panel-line);border-radius:5px;margin-bottom:2px;}
 .seg button{min-width:0;padding:6px 4px;font-size:11px;line-height:1.2;text-align:center;background:transparent;border-color:transparent;color:var(--muted);overflow-wrap:anywhere;}
 .mini-select{display:flex;flex-direction:column;gap:4px;margin-top:2px;font-size:10.5px;color:var(--muted);}
+.donate{display:inline-flex;align-items:center;gap:6px;margin-top:6px;padding:6px 10px;border:1px solid rgba(230,189,106,.32);border-radius:4px;color:var(--gold);font:12px var(--font-body);text-decoration:none;}
+.donate svg{width:14px;height:14px;flex:0 0 auto;}
+.donate[hidden]{display:none;}
+@media (hover:hover){.donate:hover{background:rgba(230,189,106,.1);}}
 .swing-box{display:flex;flex-direction:column;gap:7px;padding:8px;border:1px dashed var(--panel-line);border-radius:5px;margin-top:2px;}
 .swing-btn{background:linear-gradient(180deg,var(--gold),var(--gold-deep));color:#1a1206;border-color:var(--gold);font-weight:600;text-align:center!important;}
 .swing-btn:disabled{opacity:.6;cursor:progress;}
@@ -171,6 +175,7 @@ body.compact #btnMusic[aria-pressed="true"] .eq rect{animation:none;}   /* anima
 body.compact .specs,body.compact .stats{display:none;}   /* màn nhỏ: không đủ chỗ cho bảng Thông số và FPS */
 body.compact .panel button{min-height:40px;font-size:13px;}
 body.compact .panel select{min-height:40px;font-size:13px;}
+body.compact .donate{min-height:40px;}
 body.compact #btnSettings,body.compact .sheet-close{align-items:center;justify-content:center;flex:0 0 auto;width:40px;height:40px;padding:0;}
 body.compact #btnSettings svg,body.compact .sheet-close svg{width:18px;height:18px;}
 /* Thanh trên: chỉ tên + nút Cài đặt, neo trên-trái */

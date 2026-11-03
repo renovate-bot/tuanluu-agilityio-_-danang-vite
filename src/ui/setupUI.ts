@@ -20,9 +20,11 @@ import { setupSwingUI, swingRender } from './swingUI';
 import { setupHrUI, hrRender } from './hrUI';
 import { setupRiverfrontUI } from './riverfrontUI';
 import { setupWeatherUI } from './weatherUI';
+import { setupDonateUI } from './donateUI';
 
 /* Gắn mọi bảng điều khiển: ngày/đêm, bóng đổ, trình diễn, chọn cầu, góc nhìn, nút bật/tắt từng cầu, bàn phím */
 export function setupUI({ thuanPhuoc, tranThiLy, songHan, hanTunnel, sunWheel }: { thuanPhuoc: ThuanPhuocBridge; tranThiLy: TranThiLyBridge; songHan: SongHanBridge; hanTunnel: HanTunnel; sunWheel: SunWheel }) {
+  const donate = setupDonateUI();
   const btnNight = document.getElementById('btnNight'), slider = document.getElementById('timeSlider') as HTMLInputElement;
   const btnShow = document.getElementById('btnShow'), btnShadow = document.getElementById('btnShadow');
   const syncNight = () => {
@@ -101,4 +103,5 @@ export function setupUI({ thuanPhuoc, tranThiLy, songHan, hanTunnel, sunWheel }:
   canvas.addEventListener('pointerdown', exitTour);
   canvas.addEventListener('wheel', exitTour, { passive: true });
   window.addEventListener('keydown', (e) => { if (e.key === 'Escape') { exitTour(); leaveSwRide(true); } });   // Esc cũng xuống khỏi cabin Vòng quay Mặt Trời
+  return { donate };
 }
