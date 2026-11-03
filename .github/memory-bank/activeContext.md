@@ -1,11 +1,12 @@
 # Active Context
 
-_Cập nhật: 2026-10-27 · Nhánh đang làm: `docs/mobile-agent-notes` (hướng dẫn agent cho chế độ gọn) · `feature/mobile-ui` đã merge `main` (`fc53fdd`) và push · Nhánh chính: `main`_
+_Cập nhật: 2026-11-04 · Nhánh đang làm: `feature/donate-momo-pr` (Buy me a coffee) · Nhánh chính: `main`_
 
 ## Trạng thái
 - `main` đã có đủ: Hầm vượt sông Hàn (PR #1), hai bờ sông + tối ưu draw call + thuyết minh tiếng Nga (PR #2), bộ hướng dẫn AI agent + memory bank (PR #3, qua `feature/riverfront`), thời tiết GĐ1–GĐ8 + kịch bản bão có thuyết minh (PR #6), Tour 4 cầu (D-015), Vòng quay Mặt Trời GĐ0–GĐ8 (PR #8, merge `257b905`), tối ưu độ mượt (D-018, merge `ecebdf8`), giao diện điện thoại (D-019, merge `fc53fdd`).
 - Quy tắc chế độ gọn cho agent đã ghi ở `.github/instructions/ui-views.instructions.md` và `tests.instructions.md`; lệnh test đầy đủ ở `copilot-instructions.md` §5 và README.
 - `tests/KET-QUA.md` đã cập nhật theo log GD8 (58 góc nhìn `now`, gồm `hr*`, `rf*`, `wx*`).
+- Buy me a coffee (D-021) đã triển khai; người dùng cung cấp alias MoMo và trang nhận tiền đã mở được trong trình duyệt. `CONFIG.ui.donate.url` đã cấu hình; cần kiểm tra trên thiết bị thật nếu muốn xác nhận trải nghiệm thanh toán cuối.
 
 ## Bước tiếp theo
 1. Giao diện điện thoại (`feature/mobile-ui`, D-019) đã xong GĐ code + chạy đủ bộ test: xem mục "Giao diện điện thoại" bên dưới. Đã merge `main` (`fc53fdd`, gồm sửa sau review cuối `fced484`: sheet nằm trên chú thích Tour/bão) và push. Còn: đo trên điện thoại thật, duyệt bản dịch; để lại từ review cuối: chip cao 36 px (< 44 px), câu hướng dẫn xuống cabin trỏ tới nút trong sheet Góc nhìn.
@@ -14,6 +15,7 @@ _Cập nhật: 2026-10-27 · Nhánh đang làm: `docs/mobile-agent-notes` (hư�
 4. Còn mở: tự chọn preset theo tháng khi không có `?test` (12b-6). Làm xong phải chạy lại `test:weather` và `test:drawcalls`, vì đổi mặc định hiển thị.
 5. Sửa dòng giới thiệu Hầm bị lặp ở đầu `README.md`.
 6. Vòng quay Mặt Trời (`prompts/vong-quay-mat-troi.md`, D-014/D-016/D-017) đã vào `main` (PR #8). Còn mở: (a) sửa `tests/drawcalls.mjs` để trả ban ngày sau `rfHearts` rồi đo lại bảng (cột "ngày" của `rfBank`, `wx*`, `swOverview/Front/Base/FromTTL` thực ra đo ban đêm, xem `tests/KET-QUA.md`); (b) chạy `test:drawcalls` một mình tại `main` (lần `-Resume` cuối bị TimeoutError do máy quá tải) và `test:drawcalls -- tests/original`; (c) số ước lượng `x ≈ −440`, D ≈ 93 m, trục ≈ 64 m, bệ ≈ 13 m (cần đo khoảng cách tâm → mép nước); (d) nghe thử giọng đọc `swStops`, `/code-review`, FPS GPU thật; (e) khác ảnh tham chiếu: giá treo cabin, lầu hai đầu bệ rỗng, đèn rọi trời.
+7. Buy me a coffee: alias đã cấu hình và xác nhận trang MoMo mở được; chưa thực hiện giao dịch và chưa kiểm tra trên điện thoại thật.
 
 ## Giao diện điện thoại (2026-10-27, nhánh `feature/mobile-ui`, D-019)
 - Đã làm (6 commit `8605bd5`, `598012c`, `9214229`, `1dbe77a`, `6857698`, `312e11b`): `body.compact` theo `CONFIG.ui.compactQuery`; thanh trên + thanh dưới + hai sheet Cài đặt/Góc nhìn (`src/ui/compactUI.ts`, CSS sau `body.compact`); hàng chip cuộn ngang có mờ cạnh; chữ hướng dẫn cảm ứng (`(hover:none)`), hover chỉ khi có chuột; 5 khóa i18n × 9 (`scripts/add-mobile-locales.mjs`) + chốt khóa thiếu trong `apply()`; `viewport-fit=cover`, bỏ blur khi gọn, `scheduleResize` (`CONFIG.ui.resizeDebounceMs`); helper test `reveal`/`tap`/`pick`; `tests/mobile-check.mjs` + `npm run test:mobile`.
