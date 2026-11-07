@@ -49,7 +49,7 @@ Kiểm tra: `npm run test:weather` đạt (`start()` false khi bão, `canStart()
 ### GĐ5: Tour 4 cầu
 - [x] `ALL_TOUR` điểm 8 (`bridge: 'sh'`, `swing: true`) tự quay cầu 30×; điểm 9 nhìn nhịp quay mở luồng; thuyết minh `allStops`.
 
-Commit: `e672add` (đường bay mở, 13 điểm, `src/views/tourStops.ts`, `swingUI.ts`); `cd52a47` (thuyết minh `allStops` vi/en/ru).
+Commit: `e672add` (đường bay mở, 13 điểm; file cầu không đổi: `src/views/tourStops.ts`, `src/views/tour.ts`, `src/ui/setupUI.ts`, `src/config.ts`; điểm 8 tự quay cầu qua hook có sẵn `setTourSwingHook` trong `tour.ts`, `swingUI.ts` không nằm trong commit này); `cd52a47` (thuyết minh `allStops` vi/en/ru).
 Kiểm tra: `npm run test:tour` (đạt: kiểm điểm có cờ `swing` làm trạng thái rời "Đóng"), `npm run test:voice` (đạt, 2026-10-27).
 
 ### GĐ6: Tối ưu độ mượt (D-018)
