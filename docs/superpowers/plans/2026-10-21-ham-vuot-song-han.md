@@ -35,7 +35,7 @@ Kiểm tra: `npm run build`; `npm run test:tunnel` (hình học 600/380/415, d�
 - [x] Gộp biển VMS và biển 4,5 m vào một canvas/mesh.
 - [x] Gộp dải LED, lam mái, cọ, thuyền thúng, dải giữa, vỉa hè vào bê tông (màu đỉnh).
 - [x] Bê tông/thép gộp không vào lượt phản chiếu mặt nước (`layers.set(1)`); thép và cột đèn không đổ bóng; bỏ đổ bóng thừa.
-- [x] Ẩn chi tiết theo khoảng cách: `lodDistance` 800 → 600 m, xe 450 m, cả công trình 1.500 m (`hideDistance`).
+- [x] Ẩn chi tiết theo khoảng cách: `lodDistance` 1300 → 600 m, `farDistance` 1600 → 650 m, xe 450 m, cả công trình 1.500 m (`hideDistance`).
 - [x] Nâng điểm dừng cổng của Tour hầm lên 15 m để đường bay không lọt dưới đất (`views/tourStops.ts`).
 
 Commit: `a4802ad` (2026-10-21; `HanTunnel.ts`, `outdoor.ts`, `config.ts`, `tourStops.ts`).
@@ -74,10 +74,10 @@ Kiểm tra: `npm run test:drawcalls`, `npm run test:weather` (log GĐ5).
 Commit: `134d5c8` (`cutaway.ts` +6/−5 dòng; commit chung nhiều phần).
 Kiểm tra: `npm run test:perf -- --strict` đạt (bay tới Hầm lần đầu +14 ms / 0 program; bật mặt cắt lần 1 +5 ms / 0 program, so với GĐ0 +12 577 ms / +22), 2026-10-25; `npm run test:tunnel` đạt.
 
-### GĐ8: Ghi nhận sau Vòng quay Mặt Trời
+### GĐ8: Ghi nhận bảng đo `hr*` (thời tiết GĐ8)
 - [x] `tests/KET-QUA.md` có 6 góc `hr*` ngày / đêm; Tour `hr` 8 điểm đạt (camera thấp nhất −14,73 m).
 
-Commit: `314e6b4` (tài liệu GĐ8 Vòng quay; commit chung, không đổi mã hầm).
+Commit: `2572e8a` (2026-10-22, tài liệu thời tiết GĐ8; commit chung, không đổi mã hầm). Commit `314e6b4` (GĐ8 Vòng quay) không chạm bảng `hr*`.
 Kiểm tra: `npm run test:tunnel` đạt (chạy tay 2026-10-24; lần đầu `page.goto` quá 180 s không tái hiện); `npm run test:tour` 8/8 đạt (2026-10-27).
 
 ## Còn lại
