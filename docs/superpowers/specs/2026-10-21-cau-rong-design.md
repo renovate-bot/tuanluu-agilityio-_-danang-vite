@@ -48,6 +48,7 @@ Mọi số nằm trong khối `base` (đầu `src/config.ts`), xuất ra `CONFIG
 | Bóng đổ | shadow map 2048 | prompt (2048 hoặc 4096) | `CONFIG.shadowMapSize` |
 | Hạt lửa / nước | 420 / 520 | prompt: "vài trăm" | `CONFIG.fireCount`, `CONFIG.waterCount` |
 | Chu kỳ trình diễn | 48 s | prompt: 30–60 s | `CONFIG.showCycle` |
+| Lịch trình diễn thật | tối thứ Bảy và Chủ Nhật, 21:00 | prompt ("Trong thực tế…"); không đối chiếu nguồn ngoài | không có khóa; mô hình không dùng lịch (xem mục 7) |
 
 Lưu ý độ tin cậy (giữ từ prompt gốc):
 - Trọng lượng (900 tấn hay gần 9 000 tấn), chiều cao đầu rồng (~18 m trong prompt) và độ rộng mặt cầu khác nhau giữa các nguồn. Khi mâu thuẫn, ưu tiên 666 m, nhịp 200 m, rộng 37,5 m, 6 làn.
@@ -91,6 +92,7 @@ Cầu Rồng dựng thẳng vào scene bằng các hàm rời, không dùng `Bri
 - Prompt: đèn đêm bằng PointLight/SpotLight dọc cầu. Đã xây: emissive trong shader (sóng sáng chạy dọc thân) và một `fireLight`; giữ draw call và theo bất biến 5.
 - Prompt: `buildLights()`, `buildCity()`, `buildTrees()`, `buildCableStayBridge()` trong một file. Đã xây: `buildLights()` ở `core/lights.ts`; Cầu Trần Thị Lý tách thành lớp `TranThiLyBridge` (D-006). Số liệu cầu đó (prompt ghi ~731 m, tháp ~145 m) nằm ở tài liệu riêng của cầu.
 - Prompt: đầu rồng "cao khoảng 18 m", vảy "giọt nước, cong nhẹ". Đã xây: đầu dựng từ hình khối cơ bản; vảy là tấm 5 đỉnh (chưa đối chiếu với 18 m).
+- Prompt: rồng phun lửa và nước "vào tối thứ Bảy và Chủ Nhật lúc 21:00", lặp 30–60 s. Đã xây: không có lịch theo ngày giờ. Trình diễn chạy khi người xem bấm `#btnShow` (`show.on`, `setupUI.ts`), rồi lặp chu kỳ 48 s mãi (`updateShow`, `CONFIG.showCycle`). Chỉ có một liên hệ với giờ: bật trình diễn thì ban ngày tự chuyển sang đêm (`dayNight.target = 1`, comment "lúc 21:00"). Chữ "21h tối thứ Bảy, Chủ nhật" chỉ xuất hiện trong quảng cáo hư cấu của riverfront (`adAtlas.ts`). Lý do: mô hình xem được mọi lúc, không phụ thuộc đồng hồ máy.
 - Prompt: chế độ đi bộ "tùy chọn". Đã xây: có (`walk`), nhưng không có người đi bộ.
 - Prompt: ngày/đêm bằng nút hoặc slider. Đã xây: nút `#btnNight`; thêm hệ thời tiết (ngoài prompt gốc).
 - Chưa làm (yêu cầu của prompt không có trong mã):
