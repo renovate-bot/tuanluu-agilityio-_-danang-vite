@@ -436,5 +436,6 @@
   "close": "Close",
   "tourExitTouch": "Tap the scene to exit",
   "wxStormHintTouch": "Drag the scene to take the camera — the weather keeps running",
-  "swRideHintTouch": "Drag to look around · tap the button again to leave the cabin"
+  "swRideHintTouch": "Drag to look around · tap the button again to leave the cabin",
+  "donateAria": "Buy the author a coffee via MoMo (opens in a new tab)"
 }

@@ -80,3 +80,5 @@ Quyết định:
 - Test: `window.__app.ui` (`ui`, `openSheet`, `closeSheets`, `reveal`) và helper `tap`/`pick` trong `tests/lib.mjs` gọi `reveal(el)` trước khi bấm (trong `.brand` → mở tờ Cài đặt; trong `.view-list` → tờ Góc nhìn; chỗ khác → đóng tờ). Kiểm tràn ngang dùng `checkVisibility()`, không dùng `offsetParent` (luôn null với `.panel` fixed).
 Hệ quả: test mới bấm phần tử nằm trong panel đang bị tờ đóng che phải dùng `tap`/`pick`, không `page.click` trực tiếp. 7 bản dịch (ko, ja, zh, th, ar, hi, ru) cho khóa mới chưa người bản ngữ duyệt. Chưa đo trên điện thoại thật.
 
+## D-021: Liên kết ủng hộ MoMo thuần trong Cài đặt — 2026-11-04 — Chấp nhận
+Bối cảnh: cần nút Buy me a coffee nhưng không thêm script/widget bên thứ ba hoặc phụ thuộc runtime. Quyết định: dùng thẻ `<a>` tới trang MoMo, cấu hình URL rỗng thì ẩn, chỉ chấp nhận HTTPS; chữ nút giữ tiếng Anh và `aria-label` dịch đủ 9 ngôn ngữ. Không bật URL thật cho tới khi có alias riêng đã xác minh, vì URL nằm công khai trong bundle. Hệ quả: không thêm mesh/draw call; điện thoại dùng sheet Cài đặt hiện có.
