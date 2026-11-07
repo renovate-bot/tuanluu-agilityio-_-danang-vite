@@ -27,7 +27,7 @@ Một commit mang toàn bộ.
 - [x] `tests/voice-check.mjs`: danh sách ngôn ngữ `['vi', 'en', 'ru']` ở bước 1 và 2; bước 3 thêm kiểm đổi sang `ru` phát `voice/ru/<khóa>-1.mp3`; bước 4 vẫn dùng `ja`.
 - [x] README mục "Giọng thuyết trình của Tour (vi, en, ru)".
 Commit: `0a0b6be` (2026-10-21).
-Kiểm tra: `test:voice` đạt (vi + en + ru, 4 tour, 28 điểm dừng mỗi ngôn ngữ), ghi ở `tests/KET-QUA.md` (2026-10-21).
+Kiểm tra: `test:voice` đạt (vi + en + ru, 4 tour, 28 điểm dừng mỗi ngôn ngữ), thông báo của `voice-check` ở commit `0a0b6be`. `tests/KET-QUA.md` có dòng cùng số liệu ở commit `2572e8a` (log GĐ8 thời tiết, không phải lần đo ngày 2026-10-21).
 
 ### GĐ3: Mở rộng khóa `ru` theo các tính năng sau
 Mỗi lần thêm khóa mới trong `ru.json` và sinh clip `ru` cùng với vi/en:

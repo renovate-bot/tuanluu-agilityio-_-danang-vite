@@ -70,7 +70,7 @@ Người dùng đã chốt 4 câu (đặc tả gốc mục 2):
 - Thuyết minh vi/en/ru: khóa `allStops` trong `scripts/narration/*.json` (`cd52a47`); lời điểm 10 (ru): «Под нами — трасса тоннеля под рекой Хан. Это лишь модель предлагаемого варианта, тоннель ещё не построен.»
 
 ## 6. Ràng buộc đã tuân thủ
-- Không thêm mesh, không gọi `rand()`: seed và draw call các góc nhìn cũ không đổi (ngưỡng 0). `test:drawcalls` 58/58 chênh 0 (`tests/KET-QUA.md`, mục Bộ test Tour 4 cầu).
+- Không thêm mesh, không gọi `rand()`: seed và draw call các góc nhìn cũ không đổi (ngưỡng 0). `test:drawcalls` 58/58 chênh 0 (`tests/KET-QUA.md`, mục Bộ test Tour 4 cầu; chỉ các góc nhìn cũ, `allTour` không có trong `VIEWS` của `tests/drawcalls.mjs`).
 - 5 Tour cũ giữ nguyên `durs` và đường bay: nhánh mới chỉ chạy khi `loop === false`.
 - Không đặt điểm dừng trên hành lang Hầm ở độ thấp (`test:tour`: camera thấp nhất 24 m).
 - Hầm là "phương án đề xuất, chưa xây" ở lời điểm 10 (vi/en/ru).
@@ -86,10 +86,10 @@ Người dùng đã chốt 4 câu (đặc tả gốc mục 2):
 ## 8. Kiểm tra
 - `test:tour` (`tests/tour-check.mjs`): thêm Tour `all` — chú thích đúng 13 điểm, camera y ≥ 3 m (thực đo thấp nhất 24 m), raycast đường bay không chạm, tới cầu mới thì danh sách góc nhìn chuyển theo cầu đó, Cầu sông Hàn tự quay ở điểm 8, hết hành trình thì `cam.mode` về `orbit` và không lặp lại. Đạt: dragon 8, tp 7, ttl 7, sh 6, hr 8, all 13, sw 6, storm 8.
 - `test:voice`: `allStops` đủ clip vi/en/ru, đọc kịp (clip + 1,2 s); đạt (6 tour, 47 điểm + 8 mốc bão) ở lần chạy gần nhất.
-- `test:drawcalls`: 58/58 phép đo khớp bảng `now` cũ, chênh 0 (2026-10-22; lần đầu treo 240 s ở một thao tác nhấp, chạy lại riêng thì đạt). Lần gần nhất 72/74 khớp (2026-10-27), ngoại lệ `swTour` là dao động đã biết.
+- `test:drawcalls`: 58/58 phép đo khớp bảng `now` cũ, chênh 0 (chỉ các góc nhìn cũ; `allTour` không có trong `VIEWS` của `tests/drawcalls.mjs`, nên draw call của chính Tour 4 cầu chưa đo) (2026-10-22; lần đầu treo 240 s ở một thao tác nhấp, chạy lại riêng thì đạt). Lần gần nhất 72/74 khớp (2026-10-27), ngoại lệ `swTour` là dao động đã biết.
 - `test:tunnel`, `test:riverfront`, `test:weather` đạt cùng đợt (`f6a6c3f`).
 
 ## 9. Còn mở
 - Lời điểm 7 ("Tiếp tục về phía Bắc") đọc lúc camera còn nhìn lại Cầu Rồng; chỉnh `ALL_TOUR[6]` nếu muốn camera quay về hướng Bắc.
 - Chưa kiểm: giọng nghe thật; Tour ban đêm / thời tiết khác `now`; FPS SwiftShader/GPU thật.
-- `tests/KET-QUA.md` chưa ghi riêng số draw call của Tour 4 cầu (chưa đối chiếu có góc nhìn `allTour` trong `VIEWS` của `tests/drawcalls.mjs` hay không).
+- Draw call của chính Tour 4 cầu chưa đo: `allTour` không có trong `VIEWS` của `tests/drawcalls.mjs`, nên `tests/KET-QUA.md` không có số riêng cho Tour này.
