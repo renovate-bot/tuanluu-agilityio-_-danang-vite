@@ -23,5 +23,5 @@ Ngoài phạm vi: bản đồ toàn thành phố, vật lý giao thông thật, 
 
 ## Nguồn sự thật
 - Thông số: `src/config.ts`.
-- Đặc tả từng tính năng: `prompts/*.md` ở gốc repo.
+- Spec và plan từng tính năng: `docs/superpowers/specs/` và `docs/superpowers/plans/`.
 - Hướng dẫn người dùng/nhà phát triển: `README.md`.

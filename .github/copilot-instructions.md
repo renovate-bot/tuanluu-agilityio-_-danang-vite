@@ -12,7 +12,7 @@ Vite 6 + TypeScript 5.9 + three@0.165, **không dùng framework UI**. Chuyển t
 
 Agent không nhớ gì giữa các phiên. Bộ nhớ của dự án nằm ở [.github/memory-bank/](memory-bank/README.md).
 
-1. **Đầu phiên:** đọc `memory-bank/activeContext.md` và `memory-bank/progress.md`. Đọc thêm file khác theo bảng trong [memory-bank/README.md](memory-bank/README.md) khi nhiệm vụ cần.
+1. **Đầu phiên:** đọc `memory-bank/activeContext.md` và `memory-bank/progress.md`. Đọc thêm file khác theo bảng trong [memory-bank/README.md](memory-bank/README.md) khi nhiệm vụ cần. Đang làm một tính năng có plan thì đọc plan đó (`../docs/superpowers/plans/`) và spec của nó.
 2. **Trong phiên:** quyết định kiến trúc mới → ghi vào `decisions.md`. Phát hiện quy ước chưa có → ghi vào `systemPatterns.md`.
 3. **Cuối phiên / trước commit:** cập nhật `activeContext.md` (đang làm gì, bước tiếp theo) và `progress.md` (xong / còn thiếu). Dùng prompt [update-memory-bank](prompts/update-memory-bank.prompt.md).
 
@@ -71,9 +71,10 @@ Test chạy Chromium CPU nên **chậm**: chạy test liên quan trực tiếp t
 | Quy tắc theo vùng code (tự áp theo `applyTo`) | [.github/instructions/](instructions/) |
 | Quy trình tái sử dụng (thêm công trình, thêm ngôn ngữ, kiểm tra…) | [.github/prompts/](prompts/) |
 | Vai trò agent (lập kế hoạch, review) | [.github/agents/](agents/) |
-| **Đặc tả nhiệm vụ lớn** (một file cho mỗi tính năng) | [prompts/](../prompts/) ở gốc repo |
+| **Spec tính năng** (cái gì, vì sao, thông số) | [docs/superpowers/specs/](../docs/superpowers/specs/) |
+| **Plan tính năng** (làm theo bước nào, đã xong tới đâu) | [docs/superpowers/plans/](../docs/superpowers/plans/) |
 
-Quy ước: `prompts/` ở gốc = **đặc tả một lần** cho từng tính năng (cái gì, thông số thật). `.github/prompts/` = **quy trình lặp lại** (làm thế nào).
+Quy ước: `docs/superpowers/` là nguồn sự thật cho "xây cái gì / theo bước nào"; tính năng mới bắt đầu bằng brainstorming → spec → plan (prompt [plan-feature](prompts/plan-feature.prompt.md), có hoặc không có plugin superpowers). `.github/prompts/` là **quy trình lặp lại** (làm thế nào).
 
 ## 8. Git
 

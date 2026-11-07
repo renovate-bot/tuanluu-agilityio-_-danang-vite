@@ -30,4 +30,6 @@ projectbrief.md ──► productContext.md ──┐
 4. **Sửa chỗ sai ngay.** Thấy ghi chú mâu thuẫn với code → tin code, sửa ghi chú.
 5. **`decisions.md` chỉ ghi thêm.** Quyết định bị thay thì thêm mục mới, đánh dấu mục cũ `Thay bởi D-xxx`.
 
+Spec và plan của từng tính năng nằm ngoài memory bank, ở `docs/superpowers/`; memory bank trỏ tới chúng, không chép lại.
+
 Cập nhật toàn bộ: chạy prompt [update-memory-bank](../prompts/update-memory-bank.prompt.md).
