@@ -1,4 +1,4 @@
-// Ảnh tự xem Giai đoạn 2 của Vòng quay Mặt Trời (hình học tĩnh), cùng góc với ảnh tham chiếu prompts/tham-chieu/sun-wheel/
+// Ảnh tự xem Giai đoạn 2 của Vòng quay Mặt Trời (hình học tĩnh), cùng góc với ảnh tham chiếu docs/superpowers/specs/tham-chieu/sun-wheel/
 // (a1/a2 flycam từ Nam Đông Nam, n1 chính diện, n2 chân nhìn lên, n3 nhìn nghiêng) + đếm draw call phần vòng quay.
 //
 //   npm run build && node tests/sunwheel-gd2-shots.mjs      → tests/screens/sunwheel-gd2/*.png

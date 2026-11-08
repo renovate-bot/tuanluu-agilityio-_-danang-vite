@@ -2,7 +2,7 @@ import { CONFIG } from '../../config';
 import type { WeatherParams } from './state';
 
 /* ===== [weather] Ảnh hưởng của thời tiết lên cầu: gió theo cao độ, cấp Beaufort, giãn nở, võng cáp =====
-   Module THUẦN: số lấy từ CONFIG, không ghi cứng. Kết quả là "tính gần đúng" (xem prompts/ke-hoach-thoi-tiet.md mục 1.6). */
+   Module THUẦN: số lấy từ CONFIG, không ghi cứng. Kết quả là "tính gần đúng" (xem docs/superpowers/specs/2026-10-21-thoi-tiet-design.md mục 3). */
 export type BridgeKey = 'dragon' | 'thuanPhuoc' | 'tranThiLy' | 'songHan' | 'hanTunnel';
 export type BridgeStatus = 'open' | 'limited' | 'closed';
 export interface BridgeImpact {

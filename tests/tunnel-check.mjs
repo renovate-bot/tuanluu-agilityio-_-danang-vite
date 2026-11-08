@@ -1,4 +1,4 @@
-// Kiểm tra Hầm vượt sông Hàn (xem prompts/ham-vuot-song-han.md):
+// Kiểm tra Hầm vượt sông Hàn (xem docs/superpowers/specs/2026-10-21-ham-vuot-song-han-design.md):
 //  1. Hình học trắc dọc: chiều dài các đoạn 600/380/415 m (tổng 1.670 m), độ dốc từng đoạn, nóc hầm dìm thấp hơn đáy sông ≥ 1 m,
 //     lớp phủ hầm kín dưới mặt đất, cao độ liên tục, gờ chắn ngập cao hơn mặt phố ≥ 0,95 m.
 //  2. Mặt cắt địa chất: bật/tắt 3 lần, vật liệu nước/đất/… về đúng giá trị gốc (alpha, transparent, depthWrite, clippingPlanes).

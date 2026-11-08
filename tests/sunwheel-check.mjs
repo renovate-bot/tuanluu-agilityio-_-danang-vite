@@ -1,4 +1,4 @@
-// Kiểm tra Vòng quay Mặt Trời (xem prompts/vong-quay-mat-troi.md, mục 11). Mở rộng dần theo giai đoạn.
+// Kiểm tra Vòng quay Mặt Trời (xem docs/superpowers/specs/2026-10-22-vong-quay-mat-troi-design.md, mục 8). Mở rộng dần theo giai đoạn.
 // Giai đoạn 1 (khung): vị trí, hướng mặt phẳng, kích thước dẫn xuất, dọn nền không đụng nhà/cây ngoài nền, không lỗi console.
 // Giai đoạn 2 (hình học): đủ mesh, 64 cabin đứng thẳng, đỉnh cabin 115 m, không chạm hành lang Hầm, lớp 1 + không đổ bóng, LOD,
 // draw call do vòng quay thêm vào (góc cũ ≤ 2, gần ≤ 6, ngày = đêm; mục 9 của đặc tả).
