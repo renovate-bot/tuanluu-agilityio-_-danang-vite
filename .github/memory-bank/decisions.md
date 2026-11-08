@@ -80,5 +80,18 @@ Quyết định:
 - Test: `window.__app.ui` (`ui`, `openSheet`, `closeSheets`, `reveal`) và helper `tap`/`pick` trong `tests/lib.mjs` gọi `reveal(el)` trước khi bấm (trong `.brand` → mở tờ Cài đặt; trong `.view-list` → tờ Góc nhìn; chỗ khác → đóng tờ). Kiểm tràn ngang dùng `checkVisibility()`, không dùng `offsetParent` (luôn null với `.panel` fixed).
 Hệ quả: test mới bấm phần tử nằm trong panel đang bị tờ đóng che phải dùng `tap`/`pick`, không `page.click` trực tiếp. 7 bản dịch (ko, ja, zh, th, ar, hi, ru) cho khóa mới chưa người bản ngữ duyệt. Chưa đo trên điện thoại thật.
 
+## D-020: Chế độ tự khám phá bằng dù lượn — mô hình thuần, camera bám, `body.explore`, thoát bằng tải lại trang — 2026-11-09 — Chấp nhận
+Bối cảnh: ngoài góc nhìn đặt sẵn và Tour, người dùng muốn tự lái đi ngắm cầu; đợt này chỉ làm dù lượn (ô tô, xe máy, đi bộ để sau). Đầy đủ 20 quyết định ở §6 của [spec](../../docs/superpowers/specs/2026-11-02-tu-kham-pha-du-luon-design.md).
+Quyết định:
+- Cùng một trang và một cảnh; màn chọn phương tiện (`#chooser`) hiện mỗi lần vào trang, trừ khi có `?test` (bỏ qua màn chọn, mọi `test:*` chạy y như cũ). `?explore=glider` bay thẳng, `?chooser` (kèm `?test`) hiện màn chọn.
+- Mã mới nằm trong `src/explore/`: `flight.ts` (mô hình thuần, không đụng cảnh), `glider.ts` (1 Mesh, thêm vào scene khi bay), `chase.ts` (camera góc nhìn thứ ba, trễ mượt), `chooser.ts`, `index.ts` (điều phối); thêm `CameraMode` `'glider'`. Thông số ở `CONFIG.explore`.
+- Tốc độ ngang cố định 25 m/s; A/D rẽ (dù nghiêng), W/S lên/xuống trong sàn 30 m, trần 800 m; thả phím tự cân bằng. Không va chạm; tới mép khung bay thì dù tự vòng về, không có tường vô hình.
+- Không chữ, nhãn, thuyết minh, thời tiết khi bay. Giao diện khi bay do `body.explore` ẩn hết, chỉ giữ sáng/tối, ngôn ngữ, chất lượng, dòng hướng dẫn phím, nút Thoát.
+- Thoát (Esc hoặc `#btnExExit`) = tải lại trang bỏ `?explore=`; nhờ vậy bản hướng dẫn sau khi bay giống hệt lúc mới mở, không cần code dọn trạng thái dùng chung. Từ bản hướng dẫn muốn về màn chọn thì tải lại trang.
+- Gốc nhóm dù đặt giữa cánh và người lái (`originAt`) để người lái nằm trong khung hình của camera bám; vì vậy `state.pos` là điểm giữa dù chứ không phải mũi người.
+- `#exLang`: màn chọn có ô ngôn ngữ riêng, vì panel Cài đặt che mất hộp chọn.
+- Hiệu năng: đợt này chỉ đo draw call / ms ở 4 tư thế bay (`test:explore` mục 5), không làm LOD theo độ cao.
+Hệ quả: dù chỉ vào scene khi bay nên góc nhìn cũ không đổi draw call. Điện thoại/cảm ứng: thẻ dù lượn khóa, ghi "Chỉ dùng trên máy tính". 8 bản dịch (ko, ja, zh, th, ar, hi, ru, en) của 12 khóa `ex*` chưa người bản ngữ duyệt.
+
 ## D-021: Liên kết ủng hộ MoMo thuần trong Cài đặt — 2026-11-04 — Chấp nhận
 Bối cảnh: cần nút Buy me a coffee nhưng không thêm script/widget bên thứ ba hoặc phụ thuộc runtime. Quyết định: dùng thẻ `<a>` tới trang MoMo, cấu hình URL rỗng thì ẩn, chỉ chấp nhận HTTPS; chữ nút giữ tiếng Anh và `aria-label` dịch đủ 9 ngôn ngữ. Không bật URL thật cho tới khi có alias riêng đã xác minh, vì URL nằm công khai trong bundle. Hệ quả: không thêm mesh/draw call; điện thoại dùng sheet Cài đặt hiện có.
