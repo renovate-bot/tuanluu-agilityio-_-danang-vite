@@ -11,6 +11,13 @@ _2026-10-21 · Trạng thái: Đã xây (merge 745f72d, PR #1) · Prompt gốc: 
 - Không làm hỏng cái đang có: bốn cầu, chuỗi `rand()` có seed, draw call góc nhìn cũ, các test cũ.
 - Bối cảnh trong prompt: sẽ là hầm vượt sông thứ hai của Việt Nam, sau hầm Thủ Thiêm (TP.HCM, hầm dìm, khánh thành 2011) (Người Quan Sát). Thủ Thiêm là mẫu cho mặt cắt (hai ống xe + hành lang thoát nạn giữa) và phương pháp hầm dìm.
 
+**Nguồn (URL trong prompt gốc `git show c418f92:prompts/ham-vuot-song-han.md`):**
+- Tuổi Trẻ (19/03/2025), *Đà Nẵng đề xuất phương án xây hầm qua sông Hàn hơn 6.800 tỉ*: https://tuoitre.vn/da-nang-de-xuat-phuong-an-xay-ham-qua-song-han-hon-6-800-ti-20250319183650911.htm
+- Tiền Phong (07/2024), *Hầm chui qua sông Hàn sẽ như thế nào?*: https://tienphong.vn/ham-chui-qua-song-han-se-nhu-the-nao-post1655756.tpo
+- VnExpress, chủ đề *Đà Nẵng sẽ xây hầm vượt sông Hàn*: https://vnexpress.net/topic/da-nang-se-xay-ham-vuot-song-han-21586
+- VOH, *Đề xuất phương án xây dựng hầm vượt sông Hàn*: https://voh.com.vn/giao-thong/de-xuat-phuong-an-xay-dung-ham-vuot-song-han-hon-6000-ty-dong-585589.html
+- Người Quan Sát, *Hầm vượt sông thứ hai của Việt Nam…*: https://nguoiquansat.vn/ham-vuot-song-thu-hai-cua-viet-nam-di-qua-dong-song-bieu-tuong-cua-do-thi-dang-song-nhat-the-gioi-chi-phi-gan-7-000-ty-217642.html
+
 ## 2. Phạm vi: có / không có
 Có:
 - Trắc dọc `hrRoadY(x)` đối xứng qua tim sông, đáy sông, hào nạo vét (`profile.ts`).

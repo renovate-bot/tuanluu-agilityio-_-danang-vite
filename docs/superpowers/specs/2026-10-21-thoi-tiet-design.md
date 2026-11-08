@@ -220,6 +220,7 @@ Nối vào mã có sẵn: `main.ts` gọi `buildWeather()` sau `buildRiverfront(
 - **Báo cáo mục 13 của prompt** (draw call từng preset, FPS SwiftShader, link nguồn mục 1): chưa có số FPS, chưa có link, chưa có bảng preset.
 
 ## 8. Kiểm tra
+- Số mục: comment "mục N" trong mã (`src/…`), test và `tests/KET-QUA.md` dùng số mục của prompt gốc (`git show c418f92:prompts/thoi-tiet.md`), không phải số mục của spec này.
 - `tests/weather-check.mjs` (`npm run test:weather`, dùng `tests/weather-lib.mjs`: `snapAtmosphere`, `setWx`):
   - GĐ2: `now` không nhúc nhích mọi giá trị khí quyển; `storm → now` (ngày và đêm) khớp tuyệt đối chụp gốc (sương, Sky, nước, mây, ánh sáng, exposure); mỗi preset khác `now` đổi cảnh (mưa/bão sương > ×4); console sạch.
   - GĐ5: `now` đủ 536 xe khu phố, không khoá trình diễn/cầu quay; bão: `songHan.ctrl.start()` false và cầu vẫn đóng, `showAllowed` false, còn 232 xe (hai phố bờ sông), quảng cáo tắt, draw call ≤ now + 2 (max 10 khung có chớp); hết bão xe đủ 536, nút người dùng (`adsEnabled`, `songHan.lifeOn`, `hr.lifeOn`) giữ nguyên, `canStart()` true.

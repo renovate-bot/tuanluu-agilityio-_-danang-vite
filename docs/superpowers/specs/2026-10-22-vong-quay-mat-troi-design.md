@@ -15,6 +15,15 @@ _2026-10-22 · Trạng thái: Đã xây (merge 257b905, PR #8) · Prompt gốc: 
 - Thứ tự ưu tiên của prompt: **P1** hình học + quay + LOD → **P2** LED đêm + ngồi cabin + thời tiết → **P3** Tour + thuyết minh, kiểu show đồng bộ riverfront. Đã làm đủ P1–P3; phần P3 "đèn rọi trời" chưa làm (mục 7).
 - Hiện trạng thật: theo một số nguồn vòng quay đã ngừng sau 3/9/2025 (Wikipedia infobox "Closed", hoiandaytrip; chưa xác nhận). Người dùng chọn thể hiện lúc **đang hoạt động** kèm ghi chú (12b-1, mục 5).
 
+**Nguồn (URL trong prompt gốc `git show c418f92:prompts/vong-quay-mat-troi.md`):**
+- Wikipedia, *Sun Wheel (Da Nang)*: https://en.wikipedia.org/wiki/Sun_Wheel_(Da_Nang)
+- Cổng thông tin Đà Nẵng: https://danang.gov.vn/web/en/detail?id=15064
+- Vietnam Tourism: https://vietnamtourism.vn/en/index.php/news/items/8175
+- Vietnambooking (khối lượng 980 t, một nguồn): https://www.vietnambooking.com/du-lich/blog-du-lich/vong-quay-mat-troi-sun-wheel-da-nang.html
+- Abandoned Kansai (lịch sử Igosu 108 / Biwako Tower): https://abandonedkansai.com/2011/09/23/biwako-tower-igosu-108-amusement-park-ferris-wheel/
+- Hoi An Day Trip (đường kính, tình trạng ngừng hoạt động): https://hoiandaytrip.com/sun-wheel-da-nang/
+- Structurae, Cầu Rồng (tọa độ so sánh): https://structurae.net/structures/dragon-river-bridge
+
 ## 2. Phạm vi: có / không có
 Có:
 - `class SunWheel extends BridgeBase` (D-014) ở `src/bridges/sun-wheel/`: phần tĩnh (quảng trường, bệ + nhà ga, hai tháp đầu bệ + lầu, cổng vòm vàng, giàn tháp đỡ, trục) gộp một mesh; phần quay (vành chính, vành phụ, vành moay-ơ, 32 thanh, 64 cáp chéo, moay-ơ) gộp một mesh; 64 cabin `InstancedMesh`; biển "SUN WHEEL" vẽ canvas.
@@ -195,6 +204,7 @@ Câu trả lời của người dùng (prompt mục 12b, 2026-10-22), đều đ�
 Còn chờ theo 12b (không chặn, đang dùng ước lượng): khoảng cách tâm → mép nước sông Hàn (đo vuông góc bờ trên Google Maps) để chốt `x`; khoảng cách tâm → tim Cầu Trần Thị Lý để kiểm `z` (cảnh đặt Trần Thị Lý ở z = +1 300); đường kính hoặc chiều cao trục nếu có nguồn; ảnh cận cabin ban ngày, video show LED, ảnh trong cabin (mục 9).
 
 ## 8. Kiểm tra
+- Số mục: comment "mục N" trong mã (`src/…`), test và `tests/KET-QUA.md` dùng số mục của prompt gốc (`git show c418f92:prompts/vong-quay-mat-troi.md`), không phải số mục của spec này.
 - `tests/sunwheel-check.mjs` (`npm run test:sunwheel`), mở rộng theo giai đoạn (mục 11 của prompt):
   - GĐ1: tâm (−440; 2 280), hướng mặt phẳng 83°, kích thước dẫn xuất, đỉnh 115 m, dọn nền 0 nhà / 0 cây ngoài nền, console sạch.
   - GĐ2: chỉ `sw-static`, `sw-wheel` ngoài `details`/`life`; 64 instance, nghiêng ≤ 2°, đỉnh cabin 115 ± 1 m, không chạm hành lang Hầm, mesh lớp 1 + không đổ bóng, cabin/biển trong `details`; draw call do vòng quay (4 góc cũ ≤ 2, 3 camera gần ≤ 6, ngày = đêm).

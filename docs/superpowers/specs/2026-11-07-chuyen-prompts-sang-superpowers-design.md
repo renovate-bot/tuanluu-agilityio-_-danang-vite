@@ -1,6 +1,6 @@
 # Chuyển `prompts/` sang `docs/superpowers/` — Thiết kế
 
-_2026-11-07 · Trạng thái: đã duyệt_
+_2026-11-07 · Trạng thái: Đã thực hiện (nhánh feature/superpowers-docs)_
 
 ## 1. Mục đích và lý do
 
