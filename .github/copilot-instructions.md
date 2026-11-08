@@ -24,7 +24,7 @@ Memory bank ghi **cái code không tự nói ra được**: lý do, trạng thá
    - Không đổi thứ tự các lệnh `build*()` hiện có, không thêm/bớt lời gọi `rand()` trong code đã có.
    - Phần ngẫu nhiên mới dùng bộ sinh riêng `rng(seed)` (mẫu: `src/core/water.ts`).
    - Công trình mới cần dọn nhà/cây: dựng **sau** mọi lệnh dùng `rand`, rồi thu nhỏ instance về scale 0 (mẫu: `src/bridges/han-tunnel/corridor.ts`, `hideBankTrees()` trong `SongHanBridge.ts`). Xử lý cả level `near` lẫn `far` của `THREE.LOD`.
-2. **Draw call.** Bảng chuẩn ở `tests/KET-QUA.md`. Góc nhìn cũ không được tăng quá ngưỡng mà prompt nhiệm vụ cho phép (mặc định: 0). Gộp hình học (`mergeGeometries`), dùng `InstancedMesh`, LOD, `noReflect`/layer 1.
+2. **Draw call.** Bảng chuẩn ở `tests/KET-QUA.md`. Góc nhìn cũ không được tăng quá ngưỡng mà spec của tính năng cho phép (mặc định: 0). Gộp hình học (`mergeGeometries`), dùng `InstancedMesh`, LOD, `noReflect`/layer 1.
 3. **Mọi thông số ở `src/config.ts`.** Mỗi dòng: chú thích tiếng Việt, đơn vị, `(ước lượng)` nếu không có nguồn. Số đã công bố thì ghi nguồn.
 4. **i18n đủ 9 ngôn ngữ.** Khóa mới phải có trong cả `src/i18n/locales/{vi,en,ko,ja,zh,th,ar,hi,ru}.json`. `ar` là RTL.
 5. **Không thêm thư viện runtime, không thêm ảnh ngoài.** Texture vẽ bằng canvas. Không thêm `PointLight`/`SpotLight` mới; đèn đêm làm bằng emissive, đọc `shared.uNight`.
@@ -61,7 +61,7 @@ Test chạy Chromium CPU nên **chậm**: chạy test liên quan trực tiếp t
 - Hàm dựng đặt tiền tố theo công trình: `shBuild*`, `hr*`, `tp*`, `ttl*`, `rf*`.
 - Dòng dài, gọn kiểu "một dòng một ý" như code hiện có; không tự ý format lại file.
 - `tsconfig` đang `strict: false` (giai đoạn 1). Code mới nên có kiểu rõ ràng, không bật strict toàn cục.
-- Không tạo file tài liệu mới ngoài yêu cầu; README cập nhật mục **Cấu trúc** khi thêm thư mục.
+- Không tạo file tài liệu mới ngoài yêu cầu (trừ spec/plan trong `docs/superpowers/` theo `plan-feature`); README cập nhật mục **Cấu trúc** khi thêm thư mục.
 
 ## 7. Bản đồ tài liệu cho agent
 

@@ -60,7 +60,7 @@ src/
 
 ## Hầm vượt sông Hàn
 
-Mô hình phương án đề xuất 2025 (Sở Xây dựng Đà Nẵng): tuyến thẳng Đống Đa – Trần Phú → Vân Đồn – Trần Hưng Đạo, ≈ 1.670 m = hầm dìm qua sông 600 m (5 đốt × 120 m) + hầm kín trên bờ 380 m + hầm hở 415 m, 6 làn, 60 km/h, 6.880 tỷ đồng, đầu tư dự kiến 2031–2045. Kế hoạch triển khai chi tiết nằm ở [docs/superpowers/specs/2026-10-21-ham-vuot-song-han-design.md](docs/superpowers/specs/2026-10-21-ham-vuot-song-han-design.md).
+Mô hình phương án đề xuất 2025 (Sở Xây dựng Đà Nẵng): tuyến thẳng Đống Đa – Trần Phú → Vân Đồn – Trần Hưng Đạo, ≈ 1.670 m = hầm dìm qua sông 600 m (5 đốt × 120 m) + hầm kín trên bờ 380 m + hầm hở 415 m, 6 làn, 60 km/h, 6.880 tỷ đồng, đầu tư dự kiến 2031–2045. Thiết kế: [docs/superpowers/specs/2026-10-21-ham-vuot-song-han-design.md](docs/superpowers/specs/2026-10-21-ham-vuot-song-han-design.md) · kế hoạch: [docs/superpowers/plans/2026-10-21-ham-vuot-song-han.md](docs/superpowers/plans/2026-10-21-ham-vuot-song-han.md).
 Chiều dài từng đoạn, số làn, tốc độ, độ dốc tham khảo và tổng mức là số đã công bố; **mặt cắt ngang, độ sâu, đáy sông, kiến trúc cửa hầm, thiết bị là ước lượng** (ghi trong `CONFIG.hanTunnel`, `src/config.ts`).
 
 - Trắc dọc `hrRoadY(x)` (đối xứng qua tim sông): đường gãy khúc bo parabol, dốc ≤ 2% dưới sông, ≤ 3,5% hầm kín bờ, ≤ 4,5% hầm hở; nóc hầm dìm thấp hơn đáy sông ≥ 1 m; gờ chắn ngập ở đỉnh dốc cao hơn mặt phố 1 m. `npm run test:tunnel` kiểm tra các ràng buộc này.

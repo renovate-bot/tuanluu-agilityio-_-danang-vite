@@ -6,7 +6,7 @@ argument-hint: Mã ngôn ngữ (vd. ru, ko, ja)
 
 # Thêm thuyết minh cho ngôn ngữ `${input:lang:mã ngôn ngữ}`
 
-Nếu có đặc tả riêng trong `prompts/` (vd. `prompts/thuyet-minh-tieng-nga.md`) thì đặc tả đó ưu tiên.
+Nếu có spec riêng trong `docs/superpowers/specs/` (vd. `2026-10-21-thuyet-minh-tieng-nga-design.md`) thì spec đó ưu tiên.
 
 1. Tạo `scripts/narration/<lang>.json` theo đúng khóa và thứ tự của `scripts/narration/en.json`. Nội dung dựa trên `vi.json` (nguồn), viết lại tự nhiên, **số và đơn vị bằng chữ**, độ dài mỗi clip gần bằng bản `en` (±25%).
 2. Thêm giọng Neural của Edge vào `VOICES` trong `scripts/gen-narration.mjs`.

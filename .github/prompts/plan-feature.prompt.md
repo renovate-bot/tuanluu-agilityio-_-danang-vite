@@ -67,5 +67,5 @@ Task đầu luôn là phần ít rủi ro nhất có thể kiểm tra độc l�
 ## Sau khi làm xong
 
 - Đánh dấu `- [x]` từng bước trong plan; thêm `**Trạng thái:** Đã hoàn thành (merge <hash>)` ngay sau dòng Mục tiêu.
-- Sửa spec: `Trạng thái: Đã xây`, và nếu bản xây khác ý định thì thêm mục ghi chỗ khác và lý do (trỏ `D-0xx` hoặc commit).
+- Sửa spec: `Trạng thái: Đã xây`, và nếu bản xây khác ý định thì thêm mục `## 7. Khác so với ý định ban đầu` (đổi số các mục sau) ghi chỗ khác và lý do (trỏ `D-0xx` hoặc commit).
 - Quyết định kiến trúc ghi vào `decisions.md`; trạng thái ghi vào `activeContext.md` và `progress.md` (prompt `update-memory-bank`).
