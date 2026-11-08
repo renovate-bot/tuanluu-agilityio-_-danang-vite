@@ -572,6 +572,7 @@ const exploreBase = {
   glider: {
     span: 11,         // m sải cánh (ước lượng)
     lines: 7,         // m khoảng treo: người treo cách cánh xuống dưới bao nhiêu mét (ước lượng)
+    originAt: 0.55,   // tỉ lệ khoảng treo tính từ cánh xuống tới gốc group, không đơn vị (ước lượng)
     lineCount: 7,     // số dây treo mỗi bên, từ cánh xuống vai (ước lượng)
     chord: 2.6,       // m dây cung cánh (ước lượng)
     arch: 0.28,       // độ võng hai đầu cánh, tỉ lệ theo nửa sải (không đơn vị, ước lượng)

@@ -79,6 +79,8 @@ export function exBuildGlider(): THREE.Group {
     }
   }
   const geo = mergeGeometries(parts)!;
+  /* Gốc group nằm giữa cánh (trên) và người (dưới): cánh ở +lines·k, người ở −lines·(1−k) */
+  geo.translate(0, G.lines * G.originAt, 0);
   const mat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.85, side: THREE.DoubleSide, emissive: 0xffffff, emissiveMap: exGlowMap(), emissiveIntensity: 0 });
   const mesh = new THREE.Mesh(geo, mat);
   mesh.castShadow = false; mesh.receiveShadow = false; mesh.frustumCulled = false;
