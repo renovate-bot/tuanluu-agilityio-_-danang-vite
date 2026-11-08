@@ -1,5 +1,6 @@
 // Kiểm tra chế độ tự khám phá bằng dù lượn (kế hoạch feature/explore-du-luon).
-//   Mục 1: mô hình bay thuần (src/explore/flight.ts) qua móc tạm window.__app.exFlight.
+//   Mục 1–2: mô hình bay thuần, dù, camera bám (src/explore/*) qua móc window.__app.exFlight.
+//   Mục 3: điều phối chế độ bay, phím, ?explore=glider qua window.__app.explore.
 //
 //   npm run build && npm run test:explore
 import { fileURLToPath } from 'node:url';
@@ -135,6 +136,56 @@ try {
   check('console sạch', P.errors.length === 0);
   if (P.errors.length) console.log(P.errors.join('\n'));
   await P.page.close();
+  // Mục 3 — điều phối, phím, ?explore=glider
+  {
+    const G = await openApp(browser, srv.url + '?explore=glider');
+    await frames(G.page, 3);
+    const st = () => G.page.evaluate(() => { const e = window.__app.explore; return e.state ? { yaw: e.state.yaw, bank: e.state.bank, y: e.state.pos.y } : null; });
+    const a3 = await G.page.evaluate(() => { const a = window.__app; return { mode: a.cam.mode, en: a.controls.enabled, cls: document.body.classList.contains('explore'), obj: !!a.scene.getObjectByName('ex-glider'), act: a.explore.active() }; });
+    check('3a mode glider, controls tắt, body.explore, scene có ex-glider', a3.mode === 'glider' && a3.en === false && a3.cls && a3.obj && a3.act);
+    // 3b giữ A → yaw tăng; thả → hết tăng sau quá độ
+    await G.page.focus('canvas');
+    const y0 = (await st()).yaw;
+    await G.page.keyboard.down('a'); await G.page.waitForFunction((y) => Math.abs(window.__app.explore.state.yaw - y) > 0.01, y0, { timeout: 240000 });   // SwiftShader chậm: chờ tới khi yaw đổi thay vì chờ theo giờ
+    const y1 = (await st()).yaw;
+    await G.page.keyboard.up('a');
+    await G.page.waitForFunction(() => Math.abs(window.__app.explore.state.bank) < 0.01, null, { timeout: 240000 });
+    const y2 = (await st()).yaw; await G.page.waitForTimeout(1000); const y3 = (await st()).yaw;
+    check(`3b giữ A: yaw ${y0.toFixed(3)} → ${y1.toFixed(3)}; thả: ổn định (${y2.toFixed(3)} → ${y3.toFixed(3)})`, y1 > y0 + 0.001 && Math.abs(y3 - y2) < 0.005);
+    // 3c mất focus (blur) khi giữ A
+    await G.page.keyboard.down('a'); await G.page.waitForTimeout(800);
+    await G.page.evaluate(() => window.dispatchEvent(new Event('blur')));
+    const c = await G.page.evaluate(() => ({ n: window.__app.keys ? window.__app.keys.size : -1 }));
+    await G.page.waitForFunction(() => Math.abs(window.__app.explore.state.bank) < 0.01, null, { timeout: 240000 });
+    check(`3c blur → keys rỗng (${c.n}), bank về ~0`, c.n === 0);
+    await G.page.keyboard.up('a');
+    // 3d phím mũi tên trên #qualitySel không lái dù
+    await G.page.evaluate(() => { window.__app.ui.reveal(document.getElementById('qualitySel')); });
+    await G.page.waitForFunction(() => Math.abs(window.__app.explore.state.bank) < 0.01, null, { timeout: 240000 });
+    await G.page.focus('#qualitySel');
+    const d0 = await st(), v0 = await G.page.$eval('#qualitySel', (e) => e.value);
+    for (let i = 0; i < 3; i++) { await G.page.keyboard.press('ArrowDown'); await G.page.waitForTimeout(300); }
+    const d1 = await st(), v1 = await G.page.$eval('#qualitySel', (e) => e.value);
+    check(`3d select nhận phím (${v0} → ${v1}), dù không đổi độ cao (${d0.y} → ${d1.y}), bank ${d1.bank.toExponential(1)}`, v0 !== v1 && d0.y === d1.y && Math.abs(d1.bank) < 0.01);
+    // 3e controls.target bám điểm nhìn
+    await G.page.evaluate(() => window.__app.explore.step(1 / 60, { turn: 1, climb: 0 }));
+    await frames(G.page, 2);
+    const e3 = await G.page.evaluate(() => { const a = window.__app, s = a.explore.state, t = a.controls.target; const fx = Math.cos(s.yaw), fz = -Math.sin(s.yaw); return Math.hypot(t.x - (s.pos.x + fx * 30), t.y - s.pos.y, t.z - (s.pos.z + fz * 30)); });
+    check(`3e controls.target bám pos + forward·30 (lệch ${e3.toFixed(3)} m)`, e3 < 1);
+    // 3f Esc → tải lại, bỏ tham số explore
+    await G.page.keyboard.press('Escape');
+    await G.page.waitForURL((u) => !u.href.includes('explore='), { timeout: 240000, waitUntil: 'commit' });   // chỉ cần điều hướng bắt đầu; tải lại bằng SwiftShader rất chậm
+    check('3f Esc thoát: URL không còn explore=', true);
+    check('console sạch (mục 3)', G.errors.length === 0);
+    if (G.errors.length) console.log(G.errors.join('\n'));
+    await G.page.close();
+    // 3g không tham số: không bay
+    const N = await openApp(browser, srv.url);
+    await frames(N.page, 2);
+    const g3 = await N.page.evaluate(() => ({ mode: window.__app.cam.mode, obj: !!window.__app.scene.getObjectByName('ex-glider'), cls: document.body.classList.contains('explore'), act: window.__app.explore.active() }));
+    check('3g không ?explore: orbit, không ex-glider, không body.explore', g3.mode === 'orbit' && !g3.obj && !g3.cls && !g3.act);
+    await N.page.close();
+  }
 } catch (e) {
   problems.push('ngoại lệ: ' + e); console.log(e);
 } finally {

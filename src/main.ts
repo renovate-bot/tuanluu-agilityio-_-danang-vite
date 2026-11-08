@@ -33,11 +33,12 @@ import { SunWheel, swRide } from './bridges/sun-wheel';
 import { buildRiverfront, updateRiverfront } from './environment/riverfront';
 import { buildWeather, updateWeather } from './environment/weather';
 import { updateCamera, hrDrive } from './views/camera';
-import { cam } from './views/state';
+import { cam, keys } from './views/state';
 import { TOURS, tour } from './views/tour';
 import { exCreate, exStep, exInputFromKeys } from './explore/flight';
 import { exBuildGlider, exPlaceGlider } from './explore/glider';
 import { exChase } from './explore/chase';
+import { explore, setupExplore } from './explore';
 import { CONFIG } from './config';
 import { audio } from './audio';
 import { narration } from './audio/narration';
@@ -92,6 +93,7 @@ applyNight(0, 0);
 quality.init(() => cam.mode === 'fly');   // bậc chất lượng ban đầu (theo thiết bị / lựa chọn đã lưu); không đổi bậc giữa chuyến bay camera
 setupQualityUI();
 setupCompactUI();
+setupExplore();
 
 /* Móc kiểm thử: chỉ bật khi URL có ?test (dùng cho tests/*.mjs đo draw call và chạy Tour) */
 /* Chỉ các lớp three mà tests/*.mjs dùng: đưa cả namespace THREE vào một object làm Rollup giữ lại mọi export của three (D-018) */
@@ -100,7 +102,7 @@ const TEST_THREE = { Vector3: THREE.Vector3, Quaternion: THREE.Quaternion, Matri
 const query = new URLSearchParams(location.search);
 if (query.has('test')) {
   perf.on = query.has('perf');
-  (window as unknown as { __app: unknown }).__app = { renderer, scene, camera, controls, cam, shared, songHan, hr: hanTunnel, sunWheel, riverfront, weather, hrDrive, swRide, windFx, THREE: TEST_THREE, dayNight, tours: TOURS, tour, narration, audio, perf, quality, ui: { ...ui, ui: compactState, openSheet, closeSheets, reveal }, exFlight: { exCreate, exStep, exInputFromKeys, exBuildGlider, exPlaceGlider, exChase, CONFIG_explore: CONFIG.explore } };
+  (window as unknown as { __app: unknown }).__app = { renderer, scene, camera, controls, cam, shared, songHan, hr: hanTunnel, sunWheel, riverfront, weather, hrDrive, swRide, windFx, THREE: TEST_THREE, dayNight, tours: TOURS, tour, narration, audio, perf, quality, ui: { ...ui, ui: compactState, openSheet, closeSheets, reveal }, explore, keys, exFlight: { exCreate, exStep, exInputFromKeys, exBuildGlider, exPlaceGlider, exChase, CONFIG_explore: CONFIG.explore } };
 }
 
 /* ============================ Vòng lặp ============================ */
@@ -124,7 +126,7 @@ function animate() {
   updateEffects(dt, time); pt = perf.lap('effects', pt);
   updateTraffic(dt); pt = perf.lap('traffic', pt);
   updateBoats(dt, time); pt = perf.lap('boats', pt);
-  updateCamera(dt); pt = perf.lap('camera', pt);
+  updateCamera(dt); explore.update(dt); pt = perf.lap('camera', pt);
   for (let k = 0; k < bridges.length; k++) { bridges[k].update(dt, time, camera); pt = perf.lap(bridgeKeys[k], pt); }
   hanTunnel.holdBoats(songHan.boats.list);
   updateHrUI(camera);

@@ -45,8 +45,9 @@ export function exStep(s: GliderState, inp: GliderInput, dt: number): void {
 }
 
 /* Phím giữ → đầu vào lái: A/← trái, D/→ phải, W/↑ lên, S/↓ xuống; hai phím ngược nhau triệt tiêu */
-export function exInputFromKeys(keys: Set<string>): GliderInput {
+export function exInputFromKeys(keys: Set<string>, out: GliderInput = { turn: 0, climb: 0 }): GliderInput {   // out: đối tượng tái dùng cho đường khung hình (không cấp phát)
   const turn = (keys.has('a') || keys.has('arrowleft') ? 1 : 0) - (keys.has('d') || keys.has('arrowright') ? 1 : 0);
   const climb = (keys.has('w') || keys.has('arrowup') ? 1 : 0) - (keys.has('s') || keys.has('arrowdown') ? 1 : 0);
-  return { turn: turn as -1 | 0 | 1, climb: climb as -1 | 0 | 1 };
+  out.turn = turn as -1 | 0 | 1; out.climb = climb as -1 | 0 | 1;
+  return out;
 }

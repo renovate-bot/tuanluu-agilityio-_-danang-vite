@@ -1,0 +1,63 @@
+/* ============================ Tự khám phá: điều phối chế độ bay dù lượn ============================
+   Nối flight (mô hình), glider (dù), chase (camera) với vòng animate, phím và URL.
+   `?explore=glider` bay thẳng; Esc tải lại trang không còn tham số explore. Camera do explore.update đặt sau updateCamera. */
+import * as THREE from 'three';
+import { scene, camera, controls } from '../core/renderer';
+import { cam, keys } from '../views/state';
+import { exCreate, exStep, exInputFromKeys, type GliderState, type GliderInput } from './flight';
+import { exBuildGlider, exPlaceGlider } from './glider';
+import { exChase } from './chase';
+
+const _inp: GliderInput = { turn: 0, climb: 0 };   // đầu vào tái dùng mỗi khung
+
+let glider: THREE.Group | null = null;
+let state: GliderState | null = null;
+
+const active = () => cam.mode === 'glider' && state !== null;
+
+/* Một bước: mô phỏng, đặt dù, đặt camera bám */
+function advance(dt: number, inp: GliderInput): void {
+  exStep(state!, inp, dt);
+  exPlaceGlider(glider!, state!);
+  exChase(camera, controls.target, state!, dt);
+}
+
+export const explore = {
+  active,
+  get state() { return state; },
+  get glider() { return glider; },
+  start(): void {
+    state = exCreate();
+    if (!glider) glider = exBuildGlider();
+    if (!glider.parent) scene.add(glider);
+    cam.flight.then = null; cam.mode = 'glider'; controls.enabled = false;
+    exPlaceGlider(glider, state);
+    exChase(camera, controls.target, state, 0, true);
+    document.body.classList.add('explore');
+  },
+  update(dt: number): void {
+    if (!active()) return;
+    advance(dt, exInputFromKeys(keys, _inp));
+  },
+  /* Cho test: như update nhưng nhận đầu vào trực tiếp */
+  step(dt: number, inp: GliderInput): void {
+    if (active()) advance(dt, inp);
+  },
+  exit(): void {
+    const u = new URL(location.href);
+    u.searchParams.delete('explore'); u.searchParams.delete('chooser');
+    location.replace(u.toString());
+  },
+};
+
+export function setupExplore(): void {
+  window.addEventListener('keydown', (e) => {
+    if (!active()) return;
+    if (e.key === 'Escape') { explore.exit(); return; }   // Esc thoát kể cả khi đang focus ô chọn
+    const t = e.target as HTMLElement | null;
+    if (t && /^(SELECT|INPUT|TEXTAREA)$/.test(t.tagName)) return;   // phím trong ô chọn/nhập không lái dù
+    const k = e.key.toLowerCase(); keys.add(k);
+    if (k.startsWith('arrow')) e.preventDefault();
+  });
+  if (new URLSearchParams(location.search).get('explore') === 'glider') explore.start();
+}
