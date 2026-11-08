@@ -27,6 +27,17 @@ function wireLang(root: HTMLElement): void {
   onChange((code) => { mine.value = code; });
 }
 
+/* Màn chọn là hộp thoại modal: các khối giao diện cũ (header, panel, canvas...) đặt inert để Tab/Enter không lọt xuống dưới */
+const inerted: HTMLElement[] = [];
+function setUnderInert(root: HTMLElement, on: boolean): void {
+  if (on) {
+    for (const c of Array.from(document.body.children) as HTMLElement[]) {
+      if (c === root || c.tagName === 'SCRIPT' || c.id === 'loading' || c.inert) continue;
+      c.inert = true; inerted.push(c);
+    }
+  } else { for (const c of inerted) c.inert = false; inerted.length = 0; }
+}
+
 export function exShowChooser(onPick: (choice: ExChoice) => void): void {
   const root = el();
   if (!root) return;
@@ -36,7 +47,7 @@ export function exShowChooser(onPick: (choice: ExChoice) => void): void {
     if (b.disabled) return;
     b.addEventListener('click', () => { exHideChooser(); onPick(b.dataset.pick as ExChoice); }, { once: true });
   });
-  const show = () => { root.hidden = false; root.querySelector<HTMLButtonElement>('button[data-pick]:not(:disabled)')?.focus({ preventScroll: true }); };
+  const show = () => { root.hidden = false; setUnderInert(root, true); root.querySelector<HTMLButtonElement>('button[data-pick]:not(:disabled)')?.focus({ preventScroll: true }); };
   const loading = document.getElementById('loading');
   if (!loading || loading.classList.contains('done')) { show(); return; }
   const mo = new MutationObserver(() => { if (loading.classList.contains('done')) { mo.disconnect(); show(); } });   // #loading.done được đặt sau khung đầu
@@ -45,5 +56,5 @@ export function exShowChooser(onPick: (choice: ExChoice) => void): void {
 
 export function exHideChooser(): void {
   const root = el();
-  if (root) root.hidden = true;
+  if (root) { root.hidden = true; setUnderInert(root, false); }
 }

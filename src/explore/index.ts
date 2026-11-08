@@ -47,7 +47,8 @@ export const explore = {
   exit(): void {
     const u = new URL(location.href);
     u.searchParams.delete('explore'); u.searchParams.delete('chooser');
-    location.replace(u.toString());
+    if (u.href === location.href) location.reload();   // URL chỉ khác phần #ngôn-ngữ: replace chỉ là điều hướng fragment, không tải lại
+    else location.replace(u.toString());
   },
 };
 
@@ -55,11 +56,20 @@ export function setupExplore(): void {
   window.addEventListener('keydown', (e) => {
     if (!active()) return;
     if (e.key === 'Escape') { explore.exit(); return; }   // Esc thoát kể cả khi đang focus ô chọn
+    if (e.ctrlKey || e.metaKey || e.altKey) return;   // phím tắt trình duyệt (Cmd+S...) không lái dù, tránh kẹt phím
     const t = e.target as HTMLElement | null;
     if (t && /^(SELECT|INPUT|TEXTAREA)$/.test(t.tagName)) return;   // phím trong ô chọn/nhập không lái dù
     const k = e.key.toLowerCase(); keys.add(k);
     if (k.startsWith('arrow')) e.preventDefault();
   });
+  /* Chọn ngôn ngữ / chất lượng bằng chuột xong thì bỏ focus, nếu không mũi tên và WASD sau đó đổi cài đặt thay vì lái dù. Dùng Tab + bàn phím thì giữ nguyên. */
+  for (const id of ['langSelect', 'qualitySel']) {
+    const sel = document.getElementById(id); if (!sel) continue;
+    let byMouse = false;
+    sel.addEventListener('pointerdown', () => { byMouse = true; });
+    sel.addEventListener('keydown', () => { byMouse = false; });
+    sel.addEventListener('change', () => { if (byMouse && active()) sel.blur(); byMouse = false; });
+  }
   const q = new URLSearchParams(location.search);
   if (q.has('test')) document.body.classList.add('ex-test');   // giữ HUD khi bay để test đo draw call
   document.getElementById('btnExExit')?.addEventListener('click', () => explore.exit());

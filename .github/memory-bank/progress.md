@@ -44,6 +44,7 @@ Tất cả đã vào `main` (PR #1 hầm, PR #2 riverfront, PR #3 hướng dẫn
 - Thuyết minh cho ko, ja, zh, th, ar, hi.
 - Vòng quay Mặt Trời (Sun Wheel) theo [spec](../../docs/superpowers/specs/2026-10-22-vong-quay-mat-troi-design.md): GĐ1–GĐ7 đã có (xem bảng trên). Còn thiếu để chốt số: khoảng cách tâm → mép nước (x), đường kính thật, ảnh cận cabin, video show LED.
 - Vòng quay Mặt Trời: chưa đo bản gốc (`test:drawcalls -- tests/original`) cho các góc cũ; cột "ngày" của `rfBank`, `wxRiverMouth`, `wxTtlStays`, `wxStreet`, `swOverview`, `swFront`, `swBase`, `swFromTTL` trong `KET-QUA.md` thực ra đo ban đêm (lỗi `tests/drawcalls.mjs` sau `rfHearts`, có từ trước; đề xuất sửa + đo lại). Vòng quay chưa có ảnh `sunwheel-gd8/` (GĐ8 không có bước nhìn kết quả).
+- Tự khám phá (dù lượn): WASD không chạy trên bàn phím không Latin (dùng mũi tên).
 - Bật `strict` TypeScript dần theo thư mục (giai đoạn 2).
 
 ## Lỗi / hạn chế đã biết
