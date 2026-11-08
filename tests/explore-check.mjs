@@ -2,6 +2,7 @@
 //   Mục 1–2: mô hình bay thuần, dù, camera bám (src/explore/*) qua móc window.__app.exFlight.
 //   Mục 3: điều phối chế độ bay, phím, ?explore=glider qua window.__app.explore.
 //   Mục 4: màn chọn phương tiện, giao diện khi bay (body.explore), i18n 9 ngôn ngữ.
+//   Mục 5: đo draw call và ms/khung ở 4 tư thế bay, ngày/đêm (chỉ đo; fail nếu phần dù ngày ≠ đêm).
 //
 //   npm run build && npm run test:explore
 import { fileURLToPath } from 'node:url';
@@ -264,6 +265,53 @@ try {
     for (const c of langs) for (const k of exKeys) if (typeof L[c][k] !== 'string' || !L[c][k].trim()) miss.push(`${c}.${k}`);
     check(`4h ${exKeys.length} khóa ex* (${exKeys.join(',')}) đủ 9 ngôn ngữ (thiếu: ${miss.join(',') || '-'})`, exKeys.length >= 9 && miss.length === 0);
     check('4h vi exSoon / exDesktopOnly / exHint đúng chữ', L.vi.exSoon === 'Sắp có' && L.vi.exDesktopOnly === 'Chỉ dùng trên máy tính' && L.vi.exHint === 'W/S hoặc ↑/↓ để lên/xuống · A/D hoặc ←/→ để rẽ · Esc để thoát');
+  }
+  // Mục 5 — đo draw call và thời gian khung ở các tư thế bay (không fail, trừ phần dù ngày ≠ đêm)
+  //   Tư thế gán trực tiếp state.pos/yaw; gốc nhóm dù nằm giữa cánh và người lái (originAt) nên pos là điểm giữa dù, không phải mũi người.
+  {
+    const POSES = { exTakeoff: null, exDragon: [0, 120, 400], exTp: [300, 150, -2400], exHigh: [0, 800, 1500] };
+    const R = await openApp(browser, srv.url + '?explore=glider');
+    await frames(R.page, 3);
+    const setNight5 = async (v) => {
+      await R.page.evaluate((v) => { window.__app.dayNight.target = v; window.__app.dayNight.night = v; }, v);
+      await R.page.waitForFunction((v) => Math.abs(window.__app.dayNight.night - v) < 1e-6, v, { timeout: 60000 });
+      await frames(R.page, 3);
+    };
+    const measure = async (name) => {
+      await R.page.evaluate(({ name, pose }) => {
+        const { explore, exFlight } = window.__app, s = explore.state, C = exFlight.CONFIG_explore;
+        if (pose) s.pos.set(pose[0], pose[1], pose[2]); else s.pos.set(C.takeoff[0], C.takeoff[1], C.takeoff[2]);
+        s.yaw = pose ? Math.PI / 2 : C.takeoffYaw; s.bank = 0;   // yaw π/2 = nhìn −Z (Bắc)
+      }, { name, pose: POSES[name] });
+      await frames(R.page, 2);
+      return R.page.evaluate(() => {
+        const { explore, exFlight, renderer, scene, camera, controls, perf } = window.__app;
+        const s = explore.state, g = scene.getObjectByName('ex-glider');
+        exFlight.exPlaceGlider(g, s); exFlight.exChase(camera, controls.target, s, 0, true);
+        const calls = () => { renderer.render(scene, camera); renderer.info.reset(); renderer.render(scene, camera); return renderer.info.render.calls; };   // dựng hai lần, đo lần hai (LOD theo camera mới)
+        const withG = calls(); g.visible = false; const noG = calls(); g.visible = true;
+        const times = []; for (let i = 0; i < 5; i++) times.push(calls()); times.sort((a, b) => a - b);
+        return { withG, noG, median: times[2] };
+      });
+    };
+    const avgMs = async () => { await R.page.evaluate(() => window.__app.perf.stats()); await frames(R.page, 8); return R.page.evaluate(() => window.__app.perf.stats().avg); };
+    const rows = {};
+    for (const [label, night] of [['ngày', 0], ['đêm', 1]]) {
+      await setNight5(night);
+      for (const name of Object.keys(POSES)) {
+        const m = await measure(name);
+        m.ms = await avgMs();
+        (rows[name] ||= {})[label] = m;
+      }
+    }
+    console.log('Tư thế      | draw call ngày | ms ngày | draw call đêm | ms đêm | dù (ngày/đêm)');
+    for (const [name, r] of Object.entries(rows)) {
+      console.log(`${name.padEnd(11)} | ${String(r['ngày'].median).padStart(14)} | ${r['ngày'].ms.toFixed(1).padStart(7)} | ${String(r['đêm'].median).padStart(13)} | ${r['đêm'].ms.toFixed(1).padStart(6)} | ${r['ngày'].withG - r['ngày'].noG}/${r['đêm'].withG - r['đêm'].noG}`);
+    }
+    for (const [name, r] of Object.entries(rows)) check(`5 ${name}: phần dù ngày = đêm (${r['ngày'].withG - r['ngày'].noG} = ${r['đêm'].withG - r['đêm'].noG})`, r['ngày'].withG - r['ngày'].noG === r['đêm'].withG - r['đêm'].noG);
+    check('console sạch (mục 5)', R.errors.length === 0);
+    if (R.errors.length) console.log(R.errors.join('\n'));
+    await R.page.close();
   }
 } catch (e) {
   problems.push('ngoại lệ: ' + e); console.log(e);
