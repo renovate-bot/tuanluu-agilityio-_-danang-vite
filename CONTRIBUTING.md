@@ -77,7 +77,7 @@ src/
 └── views/         # Các góc nhìn / chế độ tham quan
 scripts/           # Script hỗ trợ (vd. sinh giọng đọc)
 tests/             # Các bài kiểm tra tự động
-prompts/           # Đặc tả / prompt cho từng hạng mục
+docs/superpowers/  # Spec (specs/) và plan (plans/) cho từng tính năng
 ```
 
 ## Quy trình làm việc
@@ -153,7 +153,7 @@ Các loại thường dùng: `feat`, `fix`, `docs`, `refactor`, `perf`, `test`, 
 
 ## Gửi Pull Request
 
-- Mô tả **cái gì** thay đổi và **vì sao**; liên kết issue (`Closes #123`) hoặc đặc tả trong `prompts/` nếu có.
+- Mô tả **cái gì** thay đổi và **vì sao**; liên kết issue (`Closes #123`) hoặc spec/plan trong `docs/superpowers/` nếu có.
 - Điền đủ checklist trong mẫu PR: typecheck/build, chênh lệch draw call, test liên quan, ảnh ngày/đêm.
 - Cập nhật tài liệu liên quan (README, `tests/KET-QUA.md`) khi cần.
 - Giữ PR nhỏ gọn; tách thay đổi lớn thành nhiều PR.

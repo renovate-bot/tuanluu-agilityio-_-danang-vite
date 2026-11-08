@@ -60,7 +60,7 @@ src/
 
 ## Hầm vượt sông Hàn
 
-Mô hình phương án đề xuất 2025 (Sở Xây dựng Đà Nẵng): tuyến thẳng Đống Đa – Trần Phú → Vân Đồn – Trần Hưng Đạo, ≈ 1.670 m = hầm dìm qua sông 600 m (5 đốt × 120 m) + hầm kín trên bờ 380 m + hầm hở 415 m, 6 làn, 60 km/h, 6.880 tỷ đồng, đầu tư dự kiến 2031–2045. Kế hoạch triển khai chi tiết nằm ở [prompts/ham-vuot-song-han.md](prompts/ham-vuot-song-han.md).
+Mô hình phương án đề xuất 2025 (Sở Xây dựng Đà Nẵng): tuyến thẳng Đống Đa – Trần Phú → Vân Đồn – Trần Hưng Đạo, ≈ 1.670 m = hầm dìm qua sông 600 m (5 đốt × 120 m) + hầm kín trên bờ 380 m + hầm hở 415 m, 6 làn, 60 km/h, 6.880 tỷ đồng, đầu tư dự kiến 2031–2045. Thiết kế: [docs/superpowers/specs/2026-10-21-ham-vuot-song-han-design.md](docs/superpowers/specs/2026-10-21-ham-vuot-song-han-design.md) · kế hoạch: [docs/superpowers/plans/2026-10-21-ham-vuot-song-han.md](docs/superpowers/plans/2026-10-21-ham-vuot-song-han.md).
 Chiều dài từng đoạn, số làn, tốc độ, độ dốc tham khảo và tổng mức là số đã công bố; **mặt cắt ngang, độ sâu, đáy sông, kiến trúc cửa hầm, thiết bị là ước lượng** (ghi trong `CONFIG.hanTunnel`, `src/config.ts`).
 
 - Trắc dọc `hrRoadY(x)` (đối xứng qua tim sông): đường gãy khúc bo parabol, dốc ≤ 2% dưới sông, ≤ 3,5% hầm kín bờ, ≤ 4,5% hầm hở; nóc hầm dìm thấp hơn đáy sông ≥ 1 m; gờ chắn ngập ở đỉnh dốc cao hơn mặt phố 1 m. `npm run test:tunnel` kiểm tra các ràng buộc này.
@@ -74,7 +74,7 @@ Chiều dài từng đoạn, số làn, tốc độ, độ dốc tham khảo và
 
 ## Hai bờ sông Hàn
 
-`src/environment/riverfront/` (kế hoạch: [prompts/bo-song-han.md](prompts/bo-song-han.md)); thông số ở `CONFIG.riverfront`.
+`src/environment/riverfront/` (kế hoạch: [docs/superpowers/specs/2026-10-21-bo-song-han-design.md](docs/superpowers/specs/2026-10-21-bo-song-han-design.md)); thông số ở `CONFIG.riverfront`.
 - **Địa danh** (`landmarks.ts`, một mesh gộp, cửa sổ sáng đêm bằng `patchWindows`): Novotel Danang Premier Han River (37 tầng), Vinpearl Condotel Riverfront (36 tầng nổi + sky bar), Trung tâm Hành chính (34 tầng, 166,8 m, dáng ngọn hải đăng), Chợ Hàn, Bảo tàng Điêu khắc Chăm, Cầu Tình Yêu + cá chép hóa rồng, 3 khách sạn ven Trần Hưng Đạo. Số tầng/chiều cao có nguồn công khai (ghi ở đầu `landmarks.ts`); **toạ độ trong cảnh là ước lượng**. Không có logo thật.
 - **Mặt dựng trái tim + "DN"** (`heartFacade.ts`): một canvas mặt nạ (R tim, G chữ DN, B viền) + fragment shader lưới chấm LED 0,8 m, chu kỳ 24 s (tim đập → DN hiện dần → tim bọc DN, viền chạy → lấp lánh). Hai tấm gộp một mesh, pha từng tấm là attribute (`Đối đáp` lệch 12 s, `Đồng bộ` cùng pha). Ban ngày tối đa 4% độ sáng ban đêm. Novotel quay +X, Vinpearl quay −X, trục U luôn chạy sang phải người nhìn từ sông.
 - **Quảng cáo** (`adAtlas.ts`, `billboards.ts`): atlas canvas 2048², thương hiệu **hư cấu** (danh sách ở đầu `adAtlas.ts`) xen thông điệp du lịch thành phố. 8 pano trụ đơn, 5 bảng nóc nhà, 3 màn LED đổi quảng cáo mỗi 8 s (chuyển mờ 0,6 s), ~100 băng rôn cột đèn, biển hiệu Chợ Hàn/Bảo tàng Chăm.

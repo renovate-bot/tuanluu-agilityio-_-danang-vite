@@ -1,4 +1,4 @@
-// Kiểm tra thời tiết (xem prompts/ke-hoach-thoi-tiet.md mục 11). Hiện có phần Giai đoạn 2; các giai đoạn sau thêm tiếp.
+// Kiểm tra thời tiết (xem docs/superpowers/specs/2026-10-21-thoi-tiet-design.md mục 8). Hiện có phần Giai đoạn 2; các giai đoạn sau thêm tiếp.
 //  GĐ2.1 Preset `now`: mọi giá trị khí quyển bằng giá trị trước khi áp thời tiết (không nhúc nhích).
 //  GĐ2.2 storm -> now (ngày và đêm): mọi giá trị khớp TUYỆT ĐỐI với chụp gốc (sương, Sky, nước, mây, ánh sáng, exposure).
 //  GĐ2.3 Mỗi preset khác `now` thật sự đổi cảnh (sương dày hơn khi mưa/bão); không lỗi console.

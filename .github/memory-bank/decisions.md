@@ -33,7 +33,7 @@ Quyết định: bám số công bố (1.670 m = 600 + 380 + 415, 6 làn, 60 km/
 ## D-008: Không dùng thương hiệu thật trên quảng cáo/tòa nhà — 2026-10-21 — Chấp nhận
 Quyết định: thương hiệu hư cấu + thông điệp du lịch; tòa thật (Novotel, Vinpearl) dựng khối nhưng không logo.
 
-## D-009: Thời tiết là lớp điều biến sau ngày/đêm, chạy bằng shader — 2026-10-21 — Đề xuất (chờ duyệt đặc tả `prompts/ke-hoach-thoi-tiet.md`)
+## D-009: Thời tiết là lớp điều biến sau ngày/đêm, chạy bằng shader — 2026-10-21 — Đề xuất (chờ duyệt đặc tả `docs/superpowers/specs/2026-10-21-thoi-tiet-design.md`)
 Bối cảnh: `applyNight()` ghi đè mỗi khung hình sương, đèn, phơi sáng, màu nước; cần thêm mưa/gió/bão mà không lệch draw call hay chuỗi `rand()`. Quyết định: `updateWeather()` gọi ngay sau `applyNight()` và chỉ nhân/lerp các giá trị đó; giá trị applyNight không đặt lại thì chụp gốc lúc build và trả đúng khi preset "Hiện trạng" (no-op). Mưa, lắc cây, rung cáp làm trong vertex shader (uniform `weatherU` riêng, không gộp vào `shared` vì `MAT.ledRail` dùng nguyên object đó); ngẫu nhiên dùng `rng(seed)` riêng; không thêm đèn động hay pass hậu kỳ. Hệ quả: preset mặc định chênh 0 draw call; preset thời tiết ≤ +2 (mưa, tia chớp); `bridgePatch` có thêm option `weather`/`sway` mặc định tắt.
 
 ## D-010: Hiệu năng thời tiết đo bằng fill rate và khựng, không chỉ draw call — 2026-10-21 — Chấp nhận

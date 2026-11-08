@@ -1,4 +1,4 @@
-// Kiểm tra hai bờ sông Hàn (xem prompts/bo-song-han.md):
+// Kiểm tra hai bờ sông Hàn (xem docs/superpowers/specs/2026-10-21-bo-song-han-design.md):
 //  1. Không nhà ngẫu nhiên nào còn hiện mà chân đè lên chân địa danh; nhà không bị dọn giữ nguyên ma trận so với trước khi dọn.
 //  2. Mặt LED trái tim: pháp tuyến Novotel +X, Vinpearl −X; trục U chạy sang bên phải người nhìn từ sông (chữ "DN" không lật gương).
 //  3. Tắt/bật "Đèn trái tim": emissive về 0 rồi trở lại, hoạt cảnh chạy tiếp; bật/tắt 3 lần không rò rỉ geometry/texture.

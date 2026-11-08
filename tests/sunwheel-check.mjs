@@ -1,7 +1,7 @@
-// Kiểm tra Vòng quay Mặt Trời (xem prompts/vong-quay-mat-troi.md, mục 11). Mở rộng dần theo giai đoạn.
+// Kiểm tra Vòng quay Mặt Trời (xem docs/superpowers/specs/2026-10-22-vong-quay-mat-troi-design.md, mục 8). Mở rộng dần theo giai đoạn.
 // Giai đoạn 1 (khung): vị trí, hướng mặt phẳng, kích thước dẫn xuất, dọn nền không đụng nhà/cây ngoài nền, không lỗi console.
 // Giai đoạn 2 (hình học): đủ mesh, 64 cabin đứng thẳng, đỉnh cabin 115 m, không chạm hành lang Hầm, lớp 1 + không đổ bóng, LOD,
-// draw call do vòng quay thêm vào (góc cũ ≤ 2, gần ≤ 6, ngày = đêm; mục 9 của đặc tả).
+// draw call do vòng quay thêm vào (góc cũ ≤ 2, gần ≤ 6, ngày = đêm; mục 9 của đặc tả; số mục theo prompt gốc tại c418f92).
 //
 //   npm run build && node tests/sunwheel-check.mjs
 import { fileURLToPath } from 'node:url';
@@ -119,7 +119,7 @@ try {
     check(D[`${k}|${n}`].details, `${k}: chi tiết phải hiện ở gần`);
   }
   for (const k of [...OLD.map(([, v]) => v), ...Object.keys(NEAR)]) check(D[`${k}|0`].d === D[`${k}|1`].d, `${k}: draw call vòng quay ngày ${D[`${k}|0`].d} ≠ đêm ${D[`${k}|1`].d}`);
-  // ---- Giai đoạn 3: quay, cabin đứng thẳng, tốc độ, góc nhìn sw* (mục 3, 9, 11) ----
+  // ---- Giai đoạn 3: quay, cabin đứng thẳng, tốc độ, góc nhìn sw* (mục 3, 9, 11 theo prompt gốc tại c418f92) ----
   // 1. Chu kỳ: tích phân deterministic W.advance(giây); page.evaluate chạy đồng bộ nên vòng lặp thật không chen vào
   const M = await page.evaluate(() => {
     const { sunWheel: W } = window.__app, TAU = Math.PI * 2, out = {};
@@ -234,7 +234,7 @@ try {
   check(U.opts.join() === '0,1,10,60', `ô tốc độ: ${U.opts}`);
   check(U.g10 === 10 && U.g0 === 0 && U.g60 === 60 && U.g1 === 1, `ô tốc độ không đặt đúng tốc độ đích: ${JSON.stringify(U)}`);
   check(U.note.length > 40 && !/^sw[A-Z]/.test(U.note) && /2025/.test(U.note), `bảng thông số chưa có ghi chú hiện trạng: ${U.note}`);
-  // ---- Giai đoạn 5: ngồi cabin (mục 5, 11.4, 9) ----
+  // ---- Giai đoạn 5: ngồi cabin (mục 5, 11.4, 9 theo prompt gốc tại c418f92) ----
   // Camera gắn cabin: SunWheel.update đặt tư thế ngay sau advance(), nên giữa hai khung hình camera luôn đúng bằng mắt của cabin (kể cả khi quay ×60)
   const RS = {
     snap: () => page.evaluate(() => {
@@ -403,7 +403,7 @@ try {
   { const r = await RS.snap(); check(r.mode === 'orbit' && r.enabled && !r.hint, `Esc khi không ngồi cabin đổi trạng thái: ${r.mode}`); }
   await page.evaluate(() => window.__app.sunWheel.setSpeed(1));
 
-  // ---- Giai đoạn 6: thời tiết (mục 6, 11.5, 9) ----
+  // ---- Giai đoạn 6: thời tiết (mục 6, 11.5, 9 theo prompt gốc tại c418f92) ----
   // Dừng theo `closed` của preset Bão (weatherFx.wheelStopped, không có ngưỡng gió); cabin lắc theo windFx; mặt ướt do option `weather` của bridgePatch.
   const { setWx } = await import('./weather-lib.mjs');
   const fxNow = () => page.evaluate(() => ({ stopped: window.__app.weather.fx().wheelStopped, closed: window.__app.weather.state.current.closed }));
@@ -518,7 +518,7 @@ try {
   await setWx(page, 'now');
   await page.evaluate(() => window.__app.sunWheel.setSpeed(1));
 
-  // ---- Giai đoạn 7: Tour Vòng quay Mặt Trời (mục 7, 9, 11) ----
+  // ---- Giai đoạn 7: Tour Vòng quay Mặt Trời (mục 7, 9, 11 theo prompt gốc tại c418f92) ----
   // Đường bay mở 6 điểm; điểm 4 ('ride') lên cabin và tua nhanh tới đỉnh, điểm 5 ('top') ngắm 4 cầu từ đỉnh, điểm 6 ('night') xuống cabin + đêm + show LED;
   // thoát Tour (Esc / hết hành trình / đổi góc nhìn) trả tốc độ quay, ngày/đêm, kiểu show như cũ. Camera trong cabin do ride.ts đặt (cam.mode vẫn 'tour').
   const { readFile } = await import('node:fs/promises');

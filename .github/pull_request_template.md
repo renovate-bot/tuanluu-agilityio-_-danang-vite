@@ -1,6 +1,6 @@
 ## Thay đổi
 
-<!-- Tóm tắt; link đặc tả trong prompts/ nếu có -->
+<!-- Tóm tắt; link spec/plan trong docs/superpowers/ nếu có -->
 
 ## Kiểm tra
 
