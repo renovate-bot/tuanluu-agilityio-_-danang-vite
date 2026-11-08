@@ -1,6 +1,7 @@
 /* ============================ Tự khám phá: mô hình dù lượn ============================
    Một Mesh duy nhất (cánh vòm + dây + người treo + dải đèn mép cánh), gộp bằng mergeGeometries, vertex color.
-   Hệ cục bộ: +X là hướng bay, +Y lên, +Z bên phải. Dải đèn đêm là emissiveMap (canvas 2×1 điểm ảnh), cường độ đọc shared.uNight. */
+   Hệ cục bộ: +X là hướng bay, +Y lên, +Z bên phải. Dải đèn đêm là emissiveMap (canvas 2×1 điểm ảnh), cường độ đọc shared.uNight.
+   Mọi thông số nằm ở CONFIG.explore.glider (span, lines = khoảng treo, lineCount, chord, arch, segs). */
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { CONFIG } from '../config';
@@ -8,8 +9,6 @@ import { shared } from '../core/shared';
 import type { GliderState } from './flight';
 
 const G = CONFIG.explore.glider;
-const CHORD = 2.6, ARCH = 0.28, SEGS = 16;   // m dây cung cánh, độ võng hai đầu cánh theo sải (tỉ lệ), số đoạn cánh (ước lượng)
-const HANG = G.span * 0.45;                  // m người treo dưới cánh (ước lượng)
 const UV_DARK = 0.25, UV_LIT = 0.75;         // u trên emissiveMap: nửa tối / nửa sáng
 
 /* Gán uv và màu đỉnh cho hình học không chỉ số */
@@ -25,9 +24,9 @@ function exPaint(g: THREE.BufferGeometry, rgb: number[], u: number): THREE.Buffe
 function exWingStrip(chord0: number, chord1: number, rgb: number[], u: number, lift: number): THREE.BufferGeometry {
   const pos: number[] = [];
   const half = G.span / 2;
-  for (let i = 0; i < SEGS; i++) {
-    const ta = -1 + 2 * i / SEGS, tb = -1 + 2 * (i + 1) / SEGS;
-    const pa = (t: number, x: number) => [x, -ARCH * half * t * t + lift, t * half];
+  for (let i = 0; i < G.segs; i++) {
+    const ta = -1 + 2 * i / G.segs, tb = -1 + 2 * (i + 1) / G.segs;
+    const pa = (t: number, x: number) => [x, -G.arch * half * t * t + lift, t * half];
     const a0 = pa(ta, chord0), a1 = pa(ta, chord1), b0 = pa(tb, chord0), b1 = pa(tb, chord1);
     pos.push(...a0, ...b0, ...a1, ...a1, ...b0, ...b1);
   }
@@ -61,22 +60,22 @@ function exGlowMap(): THREE.CanvasTexture {
 export function exBuildGlider(): THREE.Group {
   const parts: THREE.BufferGeometry[] = [];
   /* Cánh: mặt chính + dải đèn hai mép (nhô nhẹ lên trên mặt cánh) */
-  const body = exWingStrip(-CHORD / 2, CHORD / 2, [0.95, 0.4, 0.1], UV_DARK, 0);
+  const body = exWingStrip(-G.chord / 2, G.chord / 2, [0.95, 0.4, 0.1], UV_DARK, 0);
   parts.push(body);
-  parts.push(exWingStrip(CHORD / 2 - 0.12, CHORD / 2, [1, 1, 1], UV_LIT, 0.02));
-  parts.push(exWingStrip(-CHORD / 2, -CHORD / 2 + 0.12, [1, 1, 1], UV_LIT, 0.02));   // mép sau: thấy rõ từ camera bám đuôi
-  /* Người treo: thân + đầu */
-  const torso = new THREE.BoxGeometry(0.5, 1.0, 0.45).toNonIndexed(); torso.deleteAttribute('uv'); torso.translate(0, -HANG - 0.3, 0);
+  parts.push(exWingStrip(G.chord / 2 - 0.12, G.chord / 2, [1, 1, 1], UV_LIT, 0.02));
+  parts.push(exWingStrip(-G.chord / 2, -G.chord / 2 + 0.12, [1, 1, 1], UV_LIT, 0.02));   // mép sau: thấy rõ từ camera bám đuôi
+  /* Người treo: thân + đầu, cách cánh G.lines mét */
+  const torso = new THREE.BoxGeometry(0.5, 1.0, 0.45).toNonIndexed(); torso.deleteAttribute('uv'); torso.translate(0, -G.lines - 0.3, 0);
   parts.push(exPaint(torso, [0.1, 0.12, 0.2], UV_DARK));
-  const head = new THREE.BoxGeometry(0.28, 0.28, 0.28).toNonIndexed(); head.deleteAttribute('uv'); head.translate(0.05, -HANG + 0.4, 0);
+  const head = new THREE.BoxGeometry(0.28, 0.28, 0.28).toNonIndexed(); head.deleteAttribute('uv'); head.translate(0.05, -G.lines + 0.4, 0);
   parts.push(exPaint(head, [0.9, 0.75, 0.6], UV_DARK));
-  /* Dây: G.lines dây mỗi bên, từ cánh xuống vai */
+  /* Dây: G.lineCount dây mỗi bên, từ cánh xuống vai */
   const half = G.span / 2;
   for (const side of [-1, 1]) {
-    for (let i = 0; i < G.lines; i++) {
-      const t = 0.12 + 0.75 * i / Math.max(1, G.lines - 1);
-      const x = (i % 2 ? 0.5 : -0.5) * CHORD * 0.6;
-      parts.push(exLine(new THREE.Vector3(x, -ARCH * half * t * t, side * t * half), new THREE.Vector3(0, -HANG, side * 0.2)));
+    for (let i = 0; i < G.lineCount; i++) {
+      const t = 0.12 + 0.75 * i / Math.max(1, G.lineCount - 1);
+      const x = (i % 2 ? 0.5 : -0.5) * G.chord * 0.6;
+      parts.push(exLine(new THREE.Vector3(x, -G.arch * half * t * t, side * t * half), new THREE.Vector3(0, -G.lines, side * 0.2)));
     }
   }
   const geo = mergeGeometries(parts)!;

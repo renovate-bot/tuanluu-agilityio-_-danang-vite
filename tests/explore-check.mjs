@@ -102,7 +102,6 @@ try {
         out.behind = (s2.pos.x - camera.position.x) * fx + (s2.pos.z - camera.position.z) * fz;
         out.tgt = Math.hypot(tgt.x - (s2.pos.x + fx * 30), tgt.z - (s2.pos.z + fz * 30));
         // 2f trễ
-        const want = camera.position.clone();
         s2.pos.x += fx * 20; s2.pos.z += fz * 20;
         const wantNew = new THREE.Vector3(s2.pos.x - fx * 18, s2.pos.y + 6, s2.pos.z - fz * 18);
         exChase(camera, tgt, s2, 1 / 60); out.lag1 = camera.position.distanceTo(wantNew);

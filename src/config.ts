@@ -569,7 +569,14 @@ const exploreBase = {
   bounds: { x0: -2600, x1: 3600, z0: -5600, z1: 2800 },   // m — khung được phép bay; ra sát mép thì bị lái vòng về (ước lượng)
   returnMargin: 400,   // m — bề rộng dải sát mép khung bắt đầu lái về tâm (ước lượng)
   chase: { back: 18, up: 6, lag: 0.25 },   // m phía sau, m phía trên, s trễ của camera bám đuôi (ước lượng)
-  glider: { span: 11, lines: 7 }           // m sải cánh, số dây treo mỗi bên (ước lượng)
+  glider: {
+    span: 11,         // m sải cánh (ước lượng)
+    lines: 7,         // m khoảng treo: người treo cách cánh xuống dưới bao nhiêu mét (ước lượng)
+    lineCount: 7,     // số dây treo mỗi bên, từ cánh xuống vai (ước lượng)
+    chord: 2.6,       // m dây cung cánh (ước lượng)
+    arch: 0.28,       // độ võng hai đầu cánh, tỉ lệ theo nửa sải (không đơn vị, ước lượng)
+    segs: 16          // số đoạn cánh theo sải (ước lượng)
+  }
 };
 
 export const CONFIG = {
