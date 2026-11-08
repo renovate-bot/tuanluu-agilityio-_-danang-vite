@@ -277,22 +277,29 @@ try {
       await R.page.waitForFunction((v) => Math.abs(window.__app.dayNight.night - v) < 1e-6, v, { timeout: 60000 });
       await frames(R.page, 3);
     };
+    // Tư thế giữ nguyên bằng cách đặt lại pos/yaw/bank TRƯỚC MỖI khung lấy mẫu (explore.update vẫn bay 25 m/s giữa các khung, nên chỉ lệch ~0,4 m/khung).
+    const setPose = (name, pose) => R.page.evaluate(({ pose }) => {
+      const { explore, exFlight } = window.__app, s = explore.state, C = exFlight.CONFIG_explore;
+      if (pose) s.pos.set(pose[0], pose[1], pose[2]); else s.pos.set(C.takeoff[0], C.takeoff[1], C.takeoff[2]);
+      s.yaw = pose ? Math.PI / 2 : C.takeoffYaw; s.bank = 0;   // yaw π/2 = nhìn −Z (Bắc)
+    }, { name, pose });
     const measure = async (name) => {
-      await R.page.evaluate(({ name, pose }) => {
-        const { explore, exFlight } = window.__app, s = explore.state, C = exFlight.CONFIG_explore;
-        if (pose) s.pos.set(pose[0], pose[1], pose[2]); else s.pos.set(C.takeoff[0], C.takeoff[1], C.takeoff[2]);
-        s.yaw = pose ? Math.PI / 2 : C.takeoffYaw; s.bank = 0;   // yaw π/2 = nhìn −Z (Bắc)
-      }, { name, pose: POSES[name] });
-      await frames(R.page, 2);
-      return R.page.evaluate(() => {
-        const { explore, exFlight, renderer, scene, camera, controls, perf } = window.__app;
+      const pose = POSES[name];
+      await setPose(name, pose); await frames(R.page, 2);
+      // median: trung vị 5 khung do vòng lặp của app thật sự dựng (qua renderFrame, có bloom khi đêm), như sample() trong drawcalls.mjs
+      const xs = [];
+      for (let i = 0; i < 5; i++) { await setPose(name, pose); await frames(R.page, 1); xs.push(await R.page.evaluate(() => window.__app.renderer.info.render.calls)); }
+      xs.sort((a, b) => a - b);
+      // phần dù: hiệu render trực tiếp có/không dù (bloom cộng hằng số nên hiệu không đổi)
+      const diff = await R.page.evaluate(() => {
+        const { explore, exFlight, renderer, scene, camera, controls } = window.__app;
         const s = explore.state, g = scene.getObjectByName('ex-glider');
         exFlight.exPlaceGlider(g, s); exFlight.exChase(camera, controls.target, s, 0, true);
         const calls = () => { renderer.render(scene, camera); renderer.info.reset(); renderer.render(scene, camera); return renderer.info.render.calls; };   // dựng hai lần, đo lần hai (LOD theo camera mới)
         const withG = calls(); g.visible = false; const noG = calls(); g.visible = true;
-        const times = []; for (let i = 0; i < 5; i++) times.push(calls()); times.sort((a, b) => a - b);
-        return { withG, noG, median: times[2] };
+        return { withG, noG };
       });
+      return { ...diff, median: xs[2] };
     };
     const avgMs = async () => { await R.page.evaluate(() => window.__app.perf.stats()); await frames(R.page, 8); return R.page.evaluate(() => window.__app.perf.stats().avg); };
     const rows = {};
