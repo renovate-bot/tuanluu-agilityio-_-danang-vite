@@ -1,6 +1,6 @@
 # Progress
 
-_Cập nhật: 2026-11-07_
+_Cập nhật: 2026-11-08_
 
 ## Đã xong
 | Tính năng | Commit | Kiểm tra | Spec / plan |
@@ -30,9 +30,9 @@ _Cập nhật: 2026-11-07_
 | Tour 4 cầu: TTL → Rồng → sông Hàn → Thuận Phước, đường bay mở một chiều, 13 điểm, thuyết minh vi/en/ru, i18n 9 ngôn ngữ (D-015) | `e672add`, `cd52a47` + GĐ4 | `test:drawcalls` (58/58, chênh 0), `test:tour`, `test:voice`, `test:tunnel`, `test:riverfront`, `test:weather` | [spec](../../docs/superpowers/specs/2026-10-22-tour-4-cau-design.md) · [plan](../../docs/superpowers/plans/2026-10-22-tour-4-cau.md) |
 | Giao diện điện thoại: chế độ gọn `body.compact`, thanh trên/dưới + 2 sheet, hàng chip cuộn, chữ cảm ứng, i18n 5 khóa × 9, safe-area, bỏ blur, gộp resize (D-019, `feature/mobile-ui`); sửa sau review cuối: sheet nằm trên chú thích Tour/bão | `8605bd5` … `fced484`, merge `fc53fdd` | `test:mobile` mới; `build`, `test:drawcalls` 72/74 khớp chênh 0 (swTour ngày 187 vs 188, đêm 209 vs 207 = dao động đã biết, D-018), `test:tour`, `test:voice`, `test:tunnel`, `test:riverfront`, `test:weather`, `test:sunwheel`, `test:perf --strict` đạt (2026-10-27). Đo giả lập iPhone 12 ghi ở `tests/KET-QUA.md`; chưa đo máy thật | [spec](../../docs/superpowers/specs/2026-10-26-mobile-ui-design.md) · [plan](../../docs/superpowers/plans/2026-10-26-mobile-ui.md) |
 | Buy me a coffee qua MoMo: liên kết trong panel Cài đặt, URL chỉ nhận HTTPS; aria-label 9 ngôn ngữ (D-021) | `ef844f0` (merge `cbfda36`, PR #10) | `typecheck`, `build`, `test:mobile`, `test:perf -- --strict` đạt (2026-11-04); alias do người dùng cung cấp đã mở tới trang MoMo trong trình duyệt, chưa thực hiện giao dịch/chưa kiểm tra trên điện thoại thật | [spec](../../docs/superpowers/specs/2026-10-29-buy-me-a-coffee-design.md) · [plan](../../docs/superpowers/plans/2026-10-29-buy-me-a-coffee.md) |
-| Chuyển `prompts/` → `docs/superpowers/` (14 spec + 14 plan, memory bank gọn, README/test/mã trỏ tài liệu mới) | nhánh `feature/superpowers-docs` | `typecheck` đạt; K2 link sống (60 file md); số trong activeContext khớp plan; grep `prompts/*.md`/`run-*.ps1` chỉ còn nhắc lịch sử trong spec/plan; 6 ảnh tham chiếu ở `docs/superpowers/specs/tham-chieu/sun-wheel` (gitignore) | [spec](../../docs/superpowers/specs/2026-11-07-chuyen-prompts-sang-superpowers-design.md) · [plan](../../docs/superpowers/plans/2026-11-07-chuyen-prompts-sang-superpowers.md) |
+| Chuyển `prompts/` → `docs/superpowers/` (14 spec + 14 plan, memory bank gọn, README/test/mã trỏ tài liệu mới) | `04da1f3` (merge `66d7ebb`, PR #11) | `typecheck` đạt; K2 link sống (60 file md); số trong activeContext khớp plan; grep `prompts/*.md`/`run-*.ps1` chỉ còn nhắc lịch sử trong spec/plan; 6 ảnh tham chiếu ở `docs/superpowers/specs/tham-chieu/sun-wheel` (gitignore) | [spec](../../docs/superpowers/specs/2026-11-07-chuyen-prompts-sang-superpowers-design.md) · [plan](../../docs/superpowers/plans/2026-11-07-chuyen-prompts-sang-superpowers.md) |
 
-Tất cả đã vào `main` (PR #1 hầm, PR #2 riverfront, PR #3 hướng dẫn AI agent, PR #6 thời tiết + kịch bản bão có thuyết minh), Tour 4 cầu (merge cục bộ `ad963d0`), PR #8 Vòng quay Mặt Trời (merge `257b905`), tối ưu độ mượt (merge `ecebdf8`), giao diện điện thoại (merge `fc53fdd`), PR #10 Buy me a coffee (merge `cbfda36`).
+Tất cả đã vào `main` (PR #1 hầm, PR #2 riverfront, PR #3 hướng dẫn AI agent, PR #6 thời tiết + kịch bản bão có thuyết minh), Tour 4 cầu (merge cục bộ `ad963d0`), PR #8 Vòng quay Mặt Trời (merge `257b905`), tối ưu độ mượt (merge `ecebdf8`), giao diện điện thoại (merge `fc53fdd`), PR #10 Buy me a coffee (merge `cbfda36`), PR #11 chuyển tài liệu sang `docs/superpowers/` (merge `66d7ebb`).
 
 ## Còn thiếu
 - Giao diện điện thoại: đo trên điện thoại thật (FPS, safe-area, cảm giác chạm); người bản ngữ duyệt 7 bản dịch khóa mới; chip `.seg` cao 36 px (< 44 px khuyến nghị cho chạm, cần thử máy thật); câu hướng dẫn xuống cabin (`swRideHintTouch`) trỏ tới nút nằm trong sheet Góc nhìn.

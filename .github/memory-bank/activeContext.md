@@ -1,10 +1,10 @@
 # Active Context
 
-_Cập nhật: 2026-11-07 · Nhánh đang làm: `feature/superpowers-docs` · Nhánh chính: `main`_
+_Cập nhật: 2026-11-08 · Nhánh đang làm: — · Nhánh chính: `main`_
 
 ## Trạng thái
 - `main` đã có đủ: Hầm vượt sông Hàn (PR #1), hai bờ sông + tối ưu draw call + thuyết minh tiếng Nga (PR #2), bộ hướng dẫn AI agent + memory bank (PR #3), thời tiết GĐ1–GĐ8 + kịch bản bão có thuyết minh (PR #6), Tour 4 cầu (D-015), Vòng quay Mặt Trời GĐ0–GĐ8 (PR #8, merge `257b905`), tối ưu độ mượt (D-018, merge `ecebdf8`), giao diện điện thoại (D-019, merge `fc53fdd`), Buy me a coffee (D-021, PR #10, merge `cbfda36`).
-- Nhánh hiện tại chuyển `prompts/` sang `docs/superpowers/` (spec + plan cho từng tính năng). Lịch sử từng giai đoạn (đã làm, số đo, lần chấm LỖI, hạn chế) nằm trong `docs/superpowers/plans/`; thiết kế như đã xây nằm trong `docs/superpowers/specs/`.
+- `prompts/` đã chuyển sang `docs/superpowers/` (spec + plan cho từng tính năng; PR #11, merge `66d7ebb`). Lịch sử từng giai đoạn (đã làm, số đo, lần chấm LỖI, hạn chế) nằm trong `docs/superpowers/plans/`; thiết kế như đã xây nằm trong `docs/superpowers/specs/`.
 - Buy me a coffee (D-021) đã triển khai; `CONFIG.ui.donate.url` đã cấu hình, trang MoMo mở được trong trình duyệt, chưa kiểm tra giao dịch trên điện thoại thật. Chi tiết: [plan](../../docs/superpowers/plans/2026-10-29-buy-me-a-coffee.md).
 - Quy tắc chế độ gọn cho agent: `.github/instructions/ui-views.instructions.md`, `tests.instructions.md`. Lệnh test đầy đủ: `copilot-instructions.md` §5. Bảng draw call chuẩn: `tests/KET-QUA.md`.
 
