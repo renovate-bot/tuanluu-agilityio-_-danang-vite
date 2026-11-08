@@ -554,6 +554,24 @@ const uiBase = {
   }
 };
 
+/* ------------------------- Tự khám phá bằng dù lượn -------------------------
+   Chế độ bay tự do (W/A/S/D), mô hình bay ở explore/flight.ts. Mọi số đều (ước lượng) */
+const exploreBase = {
+  speed: 25,           // m/s — tốc độ bay ngang không đổi (ước lượng; dù thật ≈ 10 m/s, chọn nhanh hơn để dễ chơi)
+  turnRate: 0.6,       // rad/s — tốc độ đổi hướng ở góc nghiêng tối đa (ước lượng)
+  bankMax: 0.45,       // rad — góc nghiêng tối đa (ước lượng)
+  bankRate: 2.5,       // 1/s — tốc độ tiến tới góc nghiêng đích (ước lượng)
+  climbRate: 6,        // m/s — tốc độ lên/xuống khi giữ W/S (ước lượng)
+  floor: 30,           // m — độ cao tối thiểu, y thế giới (ước lượng)
+  ceiling: 800,        // m — độ cao tối đa, y thế giới (ước lượng)
+  takeoff: [2600, 702, -4700] as [number, number, number],   // m — điểm cất cánh [x, y, z], sườn Sơn Trà phía Bắc (ước lượng)
+  takeoffYaw: Math.atan2(-1800, -2600),   // rad — hướng ban đầu về phía Thuận Phước (0, −2900) (ước lượng)
+  bounds: { x0: -2600, x1: 3600, z0: -5600, z1: 2800 },   // m — khung được phép bay; ra sát mép thì bị lái vòng về (ước lượng)
+  returnMargin: 400,   // m — bề rộng dải sát mép khung bắt đầu lái về tâm (ước lượng)
+  chase: { back: 18, up: 6, lag: 0.25 },   // m phía sau, m phía trên, s trễ của camera bám đuôi (ước lượng)
+  glider: { span: 11, lines: 7 }           // m sải cánh, số dây treo mỗi bên (ước lượng)
+};
+
 export const CONFIG = {
   ...base,
   perf: perfBase,
@@ -566,7 +584,8 @@ export const CONFIG = {
   sunWheel: deriveSunWheel(sunWheelBase),
   riverfront: riverfrontBase,
   weather: weatherBase,
-  tourAll: tourAllBase
+  tourAll: tourAllBase,
+  explore: exploreBase
 };
 export type SongHanConfig = typeof CONFIG.songHan;
 export type HanTunnelConfig = typeof CONFIG.hanTunnel;

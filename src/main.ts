@@ -35,6 +35,8 @@ import { buildWeather, updateWeather } from './environment/weather';
 import { updateCamera, hrDrive } from './views/camera';
 import { cam } from './views/state';
 import { TOURS, tour } from './views/tour';
+import { exCreate, exStep, exInputFromKeys } from './explore/flight';
+import { CONFIG } from './config';
 import { audio } from './audio';
 import { narration } from './audio/narration';
 import { setupUI } from './ui/setupUI';
@@ -96,7 +98,7 @@ const TEST_THREE = { Vector3: THREE.Vector3, Quaternion: THREE.Quaternion, Matri
 const query = new URLSearchParams(location.search);
 if (query.has('test')) {
   perf.on = query.has('perf');
-  (window as unknown as { __app: unknown }).__app = { renderer, scene, camera, controls, cam, shared, songHan, hr: hanTunnel, sunWheel, riverfront, weather, hrDrive, swRide, windFx, THREE: TEST_THREE, dayNight, tours: TOURS, tour, narration, audio, perf, quality, ui: { ...ui, ui: compactState, openSheet, closeSheets, reveal } };
+  (window as unknown as { __app: unknown }).__app = { renderer, scene, camera, controls, cam, shared, songHan, hr: hanTunnel, sunWheel, riverfront, weather, hrDrive, swRide, windFx, THREE: TEST_THREE, dayNight, tours: TOURS, tour, narration, audio, perf, quality, ui: { ...ui, ui: compactState, openSheet, closeSheets, reveal }, exFlight: { exCreate, exStep, exInputFromKeys, CONFIG_explore: CONFIG.explore } };
 }
 
 /* ============================ Vòng lặp ============================ */
