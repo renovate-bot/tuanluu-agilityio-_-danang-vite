@@ -4,6 +4,25 @@ Chromium + SwiftShader, khung 480×270. Draw call = renderer.info.render.calls (
 
 Khung test mặc định 480×270 khớp `(max-height: 500px)` nên cả bộ test chạy ở chế độ gọn (không blur): draw call không đổi; số hitch của `test:perf` không so sát được với mốc D-018 (đo khi còn blur).
 
+## Tự khám phá bằng dù lượn (2026-11-09, nhánh `feature/explore-du-luon`, D-020)
+
+Đo tại `3985ce2`, Chromium + SwiftShader. Draw call là trung vị 5 khung thật của app (gồm bloom khi đêm). Phần dù = chênh khi bật/tắt `ex-glider`.
+
+| Tư thế | Draw call ngày | ms ngày | Draw call đêm | ms đêm | Phần dù (ngày/đêm) |
+|---|---|---|---|---|---|
+| exTakeoff | 247 | 1808,7 | 266 | 924,2 | 2/2 |
+| exDragon | 290 | 1572,3 | 312 | 1363,0 | 2/2 |
+| exTp | 135 | 570,9 | 157 | 621,4 | 2/2 |
+| exHigh | 256 | 1414,1 | 284 | 856,9 | 2/2 |
+
+| Lệnh | Kết quả |
+|---|---|
+| `npm run build` | đạt |
+| `npm run test:explore` | đạt |
+| `npm run test:drawcalls` | 72/74 khớp bảng `now`, chênh 0; `swTour` ngày 187 vs 188, đêm 209 vs 207 = dao động đã biết (D-018) |
+| `test:tour`, `test:tunnel`, `test:riverfront`, `test:voice`, `test:weather`, `test:sunwheel`, `test:mobile` | đạt (chạy hai lần trên cùng commit, cả hai đạt) |
+| `npm run test:perf -- --strict` | exit 0 lúc 04:02; log của lần đó đã bị ghi đè nên không có số ms ở đây |
+
 ## Giao diện điện thoại (2026-10-27, nhánh `feature/mobile-ui`, D-019)
 
 Chỉ đổi DOM/CSS/i18n, không đổi mã dựng cảnh. Chạy tuần tự từng lệnh trên cùng máy (log `tests/screens/mobile/t6-*.log`, không commit):
