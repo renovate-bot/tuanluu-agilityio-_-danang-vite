@@ -68,6 +68,71 @@ try {
     check('1g exInputFromKeys', r.g.every(Boolean));
     check('1h exCreate tại điểm cất cánh', r.h);
   }
+  // Mục 2 — mô hình dù và camera bám
+  {
+    const hasB = await P.page.evaluate(() => !!(window.__app.exFlight && window.__app.exFlight.exBuildGlider));
+    check('có exBuildGlider/exPlaceGlider/exChase', hasB);
+    if (hasB) {
+      const setNight = async (v) => {
+        await P.page.evaluate((v) => { window.__app.dayNight.target = v; window.__app.dayNight.night = v; }, v);
+        await P.page.waitForFunction((v) => Math.abs(window.__app.dayNight.night - v) < 1e-6, v, { timeout: 60000 });
+        await frames(P.page, 3);   // để applyNight ghi shared.uNight
+      };
+      const r2 = await P.page.evaluate(() => {
+        const { exCreate, exBuildGlider, exPlaceGlider, exChase } = window.__app.exFlight;
+        const { THREE, scene, camera, renderer, shared } = window.__app;
+        const out = {};
+        const g = exBuildGlider();
+        let meshes = 0; g.traverse((o) => { if (o.isMesh) { meshes++; out.cast = o.castShadow; } });
+        const bb = new THREE.Box3().setFromObject(g); out.meshes = meshes; out.width = bb.max.x - bb.min.x; out.wz = bb.max.z - bb.min.z; out.wy = bb.max.y - bb.min.y;
+        out.notInScene = !scene.getObjectByName('ex-glider');
+        // 2c draw call
+        const s = exCreate(), tgt = new THREE.Vector3();
+        exChase(camera, tgt, s, 1 / 60, true); exPlaceGlider(g, s);
+        const calls = () => { renderer.render(scene, camera); renderer.info.reset(); renderer.render(scene, camera); return renderer.info.render.calls; };   // autoReset tắt: dựng hai lần, lần đầu cập nhật LOD theo camera mới, đo lần hai
+        const c0 = calls(); scene.add(g); const c1 = calls(); scene.remove(g);
+        out.dCalls = c1 - c0;
+        // 2d bank
+        const sb = exCreate(); sb.bank = 0.45; exPlaceGlider(g, sb); out.roll = -g.rotation.x; out.gyaw = g.rotation.y; out.syaw = sb.yaw;
+        // 2e snap
+        const s2 = exCreate(); s2.yaw = 0.7; s2.pos.set(100, 400, -300);
+        exChase(camera, tgt, s2, 1 / 60, true);
+        const fx = Math.cos(s2.yaw), fz = -Math.sin(s2.yaw);
+        out.dist = camera.position.distanceTo(s2.pos); out.dh = camera.position.y - s2.pos.y;
+        out.behind = (s2.pos.x - camera.position.x) * fx + (s2.pos.z - camera.position.z) * fz;
+        out.tgt = Math.hypot(tgt.x - (s2.pos.x + fx * 30), tgt.z - (s2.pos.z + fz * 30));
+        // 2f trễ
+        const want = camera.position.clone();
+        s2.pos.x += fx * 20; s2.pos.z += fz * 20;
+        const wantNew = new THREE.Vector3(s2.pos.x - fx * 18, s2.pos.y + 6, s2.pos.z - fz * 18);
+        exChase(camera, tgt, s2, 1 / 60); out.lag1 = camera.position.distanceTo(wantNew);
+        for (let i = 1; i < 180; i++) exChase(camera, tgt, s2, 1 / 60);
+        out.lag3 = camera.position.distanceTo(wantNew);
+        return out;
+      });
+      check(`2a đúng 1 Mesh, castShadow false, rộng ${r2.wz.toFixed(2)} m`, r2.meshes === 1 && r2.cast === false && r2.wz >= 10 && r2.wz <= 12);
+      check('2b chưa bay: scene không có ex-glider', r2.notInScene);
+      check(`2c ngày: thêm dù +${r2.dCalls} draw call`, r2.dCalls >= 1 && r2.dCalls <= 2);
+      check(`2d bank 0.45 → góc cuộn ${r2.roll.toFixed(4)}, yaw giữ ${r2.gyaw === r2.syaw}`, Math.abs(r2.roll - 0.45) < 1e-3 && Math.abs(r2.gyaw - r2.syaw) < 1e-6);
+      check(`2e snap: cách ${r2.dist.toFixed(3)}, cao ${r2.dh.toFixed(3)}, sau ${r2.behind.toFixed(1)}, target lệch ${r2.tgt.toExponential(1)}`, Math.abs(r2.dist - Math.hypot(18, 6)) < 0.01 && Math.abs(r2.dh - 6) < 0.01 && r2.behind > 0 && r2.tgt < 1e-6);
+      check(`2f trễ: sau 1 bước còn ${r2.lag1.toFixed(2)} m, sau 3 s còn ${r2.lag3.toFixed(4)} m`, r2.lag1 > 0 && r2.lag3 < 0.05);
+      await setNight(1);
+      const r2n = await P.page.evaluate(() => {
+        const { exCreate, exBuildGlider, exPlaceGlider, exChase } = window.__app.exFlight;
+        const { THREE, scene, camera, renderer, shared } = window.__app;
+        const g = exBuildGlider(), s = exCreate(), tgt = new THREE.Vector3();
+        exChase(camera, tgt, s, 1 / 60, true); exPlaceGlider(g, s);
+        const calls = () => { renderer.render(scene, camera); renderer.info.reset(); renderer.render(scene, camera); return renderer.info.render.calls; };   // autoReset tắt: dựng hai lần, lần đầu cập nhật LOD theo camera mới, đo lần hai
+        const c0 = calls(); scene.add(g); const c1 = calls(); scene.remove(g);
+        return { d: c1 - c0, em: g.children[0].material.emissiveIntensity, un: shared.uNight.value };
+      });
+      check(`2c đêm: thêm dù +${r2n.d} draw call (= ngày ${r2.dCalls})`, r2n.d === r2.dCalls);
+      check(`2g đêm emissiveIntensity ${r2n.em} = uNight ${r2n.un}`, r2n.em === 1 && r2n.un === 1);
+      await setNight(0);
+      const em0 = await P.page.evaluate(() => { const { exCreate, exBuildGlider, exPlaceGlider } = window.__app.exFlight; const g = exBuildGlider(); exPlaceGlider(g, exCreate()); return g.children[0].material.emissiveIntensity; });
+      check(`2g ngày emissiveIntensity ${em0} = 0`, em0 === 0);
+    }
+  }
   check('console sạch', P.errors.length === 0);
   if (P.errors.length) console.log(P.errors.join('\n'));
   await P.page.close();

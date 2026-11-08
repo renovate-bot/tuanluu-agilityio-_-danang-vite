@@ -1,0 +1,17 @@
+/* ============================ Tự khám phá: camera bám đuôi ============================
+   Camera đích = pos − forward·back + up·up; trễ mũ theo CONFIG.explore.chase.lag; nhìn vào pos + forward·30. */
+import * as THREE from 'three';
+import { CONFIG } from '../config';
+import type { GliderState } from './flight';
+
+const K = CONFIG.explore.chase;
+const _want = new THREE.Vector3();
+
+export function exChase(camera: THREE.PerspectiveCamera, target: THREE.Vector3, s: GliderState, dt: number, snap = false): void {
+  const fx = Math.cos(s.yaw), fz = -Math.sin(s.yaw);
+  _want.set(s.pos.x - fx * K.back, s.pos.y + K.up, s.pos.z - fz * K.back);
+  if (snap) camera.position.copy(_want);
+  else camera.position.lerp(_want, 1 - Math.exp(-dt / K.lag));
+  target.set(s.pos.x + fx * 30, s.pos.y, s.pos.z + fz * 30);
+  camera.lookAt(target);
+}
