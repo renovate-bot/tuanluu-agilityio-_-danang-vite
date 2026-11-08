@@ -41,20 +41,31 @@ try {
       // 1d thả phím
       s = exCreate(); run(s, { turn: 1, climb: 0 }, 2); run(s, { turn: 0, climb: 0 }, 2.5); const yb = s.yaw; run(s, { turn: 0, climb: 0 }, 0.5);
       out.dBank = s.bank; out.dYaw = s.yaw - yb;
-      // 1e ranh giới khi bay thẳng
-      s = exCreate(); ok = true;
-      run(s, { turn: 0, climb: 0 }, 600, (s) => { if (s.pos.x < C.bounds.x0 || s.pos.x > C.bounds.x1 || s.pos.z < C.bounds.z0 || s.pos.z > C.bounds.z1) ok = false; });
-      out.e = ok;
-      // 1f giữ A ở góc, hướng ra ngoài
-      s = exCreate(); s.pos.set(C.bounds.x1 - 50, 300, C.bounds.z0 + 50); s.yaw = Math.PI / 4; s.bank = 0; ok = true;
-      let flips = 0, prev = 0;
-      const t = [0];
-      for (let i = 0; i < 600 * 60; i++) {
-        exStep(s, { turn: 1, climb: 0 }, dt);
-        if (s.pos.x < C.bounds.x0 || s.pos.x > C.bounds.x1 || s.pos.z < C.bounds.z0 || s.pos.z > C.bounds.z1) ok = false;
-        if (i >= 540 * 60) { const sg = Math.sign(s.bank); if (sg !== 0 && prev !== 0 && sg !== prev) flips++; if (sg !== 0) prev = sg; }
+      // Kẹp cứng = bước mà exStep phải ép pos về đúng mép khung (pos nằm đúng trên biên); tường mềm thì không bao giờ xảy ra
+      const onEdge = (s) => s.pos.x === C.bounds.x0 || s.pos.x === C.bounds.x1 || s.pos.z === C.bounds.z0 || s.pos.z === C.bounds.z1;
+      const sim = (s, inp, sec) => {   // trả số bước bị kẹp, số lần bank đổi dấu trong 60 s cuối
+        let clamped = 0, flips = 0, prev = 0;
+        for (let i = 0; i < Math.round(sec * 60); i++) {
+          exStep(s, inp, dt); if (onEdge(s)) clamped++;
+          if (i >= Math.round((sec - 60) * 60)) { const sg = Math.sign(s.bank); if (sg !== 0 && prev !== 0 && sg !== prev) flips++; if (sg !== 0) prev = sg; }
+        }
+        return { clamped, flips };
+      };
+      // 1e bay thẳng 600 s, A 600 s, D 600 s từ điểm cất cánh: 0 bước kẹp
+      let e = 0; for (const turn of [0, 1, -1]) e += sim(exCreate(), { turn, climb: 0 }, 600).clamped;
+      out.e = e;
+      // 1f xuất phát trong dải returnMargin, hướng ra ngoài: cách mép 150 và 300 m, 4 mép + góc (ra ngoài và dọc mép), không phím / giữ A / giữ D, 180 s
+      const mx = (C.bounds.x0 + C.bounds.x1) / 2, mz = (C.bounds.z0 + C.bounds.z1) / 2, B = C.bounds;
+      let fClamped = 0, fMaxFlips = 0, fCases = 0;
+      for (const off of [150, 300]) {
+        const starts = [[B.x1 - off, mz, 0], [B.x0 + off, mz, Math.PI], [mx, B.z0 + off, Math.PI / 2], [mx, B.z1 - off, -Math.PI / 2],
+          [B.x1 - off, B.z0 + off, Math.PI / 4], [B.x1 - off, B.z0 + off, Math.PI / 2], [B.x0 + off, B.z1 - off, -3 * Math.PI / 4], [B.x0 + off, B.z1 - off, -Math.PI / 2]];
+        for (const [x, z, yaw] of starts) for (const turn of [0, 1, -1]) {
+          const s = exCreate(); s.pos.set(x, 300, z); s.yaw = yaw; s.bank = 0;
+          const r = sim(s, { turn, climb: 0 }, 180); fClamped += r.clamped; fMaxFlips = Math.max(fMaxFlips, r.flips); fCases++;
+        }
       }
-      out.f = ok; out.fFlips = flips;
+      out.f = fClamped; out.fFlips = fMaxFlips; out.fCases = fCases;
       // 1g phím
       const k = (...a) => exInputFromKeys(new Set(a));
       out.g = [k('a').turn === 1, k('arrowright').turn === -1, k('a', 'd').turn === 0, k('w').climb === 1, k('s', 'arrowup').climb === 0, k().turn === 0 && k().climb === 0];
@@ -67,8 +78,8 @@ try {
     check(`1b A rẽ trái (+${r.bL.toFixed(2)}), D rẽ phải (${r.bR.toFixed(2)})`, r.bL > 0.5 && r.bR < -0.5);
     check(`1c W lên tới 800, S xuống tới 30 (${r.cUp}, ${r.cDown})`, r.cUp === 800 && r.cDown === 30);
     check(`1d thả phím tự cân bằng (bank ${r.dBank.toExponential(1)}, Δyaw ${r.dYaw.toExponential(1)})`, Math.abs(r.dBank) < 0.01 && Math.abs(r.dYaw) < 0.005);
-    check('1e bay thẳng 600 s không ra khỏi khung', r.e);
-    check(`1f giữ A ở góc không vượt khung, bank đổi dấu ${r.fFlips} lần (≤ 2)`, r.f && r.fFlips <= 2);
+    check(`1e bay thẳng / giữ A / giữ D 600 s: ${r.e} bước bị kẹp cứng (= 0)`, r.e === 0);
+    check(`1f ${r.fCases} ca xuất phát trong dải sát mép (150/300 m, ra ngoài): ${r.f} bước bị kẹp (= 0), bank đổi dấu tối đa ${r.fFlips} lần trong 60 s cuối (≤ 2)`, r.f === 0 && r.fFlips <= 2);
     check('1g exInputFromKeys', r.g.every(Boolean));
     check('1h exCreate tại điểm cất cánh', r.h);
   }
@@ -160,7 +171,8 @@ try {
     await G.page.evaluate(() => window.dispatchEvent(new Event('blur')));
     const c = await G.page.evaluate(() => ({ n: window.__app.keys ? window.__app.keys.size : -1 }));
     await G.page.waitForFunction(() => Math.abs(window.__app.explore.state.bank) < 0.01, null, { timeout: 240000 });
-    check(`3c blur → keys rỗng (${c.n}), bank về ~0`, c.n === 0);
+    const bank3c = (await st()).bank;
+    check(`3c blur → keys rỗng (${c.n}), bank về ~0 (${bank3c.toExponential(1)})`, c.n === 0 && Math.abs(bank3c) < 0.01);
     await G.page.keyboard.up('a');
     // 3d phím mũi tên trên #qualitySel không lái dù
     await G.page.evaluate(() => { window.__app.ui.reveal(document.getElementById('qualitySel')); });
@@ -170,18 +182,36 @@ try {
     for (let i = 0; i < 3; i++) { await G.page.keyboard.press('ArrowDown'); await G.page.waitForTimeout(300); }
     const d1 = await st(), v1 = await G.page.$eval('#qualitySel', (e) => e.value);
     check(`3d select nhận phím (${v0} → ${v1}), dù không đổi độ cao (${d0.y} → ${d1.y}), bank ${d1.bank.toExponential(1)}`, v0 !== v1 && d0.y === d1.y && Math.abs(d1.bank) < 0.01);
+    // 3d' chọn bằng chuột xong: focus rời select, WASD/mũi tên lại lái dù
+    await G.page.focus('#qualitySel');
+    await G.page.evaluate(() => { const s = document.getElementById('qualitySel'); s.dispatchEvent(new Event('pointerdown')); s.value = s.value === 'low' ? 'high' : 'low'; s.dispatchEvent(new Event('change')); });
+    const f3 = await G.page.evaluate(() => document.activeElement && document.activeElement.id);
+    check(`3d' chọn #qualitySel bằng chuột: focus không còn ở select (activeElement #${f3 || 'body'})`, f3 !== 'qualitySel');
     // 3e controls.target bám điểm nhìn
     await G.page.evaluate(() => window.__app.explore.step(1 / 60, { turn: 1, climb: 0 }));
     await frames(G.page, 2);
     const e3 = await G.page.evaluate(() => { const a = window.__app, s = a.explore.state, t = a.controls.target; const fx = Math.cos(s.yaw), fz = -Math.sin(s.yaw); return Math.hypot(t.x - (s.pos.x + fx * 30), t.y - s.pos.y, t.z - (s.pos.z + fz * 30)); });
     check(`3e controls.target bám pos + forward·30 (lệch ${e3.toFixed(3)} m)`, e3 < 1);
     // 3f Esc → tải lại, bỏ tham số explore
+    await G.page.evaluate(() => { window.__reloadMark = 1; });
     await G.page.keyboard.press('Escape');
+    await G.page.waitForFunction(() => !window.__reloadMark, null, { timeout: 240000 });   // dấu hiệu trên window mất = trang tải lại thật
     await G.page.waitForURL((u) => !u.href.includes('explore='), { timeout: 240000, waitUntil: 'commit' });   // chỉ cần điều hướng bắt đầu; tải lại bằng SwiftShader rất chậm
-    check('3f Esc thoát: URL không còn explore=', true);
+    check('3f Esc thoát: tải lại thật, URL không còn explore=', !G.page.url().includes('explore='));
     check('console sạch (mục 3)', G.errors.length === 0);
     if (G.errors.length) console.log(G.errors.join('\n'));
     await G.page.close();
+    // 3h URL chỉ khác #ngôn-ngữ (vào bay bằng explore.start, URL không có explore=): Esc vẫn phải tải lại thật
+    const H = await openApp(browser, srv.url);
+    await H.page.evaluate(() => { location.hash = 'en'; });
+    await H.page.waitForFunction(() => document.documentElement.lang === 'en', null, { timeout: 60000 });
+    await H.page.evaluate(() => { window.__app.explore.start(); window.__reloadMark = 1; });
+    await frames(H.page, 2);
+    const hasHash = await H.page.evaluate(() => location.hash === '#en' && window.__app.cam.mode === 'glider');
+    await H.page.keyboard.press('Escape');
+    await H.page.waitForFunction(() => !window.__reloadMark, null, { timeout: 240000 });
+    check(`3h Esc khi URL có #en (không explore=): tải lại thật (vào bay ${hasHash})`, hasHash);
+    await H.page.close();
     // 3g không tham số: không bay
     const N = await openApp(browser, srv.url);
     await frames(N.page, 2);
@@ -200,11 +230,16 @@ try {
     check(`4a #chooser hiện, thẻ: ${JSON.stringify(a4)}`, a4.length === 5 && CARDS.every((k) => a4.some(([n]) => n === k)) && a4.filter(([, d]) => d).map(([n]) => n).sort().join() === 'bike,car,walk');
     const l4 = await C.page.evaluate(() => { const s = document.getElementById('exLang'); const r = s.getBoundingClientRect(); const top = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2); return { n: s.options.length, v: s.value, onTop: top === s }; });
     check(`4a chooser có ô ngôn ngữ riêng: ${l4.n} ngôn ngữ, giá trị ${l4.v}, không bị panel che ${l4.onTop}`, l4.n === 9 && l4.v === 'vi' && l4.onTop);
+    const inertOn = await C.page.evaluate(() => { const o = document.querySelector('[data-bridge="tp"]'); return !!o.closest('[inert]') && !document.getElementById('chooser').closest('[inert]') && !document.getElementById('exLang').closest('[inert]'); });
+    for (let i = 0; i < 12; i++) await C.page.keyboard.press('Tab');
+    const tabIn = await C.page.evaluate(() => !!document.activeElement.closest('#chooser'));
+    check(`4a màn chọn modal: panel cũ inert (${inertOn}), 12 lần Tab vẫn trong #chooser (${tabIn})`, inertOn && tabIn);
     // 4c thẻ hướng dẫn: ẩn màn chọn, giữ giao diện cũ
     await C.page.click('#chooser [data-pick="guided"]');
     await C.page.waitForSelector('#chooser', { state: 'hidden' });
     await tap(C.page, '[data-bridge="tp"]');
     const c4 = await C.page.evaluate(() => ({ mode: window.__app.cam.mode, cls: document.body.classList.contains('explore'), pressed: document.querySelector('[data-bridge="tp"]').getAttribute('aria-pressed') }));
+    check('4c guided: hết inert', await C.page.evaluate(() => document.querySelectorAll('[inert]').length === 0));
     check(`4c guided: chooser ẩn, bấm [data-bridge=tp] chạy pickView (${JSON.stringify(c4)})`, c4.cls === false && c4.pressed === 'true' && c4.mode !== 'glider');
     // 4g Esc trong Tour bản hướng dẫn: thoát Tour, không tải lại
     const url0 = C.page.url();
@@ -224,7 +259,7 @@ try {
     await D.page.waitForFunction(() => window.__app.cam.mode === 'glider');
     await frames(D.page, 2);
     const keep = ['langSelect', 'btnNight', 'qualitySel', 'exHint', 'btnExExit'];
-    const hide = ['[data-bridge="dragon"]', '[data-bridge="hr"]', '[data-view="tour"]', '[data-view="allTour"]', '[data-view="walk"]', '#tourCaption', '#weatherSel', '#btnWxStorm', '#timeSlider', '#btnMusic', '.specs'];
+    const hide = ['[data-bridge="dragon"]', '[data-bridge="hr"]', '[data-view="tour"]', '[data-view="allTour"]', '[data-view="walk"]', '#tourCaption', '#weatherSel', '#btnWxStorm', '#timeSlider', '#btnMusic', '.specs', 'h1'];
     const shown = [], leaked = [];
     for (const id of keep) if (!(await vis(D.page, '#' + id))) shown.push(id);
     for (const sel of hide) if (await vis(D.page, sel)) leaked.push(sel);
@@ -239,9 +274,11 @@ try {
     check(`4h ar khi đang bay: dir=${h4.dir}, #exHint "${h4.hint}" khác vi`, h4.dir === 'rtl' && h4.hint !== hintVi && h4.hint.length > 5);
     // 4e nút thoát
     await D.page.evaluate(() => window.__app.ui?.reveal(document.getElementById('btnExExit')));
+    await D.page.evaluate(() => { window.__reloadMark = 1; });
     await D.page.click('#btnExExit');
+    await D.page.waitForFunction(() => !window.__reloadMark, null, { timeout: 240000 });
     await D.page.waitForURL((u) => !u.href.includes('explore='), { timeout: 240000, waitUntil: 'commit' });
-    check('4e #btnExExit: URL không còn explore=', !D.page.url().includes('explore='));
+    check('4e #btnExExit: tải lại thật, URL không còn explore=', !D.page.url().includes('explore='));
     check('console sạch (4d/4h/4e)', D.errors.length === 0);
     if (D.errors.length) console.log(D.errors.join('\n'));
     await D.page.close();
@@ -279,9 +316,10 @@ try {
     };
     // Tư thế giữ nguyên bằng cách đặt lại pos/yaw/bank TRƯỚC MỖI khung lấy mẫu (explore.update vẫn bay 25 m/s giữa các khung, nên chỉ lệch ~0,4 m/khung).
     const setPose = (name, pose) => R.page.evaluate(({ pose }) => {
-      const { explore, exFlight } = window.__app, s = explore.state, C = exFlight.CONFIG_explore;
+      const { explore, exFlight, camera, controls } = window.__app, s = explore.state, C = exFlight.CONFIG_explore;
       if (pose) s.pos.set(pose[0], pose[1], pose[2]); else s.pos.set(C.takeoff[0], C.takeoff[1], C.takeoff[2]);
       s.yaw = pose ? Math.PI / 2 : C.takeoffYaw; s.bank = 0;   // yaw π/2 = nhìn −Z (Bắc)
+      exFlight.exChase(camera, controls.target, s, 0, true);   // camera cũng snap, nếu không lag 0,25 s làm khung lấy mẫu nhìn từ tư thế trước
     }, { name, pose });
     const measure = async (name) => {
       const pose = POSES[name];

@@ -6,29 +6,35 @@ import { CONFIG } from '../config';
 
 const C = CONFIG.explore;
 
-export interface GliderState { pos: THREE.Vector3; yaw: number; bank: number }
+export interface GliderState { pos: THREE.Vector3; yaw: number; bank: number; ret: number }   // ret: chiều rẽ đang chốt khi lái về khung (0 = không)
 export interface GliderInput { turn: -1 | 0 | 1; climb: -1 | 0 | 1 }
 
 /* Trạng thái ban đầu tại điểm cất cánh */
 export function exCreate(): GliderState {
-  return { pos: new THREE.Vector3(C.takeoff[0], C.takeoff[1], C.takeoff[2]), yaw: C.takeoffYaw, bank: 0 };
+  return { pos: new THREE.Vector3(C.takeoff[0], C.takeoff[1], C.takeoff[2]), yaw: C.takeoffYaw, bank: 0, ret: 0 };
 }
 
 const wrapPi = (a: number) => Math.atan2(Math.sin(a), Math.cos(a));
 
-/* Lái về tâm khung khi sát mép: trả hướng rẽ hiệu lực (−1..1) thay cho phím người chơi */
+/* Lái về trong khung khi sát mép. "Hướng vào" n = tổng pháp tuyến hướng vào của các mép nằm trong returnMargin, trọng số theo độ gần.
+   Đang bay ra (hướng bay · n < returnEngage) thì bỏ qua phím và lái cố định về n tới khi hướng bay · n >= returnRelease (trễ, hướng rẽ chốt trong s.ret nên không đổi dấu liên tục).
+   Chiều rẽ: theo phím người chơi nếu đủ xa mép (vòng tròn bán kính ≈ speed/turnRate không đi ra quá ~2 bán kính, nên giữ A/D chỉ quay tại chỗ, không rung), sát mép (< returnShort) thì rẽ đường ngắn. */
 function exTurnEff(s: GliderState, turn: number): number {
   const b = C.bounds, m = C.returnMargin;
-  const d = Math.min(s.pos.x - b.x0, b.x1 - s.pos.x, s.pos.z - b.z0, b.z1 - s.pos.z);   // khoảng cách ngắn nhất tới mép khung
-  if (d >= m) return turn;
-  const tx = (b.x0 + b.x1) / 2 - s.pos.x, tz = (b.z0 + b.z1) / 2 - s.pos.z, tl = Math.hypot(tx, tz) || 1;
-  const dot = (Math.cos(s.yaw) * tx - Math.sin(s.yaw) * tz) / tl;   // hướng bay · hướng tới tâm
-  if (dot >= 0.3) return turn;   // đang bay vào trong: giữ phím người chơi
-  const delta = wrapPi(Math.atan2(-tz, tx) - s.yaw);   // yaw hướng tâm − yaw hiện tại
-  const sg = delta >= 0 ? 1 : -1;
-  if (d <= 0.25 * m) return sg;
-  const w = 1 - d / m;
-  return turn + (sg - turn) * w;
+  const dx0 = s.pos.x - b.x0, dx1 = b.x1 - s.pos.x, dz0 = s.pos.z - b.z0, dz1 = b.z1 - s.pos.z;
+  const d = Math.min(dx0, dx1, dz0, dz1);   // khoảng cách ngắn nhất tới mép khung
+  if (d >= m) { s.ret = 0; return turn; }
+  const nx = (dx0 < m ? 1 - dx0 / m : 0) - (dx1 < m ? 1 - dx1 / m : 0);   // +X là vào trong khi gần mép x0
+  const nz = (dz0 < m ? 1 - dz0 / m : 0) - (dz1 < m ? 1 - dz1 / m : 0);
+  const nl = Math.hypot(nx, nz) || 1;
+  const dot = (Math.cos(s.yaw) * nx - Math.sin(s.yaw) * nz) / nl;   // hướng bay · hướng vào
+  if (s.ret !== 0) { if (dot >= C.returnRelease) { s.ret = 0; return turn; } return s.ret; }
+  else if (dot >= C.returnEngage) return turn;
+  else {
+    const delta = wrapPi(Math.atan2(-nz, nx) - s.yaw);   // yaw hướng vào − yaw hiện tại (>0: rẽ trái là đường ngắn)
+    s.ret = turn !== 0 && d >= C.returnShort ? turn : (delta >= 0 ? 1 : -1);
+  }
+  return s.ret;
 }
 
 /* Một bước mô phỏng: không cấp phát */
