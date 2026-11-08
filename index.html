@@ -214,6 +214,22 @@
 <div id="swStormNote" class="panel" hidden data-i18n="swStormNote">Vòng quay tạm dừng do thời tiết xấu. Cabin vẫn đung đưa theo gió.</div>
 <div id="hint" class="panel" hidden data-i18n="walkHint">W/S hoặc ↑/↓ để đi · A/D hoặc ←/→ để xoay · chọn góc nhìn khác để thoát</div>
 
+<div id="chooser" class="ex-chooser" role="dialog" aria-modal="true" aria-labelledby="exTitle" hidden>
+  <div class="panel ex-box">
+    <label class="lang ex-lang"><span hidden data-i18n="language">Ngôn ngữ</span><select id="exLang" data-i18n-aria="language" aria-label="Ngôn ngữ"></select></label>
+    <h2 id="exTitle" data-i18n="exTitle">Bạn muốn khám phá Đà Nẵng thế nào?</h2>
+    <div class="ex-cards">
+      <button type="button" class="ex-card" data-pick="glider"><b data-i18n="exGlider">Dù lượn</b><span data-i18n="exGliderDesc">Bay tự do trên sông Hàn</span><i class="ex-note" data-i18n="exDesktopOnly" hidden>Chỉ dùng trên máy tính</i></button>
+      <button type="button" class="ex-card" data-pick="car" disabled><b data-i18n="exCar">Ô tô</b><i class="ex-note" data-i18n="exSoon">Sắp có</i></button>
+      <button type="button" class="ex-card" data-pick="bike" disabled><b data-i18n="exBike">Xe máy</b><i class="ex-note" data-i18n="exSoon">Sắp có</i></button>
+      <button type="button" class="ex-card" data-pick="walk" disabled><b data-i18n="exWalk">Đi bộ</b><i class="ex-note" data-i18n="exSoon">Sắp có</i></button>
+      <button type="button" class="ex-card" data-pick="guided"><b data-i18n="exGuided">Tham quan có hướng dẫn</b><span data-i18n="exGuidedDesc">Tour, góc nhìn và thuyết minh</span></button>
+    </div>
+  </div>
+</div>
+<div id="exHint" class="panel" data-i18n="exHint">W/S hoặc ↑/↓ để lên/xuống · A/D hoặc ←/→ để rẽ · Esc để thoát</div>
+<button id="btnExExit" class="panel" type="button" data-i18n="exExit">Thoát</button>
+
 <script type="module" src="/src/main.ts"></script>
 </body>
 </html>

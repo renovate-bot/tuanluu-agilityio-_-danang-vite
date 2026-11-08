@@ -437,5 +437,17 @@
   "tourExitTouch": "シーンをタップして終了",
   "wxStormHintTouch": "画面をドラッグしてカメラを操作 — 天気はそのまま進行します",
   "swRideHintTouch": "ドラッグして見回す · もう一度ボタンを押すとゴンドラから降ります",
-  "donateAria": "MoMoで作者にコーヒーをおごる（新しいタブで開きます）"
+  "donateAria": "MoMoで作者にコーヒーをおごる（新しいタブで開きます）",
+  "exTitle": "ダナンをどのように楽しみますか？",
+  "exGlider": "パラグライダー",
+  "exGliderDesc": "ハン川の上を自由に飛ぶ",
+  "exCar": "車",
+  "exBike": "バイク",
+  "exWalk": "徒歩",
+  "exGuided": "ガイド付きツアー",
+  "exGuidedDesc": "ツアー、視点、ナレーション",
+  "exSoon": "近日公開",
+  "exDesktopOnly": "パソコン専用",
+  "exHint": "W/S または ↑/↓ で上昇/下降 · A/D または ←/→ で旋回 · Esc で終了",
+  "exExit": "終了"
 }

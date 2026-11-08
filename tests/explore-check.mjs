@@ -1,10 +1,12 @@
 // Kiểm tra chế độ tự khám phá bằng dù lượn (kế hoạch feature/explore-du-luon).
 //   Mục 1–2: mô hình bay thuần, dù, camera bám (src/explore/*) qua móc window.__app.exFlight.
 //   Mục 3: điều phối chế độ bay, phím, ?explore=glider qua window.__app.explore.
+//   Mục 4: màn chọn phương tiện, giao diện khi bay (body.explore), i18n 9 ngôn ngữ.
 //
 //   npm run build && npm run test:explore
 import { fileURLToPath } from 'node:url';
-import { serveDir, launch, openApp, frames } from './lib.mjs';
+import { readFileSync } from 'node:fs';
+import { serveDir, launch, openApp, frames, tap } from './lib.mjs';
 
 const problems = [];
 const check = (name, ok) => { if (!ok) problems.push(name); console.log(`${ok ? 'đạt ' : 'LỖI '} ${name}`); return ok; };
@@ -185,6 +187,83 @@ try {
     const g3 = await N.page.evaluate(() => ({ mode: window.__app.cam.mode, obj: !!window.__app.scene.getObjectByName('ex-glider'), cls: document.body.classList.contains('explore'), act: window.__app.explore.active() }));
     check('3g không ?explore: orbit, không ex-glider, không body.explore', g3.mode === 'orbit' && !g3.obj && !g3.cls && !g3.act);
     await N.page.close();
+  }
+  // Mục 4 — màn chọn, giao diện khi bay, i18n
+  {
+    const CARDS = ['glider', 'car', 'bike', 'walk', 'guided'];
+    const vis = (page, sel) => page.evaluate((s) => { window.__app.ui?.reveal(document.querySelector(s)); const e = document.querySelector(s); return !!e && e.getClientRects().length > 0 && getComputedStyle(e).visibility !== 'hidden'; }, sel);
+    // 4a ?chooser: màn chọn hiện, 5 thẻ, thẻ chưa có disabled
+    const C = await openApp(browser, srv.url + '?chooser');
+    await C.page.waitForSelector('#chooser', { state: 'visible', timeout: 240000 });
+    const a4 = await C.page.evaluate(() => [...document.querySelectorAll('#chooser button[data-pick]')].map((b) => [b.dataset.pick, b.disabled]));
+    check(`4a #chooser hiện, thẻ: ${JSON.stringify(a4)}`, a4.length === 5 && CARDS.every((k) => a4.some(([n]) => n === k)) && a4.filter(([, d]) => d).map(([n]) => n).sort().join() === 'bike,car,walk');
+    const l4 = await C.page.evaluate(() => { const s = document.getElementById('exLang'); const r = s.getBoundingClientRect(); const top = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2); return { n: s.options.length, v: s.value, onTop: top === s }; });
+    check(`4a chooser có ô ngôn ngữ riêng: ${l4.n} ngôn ngữ, giá trị ${l4.v}, không bị panel che ${l4.onTop}`, l4.n === 9 && l4.v === 'vi' && l4.onTop);
+    // 4c thẻ hướng dẫn: ẩn màn chọn, giữ giao diện cũ
+    await C.page.click('#chooser [data-pick="guided"]');
+    await C.page.waitForSelector('#chooser', { state: 'hidden' });
+    await tap(C.page, '[data-bridge="tp"]');
+    const c4 = await C.page.evaluate(() => ({ mode: window.__app.cam.mode, cls: document.body.classList.contains('explore'), pressed: document.querySelector('[data-bridge="tp"]').getAttribute('aria-pressed') }));
+    check(`4c guided: chooser ẩn, bấm [data-bridge=tp] chạy pickView (${JSON.stringify(c4)})`, c4.cls === false && c4.pressed === 'true' && c4.mode !== 'glider');
+    // 4g Esc trong Tour bản hướng dẫn: thoát Tour, không tải lại
+    const url0 = C.page.url();
+    await tap(C.page, '[data-view="tpTour"]');
+    await C.page.waitForFunction(() => document.body.classList.contains('touring'));
+    await C.page.keyboard.press('Escape');
+    await C.page.waitForFunction(() => !document.body.classList.contains('touring'));
+    await frames(C.page, 2);
+    check('4g Esc thoát Tour, URL không đổi, không tải lại', C.page.url() === url0 && await C.page.evaluate(() => !!window.__app));
+    check('console sạch (4a/4c/4g)', C.errors.length === 0);
+    if (C.errors.length) console.log(C.errors.join('\n'));
+    await C.page.close();
+    // 4d bấm thẻ dù lượn
+    const D = await openApp(browser, srv.url + '?chooser');
+    await D.page.waitForSelector('#chooser', { state: 'visible', timeout: 240000 });
+    await D.page.click('#chooser [data-pick="glider"]');
+    await D.page.waitForFunction(() => window.__app.cam.mode === 'glider');
+    await frames(D.page, 2);
+    const keep = ['langSelect', 'btnNight', 'qualitySel', 'exHint', 'btnExExit'];
+    const hide = ['[data-bridge="dragon"]', '[data-bridge="hr"]', '[data-view="tour"]', '[data-view="allTour"]', '[data-view="walk"]', '#tourCaption', '#weatherSel', '#btnWxStorm', '#timeSlider', '#btnMusic', '.specs'];
+    const shown = [], leaked = [];
+    for (const id of keep) if (!(await vis(D.page, '#' + id))) shown.push(id);
+    for (const sel of hide) if (await vis(D.page, sel)) leaked.push(sel);
+    const lbl = await vis(D.page, 'label[for="qualitySel"]');
+    const hud = await vis(D.page, '.stats');
+    check(`4d bay: giữ hiện ${keep.join(',')} (thiếu: ${shown.join(',') || '-'}), nhãn chất lượng ${lbl}; cần ẩn (lọt: ${leaked.join(',') || '-'}); chooser ẩn; HUD (test) ${hud}`,
+      shown.length === 0 && leaked.length === 0 && lbl && !(await vis(D.page, '#chooser')));
+    // 4h đổi sang ar khi đang bay
+    const hintVi = await D.page.$eval('#exHint', (e) => e.textContent);
+    await D.page.evaluate(() => { const s = document.getElementById('langSelect'); s.value = 'ar'; s.dispatchEvent(new Event('change')); });
+    const h4 = await D.page.evaluate(() => ({ dir: document.documentElement.dir, hint: document.getElementById('exHint').textContent }));
+    check(`4h ar khi đang bay: dir=${h4.dir}, #exHint "${h4.hint}" khác vi`, h4.dir === 'rtl' && h4.hint !== hintVi && h4.hint.length > 5);
+    // 4e nút thoát
+    await D.page.evaluate(() => window.__app.ui?.reveal(document.getElementById('btnExExit')));
+    await D.page.click('#btnExExit');
+    await D.page.waitForURL((u) => !u.href.includes('explore='), { timeout: 240000, waitUntil: 'commit' });
+    check('4e #btnExExit: URL không còn explore=', !D.page.url().includes('explore='));
+    check('console sạch (4d/4h/4e)', D.errors.length === 0);
+    if (D.errors.length) console.log(D.errors.join('\n'));
+    await D.page.close();
+    // 4f điện thoại: thẻ dù lượn bị khóa
+    const M = await openApp(browser, srv.url + '?chooser', { mobile: true });
+    await M.page.waitForSelector('#chooser', { state: 'visible', timeout: 240000 });
+    const f4 = await M.page.evaluate(() => { const b = document.querySelector('#chooser [data-pick="glider"]'); return { d: b.disabled, txt: b.textContent }; });
+    const vi = JSON.parse(readFileSync(new URL('../src/i18n/locales/vi.json', import.meta.url), 'utf8'));
+    check(`4f mobile: thẻ dù lượn disabled, có "${vi.exDesktopOnly}"`, f4.d && !!vi.exDesktopOnly && f4.txt.includes(vi.exDesktopOnly));
+    await M.page.close();
+    // 4b chỉ ?test: không có màn chọn
+    const T = await openApp(browser, srv.url);
+    await frames(T.page, 3);
+    check('4b chỉ ?test: #chooser không hiện', !(await vis(T.page, '#chooser')));
+    await T.page.close();
+    // 4h đủ khóa ex* ở 9 ngôn ngữ
+    const langs = ['vi', 'en', 'ko', 'ja', 'zh', 'th', 'ar', 'hi', 'ru'];
+    const L = Object.fromEntries(langs.map((c) => [c, JSON.parse(readFileSync(new URL(`../src/i18n/locales/${c}.json`, import.meta.url), 'utf8'))]));
+    const exKeys = Object.keys(L.vi).filter((k) => /^ex[A-Z]/.test(k));
+    const miss = [];
+    for (const c of langs) for (const k of exKeys) if (typeof L[c][k] !== 'string' || !L[c][k].trim()) miss.push(`${c}.${k}`);
+    check(`4h ${exKeys.length} khóa ex* (${exKeys.join(',')}) đủ 9 ngôn ngữ (thiếu: ${miss.join(',') || '-'})`, exKeys.length >= 9 && miss.length === 0);
+    check('4h vi exSoon / exDesktopOnly / exHint đúng chữ', L.vi.exSoon === 'Sắp có' && L.vi.exDesktopOnly === 'Chỉ dùng trên máy tính' && L.vi.exHint === 'W/S hoặc ↑/↓ để lên/xuống · A/D hoặc ←/→ để rẽ · Esc để thoát');
   }
 } catch (e) {
   problems.push('ngoại lệ: ' + e); console.log(e);

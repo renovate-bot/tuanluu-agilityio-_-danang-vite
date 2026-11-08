@@ -437,5 +437,17 @@
   "tourExitTouch": "Tap the scene to exit",
   "wxStormHintTouch": "Drag the scene to take the camera — the weather keeps running",
   "swRideHintTouch": "Drag to look around · tap the button again to leave the cabin",
-  "donateAria": "Buy the author a coffee via MoMo (opens in a new tab)"
+  "donateAria": "Buy the author a coffee via MoMo (opens in a new tab)",
+  "exTitle": "How would you like to explore Da Nang?",
+  "exGlider": "Paraglider",
+  "exGliderDesc": "Fly freely over the Han River",
+  "exCar": "Car",
+  "exBike": "Motorbike",
+  "exWalk": "On foot",
+  "exGuided": "Guided tour",
+  "exGuidedDesc": "Tours, viewpoints and narration",
+  "exSoon": "Coming soon",
+  "exDesktopOnly": "Desktop only",
+  "exHint": "W/S or ↑/↓ to climb/descend · A/D or ←/→ to turn · Esc to exit",
+  "exExit": "Exit"
 }

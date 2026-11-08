@@ -231,4 +231,26 @@ body.compact.sheet-settings .brand,body.compact.sheet-views .views{z-index:10;} 
 /* Dòng hướng dẫn: dưới thanh trên; #swStormNote thấp hơn để không chồng #swRideHint (có thể hiện cùng lúc) */
 body.compact #hint,body.compact #swRideHint{top:calc(64px + env(safe-area-inset-top,0px));max-width:calc(100vw - 24px);box-sizing:border-box;text-align:center;}
 body.compact #swStormNote{top:calc(124px + env(safe-area-inset-top,0px));max-width:calc(100vw - 24px);box-sizing:border-box;}
+/* ===== Tự khám phá ===== */
+/* Màn chọn phương tiện: lớp phủ chặn chuột vào canvas, phủ cả các bảng; có ô chọn ngôn ngữ riêng (#exLang) */
+.ex-chooser{position:fixed;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;background:rgba(6,10,13,.72);}
+.ex-lang{display:block;margin:0 0 12px;width:max-content;}
+.ex-box{position:static;max-width:min(720px,100%);max-height:100%;overflow-y:auto;padding:22px 24px;box-sizing:border-box;}
+.ex-box h2{margin:0 0 16px;font-family:var(--font-display);font-weight:600;font-size:26px;line-height:1.15;color:var(--gold);text-wrap:balance;}
+.ex-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;}
+.ex-card{display:flex;flex-direction:column;align-items:flex-start;gap:4px;min-height:84px;padding:12px 14px;text-align:start;}
+.ex-card b{font-weight:600;font-size:14px;color:var(--text);}
+.ex-card span,.ex-card i{font-style:normal;font-size:11.5px;line-height:1.4;color:var(--muted);}
+.ex-card:disabled{opacity:.55;cursor:not-allowed;}
+.ex-card:disabled .ex-note{color:var(--gold);}
+.ex-card:focus-visible{outline:2px solid var(--gold);outline-offset:2px;}
+/* Khi bay: chỉ còn ngôn ngữ, Ngày/Đêm, Chất lượng hình, dòng hướng dẫn và nút Thoát; mọi nút góc nhìn / cầu / Tour ẩn để không thoát chế độ bay bằng đường khác */
+#exHint,#btnExExit{display:none;}
+body.explore #exHint{display:block;position:fixed;left:50%;transform:translateX(-50%);top:calc(14px + env(safe-area-inset-top,0px));padding:8px 14px;font-size:12px;color:var(--text);text-align:center;max-width:calc(100vw - 32px);box-sizing:border-box;}
+body.explore #btnExExit{display:block;inset-inline-end:calc(14px + env(safe-area-inset-right,0px));top:calc(56px + env(safe-area-inset-top,0px));padding:8px 14px;font-size:12px;color:var(--text);cursor:pointer;}
+body.explore .views,body.explore .specs,body.explore #tourCaption,body.explore #wxScenario,body.explore #hint,body.explore #swRideHint,body.explore #swStormNote,body.explore #hrLabels{display:none!important;}
+body.explore .eyebrow,body.explore #btnShadow,body.explore .audio-row,body.explore .slider,body.explore .weather-row,body.explore .donate{display:none!important;}
+body.explore:not(.ex-test) .stats{display:none;}   /* HUD giữ khi URL có ?test để test đo draw call */
+body.compact #exHint{top:calc(64px + env(safe-area-inset-top,0px));}
+body.compact #btnExExit{top:calc(8px + env(safe-area-inset-top,0px));inset-inline-end:calc(8px + env(safe-area-inset-right,0px));min-height:40px;}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important;}}

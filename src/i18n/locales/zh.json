@@ -437,5 +437,17 @@
   "tourExitTouch": "点按场景即可退出",
   "wxStormHintTouch": "拖动屏幕可自行控制相机——天气继续进行",
   "swRideHintTouch": "拖动可环顾四周 · 再次点按按钮可离开轿厢",
-  "donateAria": "通过 MoMo 请作者喝杯咖啡（在新标签页中打开）"
+  "donateAria": "通过 MoMo 请作者喝杯咖啡（在新标签页中打开）",
+  "exTitle": "您想如何探索岘港？",
+  "exGlider": "滑翔伞",
+  "exGliderDesc": "在汉江上自由飞行",
+  "exCar": "汽车",
+  "exBike": "摩托车",
+  "exWalk": "步行",
+  "exGuided": "导览参观",
+  "exGuidedDesc": "游览、视角和讲解",
+  "exSoon": "即将推出",
+  "exDesktopOnly": "仅限电脑",
+  "exHint": "W/S 或 ↑/↓ 升降 · A/D 或 ←/→ 转向 · Esc 退出",
+  "exExit": "退出"
 }

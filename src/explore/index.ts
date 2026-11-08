@@ -1,12 +1,13 @@
 /* ============================ Tự khám phá: điều phối chế độ bay dù lượn ============================
    Nối flight (mô hình), glider (dù), chase (camera) với vòng animate, phím và URL.
-   `?explore=glider` bay thẳng; Esc tải lại trang không còn tham số explore. Camera do explore.update đặt sau updateCamera. */
+   `?explore=glider` bay thẳng; không tham số (hoặc `?test&chooser`) hiện màn chọn; Esc tải lại trang không còn tham số explore. Camera do explore.update đặt sau updateCamera. */
 import * as THREE from 'three';
 import { scene, camera, controls } from '../core/renderer';
 import { cam, keys } from '../views/state';
 import { exCreate, exStep, exInputFromKeys, type GliderState, type GliderInput } from './flight';
 import { exBuildGlider, exPlaceGlider } from './glider';
 import { exChase } from './chase';
+import { exShowChooser } from './chooser';
 
 const _inp: GliderInput = { turn: 0, climb: 0 };   // đầu vào tái dùng mỗi khung
 
@@ -59,5 +60,9 @@ export function setupExplore(): void {
     const k = e.key.toLowerCase(); keys.add(k);
     if (k.startsWith('arrow')) e.preventDefault();
   });
-  if (new URLSearchParams(location.search).get('explore') === 'glider') explore.start();
+  const q = new URLSearchParams(location.search);
+  if (q.has('test')) document.body.classList.add('ex-test');   // giữ HUD khi bay để test đo draw call
+  document.getElementById('btnExExit')?.addEventListener('click', () => explore.exit());
+  if (q.get('explore') === 'glider') { explore.start(); return; }
+  if (!q.has('test') || q.has('chooser')) exShowChooser((choice) => { if (choice === 'glider') explore.start(); });   // 'guided': màn chọn tự ẩn, giao diện cũ
 }
