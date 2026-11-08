@@ -1,6 +1,6 @@
 # Thiết kế: Tự khám phá bằng dù lượn (WASD)
 
-_Ngày: 2026-11-02 · Nhánh dự kiến: `feature/explore` · Trạng thái: chờ duyệt_
+_Ngày: 2026-11-02 · Nhánh dự kiến: `feature/explore-du-luon` · Trạng thái: chờ duyệt_
 
 ## 1. Ý định
 

@@ -20,7 +20,8 @@
 - Comment tiếng Việt, khối `/* ===== ... ===== */`, tiền tố hàm `ex*`, không tự format lại file cũ.
 - URL: không tham số → màn chọn; `?test` → bỏ qua màn chọn (như cũ); `?test&chooser` → màn chọn + `window.__app`; `?explore=glider` (có hoặc không `test`) → vào thẳng bay.
 - `npm run typecheck` sau mọi thay đổi `.ts`; `npm run build` trước mọi test (test đọc `dist/`).
-- Trước mỗi lần chạy test: không còn tiến trình `*-check.mjs`/`drawcalls.mjs` mồ côi (xem activeContext, mục mobile).
+- Subagent không đọc nguyên `src/config.ts` (58 KB ≈ 20k token): dùng grep tìm khối cần sửa rồi chỉ đọc đoạn đó.
+- Trước mỗi lần chạy test: không còn tiến trình `*-check.mjs`/`drawcalls.mjs` mồ côi (xem `activeContext.md`, Bước tiếp theo, mục 7).
 
 ## Review Focus
 
@@ -34,87 +35,24 @@
 
 ## Cách chia việc, chọn model và tiết kiệm token
 
-Người điều phối (phiên chính) giữ kế hoạch và GitHub Project. Mỗi task giao cho một subagent mới. Subagent chỉ nhận **đoạn task của mình**, mục Global Constraints và khối Interfaces, không nhận cả file kế hoạch.
+Người điều phối (phiên chính) giữ kế hoạch và bảng Sổ token cuối plan. Mỗi task giao cho một subagent mới. Subagent chỉ nhận **đoạn task của mình**, mục Global Constraints và khối Interfaces, không nhận cả file kế hoạch.
 
 | Task | Nội dung | Implementer | Reviewer | Lý do |
 |---|---|---|---|---|
-| 0 | GitHub Project + gọn memory bank | điều phối (lệnh `gh`) + **haiku** (gọn file) | — | Thao tác máy móc |
 | 1 | `CONFIG.explore` + mô hình bay thuần | **sonnet** | **sonnet** | Toán vector, cần đúng quy ước trục |
 | 2 | Mô hình dù + camera bám | **sonnet** | **haiku** (đối chiếu checklist) | Hình học + cảm giác, test đã định sẵn |
 | 3 | Điều phối, phím, `'glider'`, `?explore=glider` | **sonnet** | **sonnet** | Đụng `camera.ts` và `main.ts` dùng chung |
-| 4 | Màn chọn + giao diện khi bay + i18n | **sonnet** | **haiku** | DOM/CSS, bản dịch 9 ngôn ngữ |
+| 4 | Màn chọn + giao diện khi bay + i18n | **sonnet** | **sonnet** | DOM/CSS, bản dịch 9 ngôn ngữ, dễ lọt lỗi nếu chỉ đối chiếu checklist |
 | 5 | Đo draw call / ms + chạy đủ bộ test | điều phối chạy nền (0 token LLM) + **haiku** ghi `KET-QUA.md` | — | Chỉ đọc log |
 | 6 | Tài liệu + memory bank (D-020) | **haiku** | — | Viết theo mẫu có sẵn |
 | Cuối | Review toàn nhánh | — | **opus** | Một lần, bắt lỗi liên task |
 
 Cách tiết kiệm token:
-1. **Gọn `activeContext.md` (Task 0.2).** File này dài 67 KB (≈ 20k token). `CLAUDE.md` nạp nó vào **mọi** subagent. Dời các mục đã xong sang `.github/memory-bank/archive/` (không được nạp) để mỗi lần giao việc bớt khoảng 15k token. Với khoảng 12 lần giao việc, tiết kiệm khoảng 180k token. Chỉ làm khi người dùng đồng ý.
-2. **Chạy test bằng Bash nền, không qua subagent.** Test SwiftShader mất 10–20 phút. Điều phối chạy với `run_in_background` rồi đọc dòng cuối và các dòng `LỖI`, không đọc cả log.
-3. **Mỗi subagent chỉ chạy test của task mình** (`test:explore` với một mục). Chạy đủ bộ test một lần ở Task 5.
-4. **Reviewer haiku** cho các task mà test đã khóa hành vi. **Opus** chỉ dùng một lần cho review cuối.
-5. **Ảnh tự xem**: tối đa 4 ảnh 960×600, chỉ ở Task 2 và Task 4.
-6. **Ghi token**: thông báo hoàn thành của mỗi subagent có `subagent_tokens`. Điều phối ghi số này vào trường `Tokens` của item, kèm `Agent` (tên/ID ngắn) và `Model`.
-
----
-
-### Task 0: GitHub Project và gọn memory bank
-
-**Files:**
-- Modify (0.2, chỉ khi người dùng đồng ý): `.github/memory-bank/activeContext.md`
-- Create (0.2): `.github/memory-bank/archive/2026-10-activeContext.md`
-
-**Interfaces:**
-- Produces: số project `$P`, ID trường `Status`/`Agent`/`Model`/`Tokens`/`Phase`, mỗi Task 1–6 + "Review cuối" là một draft item ở trạng thái `Todo`.
-
-- [ ] **Step 1: Tạo project và trường**
-
-```bash
-gh project create --owner tuanluu-agilityio --title "Đà Nẵng 3D — Tự khám phá (dù lượn)" --format json   # lấy number → $P, id → $PID
-gh project link $P --owner tuanluu-agilityio --repo tuanluu-agilityio/danang-vite
-gh project field-create $P --owner tuanluu-agilityio --name Agent --data-type TEXT
-gh project field-create $P --owner tuanluu-agilityio --name Model --data-type SINGLE_SELECT --single-select-options "haiku,sonnet,opus,điều phối"
-gh project field-create $P --owner tuanluu-agilityio --name Tokens --data-type NUMBER
-gh project field-create $P --owner tuanluu-agilityio --name Phase --data-type TEXT
-gh project field-list $P --owner tuanluu-agilityio --format json   # ID của Status và các option
-```
-
-Trường `Status` mặc định chỉ có Todo / In Progress / Done. Thêm `Review` bằng GraphQL, giữ nguyên ID ba option cũ:
-
-```bash
-gh api graphql -f query='mutation($f:ID!){updateProjectV2Field(input:{fieldId:$f,singleSelectOptions:[{name:"Todo",color:GRAY,description:""},{name:"In Progress",color:YELLOW,description:""},{name:"Review",color:BLUE,description:""},{name:"Done",color:GREEN,description:""}]}){projectV2Field{... on ProjectV2SingleSelectField{options{id name}}}}}' -f f=$STATUS_FIELD_ID
-```
-
-Nếu mutation bị từ chối: tạo trường `Trạng thái` (SINGLE_SELECT, 4 option trên), dùng nó thay `Status`, và báo người dùng.
-
-- [ ] **Step 2: Tạo item cho Task 1–6 và "Review cuối"**
-
-```bash
-gh project item-create $P --owner tuanluu-agilityio --title "T1 · CONFIG.explore + mô hình bay" --body "<Goal của task + link plan>" --format json
-```
-
-Mỗi item: `Status=Todo`, `Phase=T1…T6/Cuối`, `Model` đặt sẵn theo bảng ở trên (`gh project item-edit --id … --field-id … --single-select-option-id …`).
-
-- [ ] **Step 3: Kiểm**
-
-Run: `gh project item-list $P --owner tuanluu-agilityio --format json`
-Expected: 7 item, đều `Todo`, có `Model`.
-
-- [ ] **Step 4 (0.2, cần người dùng đồng ý): gọn `activeContext.md` — giao haiku**
-
-Giữ trong `activeContext.md`: dòng tiêu đề, "Trạng thái", "Bước tiếp theo", "Vấn đề mở", và một mục mới "Tự khám phá (dù lượn)" trỏ tới spec + plan. Dời nguyên văn mọi mục "Thời tiết — GĐ…", "Vòng quay … GĐ…", "Kịch bản bão", "Tối ưu độ mượt", "Giao diện điện thoại" sang `archive/2026-10-activeContext.md`, mỗi mục để lại một dòng trỏ tới đó. Không sửa nội dung.
-Expected: `activeContext.md` < 12 KB; `git diff --stat` chỉ có hai file.
-
-- [ ] **Step 5: Commit (0.2)**
-
-```bash
-git add .github/memory-bank && git commit -m "docs(memory-bank): dời mục đã xong sang archive để giảm ngữ cảnh agent"
-```
-
-**Quy trình trạng thái cho mọi task sau** (điều phối làm, không phải subagent):
-- Giao việc → `In Progress`, `Agent=<tên/ID ngắn>`.
-- Implementer báo xong → `Review`.
-- Reviewer duyệt → `Done`, `Tokens = implementer + reviewer` (cộng `subagent_tokens`).
-- Bị trả lại thì về `In Progress` và cộng dồn token.
+1. **Chạy test bằng Bash nền, không qua subagent.** Test SwiftShader mất 10–20 phút. Điều phối chạy với `run_in_background` rồi đọc dòng cuối và các dòng `LỖI`, không đọc cả log.
+2. **Mỗi subagent chỉ chạy test của task mình** (`test:explore` với một mục). Chạy đủ bộ test một lần ở Task 5.
+3. **Reviewer haiku** chỉ dùng cho Task 2, nơi test đã khóa hành vi. **Opus** chỉ dùng một lần cho review cuối.
+4. **Ảnh tự xem**: tối đa 4 ảnh 960×600, chỉ ở Task 2 và Task 4.
+5. **Ghi token**: thông báo hoàn thành của mỗi subagent có `subagent_tokens`. Điều phối ghi số này vào bảng Sổ token cuối plan, kèm Agent (tên/ID ngắn) và Model; không dùng GitHub Project để tránh thêm lượt cho phiên điều phối.
 
 ---
 
@@ -423,19 +361,18 @@ git commit -m "test(explore): đo draw call các tư thế bay, ghi KET-QUA"
 
 ### Review cuối (opus)
 
-Reviewer đọc spec, plan và `git diff main...feature/explore`. Trọng tâm:
+Reviewer đọc spec, plan và `git diff main...feature/explore-du-luon`. Trọng tâm:
 - 5 dòng Review Focus;
 - bất biến seed và draw call;
 - không đụng code cũ ngoài danh sách file của các task;
 - mọi chuỗi đều qua i18n.
 
-Kết quả: danh sách lỗi theo mức nghiêm trọng. Lỗi nào sửa thì làm task phụ (sonnet) rồi chạy lại test liên quan. Cập nhật item "Review cuối" và tổng token của dự án.
+Kết quả: danh sách lỗi theo mức nghiêm trọng. Lỗi nào sửa thì làm task phụ (sonnet) rồi chạy lại test liên quan. Ghi token vào dòng "Cuối" của Sổ token và cộng tổng.
 
-## Sổ token (điều phối điền khi chạy; bản chính trên GitHub Project)
+## Sổ token (điều phối điền khi chạy)
 
 | Task | Agent | Model | Tokens implementer | Tokens reviewer | Tổng |
 |---|---|---|---|---|---|
-| T0 | | | | | |
 | T1 | | | | | |
 | T2 | | | | | |
 | T3 | | | | | |
