@@ -50,7 +50,7 @@ function simulate(server: 'new' | 'old', client: 'new' | 'old', senders = 3, see
   const xs: number[] = []; let d = 0;
   for (let t = 0; t <= 7500; t += 5) {
     while (d < deliver.length && deliver[d].t <= t) {
-      for (const e of deliver[d].f) if (e[0] === 0) { if (client === 'new') tr.feed(e, deliver[d].t, P.clockRelax, P.clockSlewMs); else tr.push(deliver[d].t, e[1], e[2], e[3], e[4], e[5]); }
+      for (const e of deliver[d].f) if (e[0] === 0) { if (client === 'new') tr.feed(e, deliver[d].t, P); else tr.push(deliver[d].t, e[1], e[2], e[3], e[4], e[5]); }
       d++;
     }
     if (t >= 2500 && t <= 7000 && t % STEP === 0) { tr.sample(t - DELAY, out); xs.push(out.x); }

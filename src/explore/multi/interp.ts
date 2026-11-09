@@ -3,12 +3,14 @@
    Mẫu đặt theo giờ của người gửi (e[6]) quy ra giờ khách, nên trễ mạng và việc máy chủ gộp gói không làm dù đứng rồi vọt. */
 const N = 8, W = 6;   // số mẫu tối đa; số trường mỗi mẫu
 export interface ExPose { x: number; y: number; z: number; yaw: number; bank: number }
+export interface ExClockParams { clockRelax: number; clockSlewMs: number; clockWarmup: number }   // xem multiParams
 
 export class ExTrack {
   private buf = new Float64Array(N * W);
   private head = 0;      // chỉ số ô sẽ ghi tiếp
   private n = 0;         // số mẫu đang có
   private off = NaN;     // độ lệch giờ người gửi → giờ khách (ms); NaN = chưa có mẫu nào có giờ
+  private fed = 0;       // số mẫu có giờ đã nhận: clockWarmup mẫu đầu lấy thẳng mức nhỏ nhất (gói đầu có thể trễ vì khung hình chậm), sau đó mới giới hạn slew
   get count(): number { return this.n; }
 
   push(t: number, x: number, y: number, z: number, yaw: number, bank: number): void {
@@ -20,16 +22,17 @@ export class ExTrack {
   }
 
   /* Một mục của gói pos e = [slot, x, y, z, yaw, bank, giờ gửi?] nhận lúc nowMs.
-     Có giờ gửi (máy chủ mới): giờ khách = giờ gửi + độ lệch; độ lệch bám mức nhỏ nhất (gói ít trễ nhất) nhưng mỗi mẫu chỉ giảm tối đa slew ms,
-     và nới lên relax phần chênh khi mạng chậm đi: độ lệch đổi chậm nên dù không bị co giãn thời gian.
+     Có giờ gửi (máy chủ mới): giờ khách = giờ gửi + độ lệch; độ lệch bám mức nhỏ nhất (gói ít trễ nhất) nhưng sau clockWarmup mẫu đầu mỗi mẫu chỉ giảm tối đa clockSlewMs,
+     và nới lên clockRelax phần chênh khi mạng chậm đi: độ lệch đổi chậm nên dù không bị co giãn thời gian.
      Không có (máy chủ cũ phát lại vị trí cũ của mọi slot mỗi gói): đóng dấu giờ nhận, bỏ mục trùng mẫu cuối để dù không đứng chờ */
-  feed(e: number[], nowMs: number, relax: number, slew: number): void {
+  feed(e: number[], nowMs: number, k: ExClockParams): void {
     const ts = e[6];
     if (typeof ts === 'number' && Number.isFinite(ts)) {
       const c = nowMs - ts;
-      if (this.off !== this.off) this.off = c;
-      else if (c < this.off) this.off -= Math.min(this.off - c, slew);
-      else this.off += (c - this.off) * relax;
+      if (this.off !== this.off || (c < this.off && this.fed < k.clockWarmup)) this.off = c;
+      else if (c < this.off) this.off -= Math.min(this.off - c, k.clockSlewMs);
+      else this.off += (c - this.off) * k.clockRelax;
+      this.fed++;
       this.push(ts + this.off, e[1], e[2], e[3], e[4], e[5]);
       return;
     }
@@ -64,5 +67,5 @@ export class ExTrack {
     return true;
   }
 
-  reset(): void { this.n = 0; this.head = 0; this.off = NaN; }
+  reset(): void { this.n = 0; this.head = 0; this.off = NaN; this.fed = 0; }
 }

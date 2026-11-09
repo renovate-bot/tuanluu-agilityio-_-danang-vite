@@ -53,7 +53,7 @@ export const exRemotes = {
     for (const e of f) {
       const i = e[0], s = slots[i];
       if (!s || i === me || s.name === null) continue;
-      s.track.feed(e, nowMs, M.clockRelax, M.clockSlewMs);
+      s.track.feed(e, nowMs, M);
     }
   },
 

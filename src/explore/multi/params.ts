@@ -28,5 +28,6 @@ export const multiParams = {
   ceiling: 800,          // m — độ cao tối đa, phải bằng CONFIG.explore.ceiling
   bankMax: 0.45,         // rad — góc nghiêng tối đa, phải bằng CONFIG.explore.bankMax (máy chủ kẹp bank nhận được)
   clockRelax: 0.01,      // phần chênh được nhận thêm mỗi mẫu khi độ lệch giờ người gửi → giờ khách tăng (mạng chậm đi), không đơn vị (ước lượng)
+  clockWarmup: 4,        // số mẫu đầu của một người được nhận thẳng độ lệch nhỏ nhất (gói đầu có thể trễ vì khung hình chậm), ≈ 0,8 s ở 5 lần/s (ước lượng)
   clockSlewMs: 4         // ms tối đa độ lệch giờ người gửi → giờ khách được giảm mỗi mẫu (gói nhanh hơn tới), giữ dù không vọt (ước lượng)
 };
