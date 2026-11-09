@@ -2,6 +2,8 @@ import * as THREE from 'three';
 import { Water } from 'three/addons/objects/Water.js';
 import { scene } from './renderer';
 import { rng } from '../common/math';
+import { CONFIG } from '../config';
+import { shared } from './shared';
 
 /* ============================ Mặt nước sông Hàn ============================ */
 export let water: Water;
@@ -33,6 +35,24 @@ function makeWaterNormals() {
   t.wrapS = t.wrapT = THREE.RepeatWrapping; t.needsUpdate = true;
   return t;
 }
+/* Vệt đèn dài trên sông về đêm: lấy thêm mẫu ảnh phản chiếu dọc trục V, chỉ cộng phần sáng hơn ngưỡng; uNight = 0 giữ nguyên hình ảnh ban ngày */
+const REFLECTION_LINE = 'vec3 reflectionSample = vec3( texture2D( mirrorSampler, mirrorCoord.xy / mirrorCoord.w + distortion ) );';
+function patchNightStreak(mat: THREE.ShaderMaterial) {
+  if (!mat.fragmentShader.includes(REFLECTION_LINE)) throw new Error('Water.js đã đổi: không tìm thấy dòng lấy mẫu phản chiếu');
+  const S = CONFIG.cityNight.streak;
+  mat.uniforms.uNight = shared.uNight;
+  mat.fragmentShader = 'uniform float uNight;\n' + mat.fragmentShader.replace(REFLECTION_LINE, `${REFLECTION_LINE}
+    if ( uNight > 0.85 ) {
+      vec3 streak = vec3( 0.0 ); float weight = 0.0;
+      for ( int i = 1; i <= ${S.taps}; i ++ ) {
+        float t = float( i ) / ${S.taps.toFixed(1)}, w = 1.0 - t * 0.7;
+        vec3 c = vec3( texture2D( mirrorSampler, mirrorCoord.xy / mirrorCoord.w + distortion * ( 1.0 + t ) + vec2( 0.0, STREAK_SIGN * t * ${S.reach.toFixed(4)} ) ) );
+        streak += max( c - ${S.threshold.toFixed(3)}, 0.0 ) * w; weight += w;
+      }
+      reflectionSample += streak / weight * ${S.gain.toFixed(3)} * smoothstep( 0.85, 1.0, uNight );
+    }`).replace(/STREAK_SIGN/g, '1.0');
+}
+
 export function buildWater() {
   const g = new THREE.PlaneGeometry(40000, 40000);
   water = new Water(g, {
@@ -42,6 +62,7 @@ export function buildWater() {
   });
   water.rotation.x = -Math.PI / 2;
   water.material.uniforms.size.value = 0.6;
+  patchNightStreak(water.material as THREE.ShaderMaterial);
   scene.add(water);
   // Phản chiếu theo bậc chất lượng (D-018): every = 1 như gốc (vẽ lại cả cảnh vào target 512² mỗi khung), n > 1 vẽ mỗi n khung (giữ ảnh cũ ở giữa),
   // 0 = tắt: đổi sampler sang texture 1×1 màu sương (màu trời gần chân trời) — chỉ đổi giá trị uniform, không biên dịch lại

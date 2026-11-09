@@ -1,15 +1,16 @@
 # Active Context
 
-_Cập nhật: 2026-11-09 · Nhánh đang làm: không · Nhánh chính: `main`_
+_Cập nhật: 2026-11-10 · Nhánh đang làm: không · Nhánh chính: `main`_
 
 ## Trạng thái
 - Chế độ tự khám phá bằng dù lượn (D-020) đã merge vào `main` (merge cục bộ): chỉnh tốc độ Q/E, sàn 7 m để bay sát cầu, cánh cờ đỏ sao vàng, người treo; kết quả ở `tests/KET-QUA.md`.
-- `main` đã có đủ: Hầm vượt sông Hàn (PR #1), hai bờ sông + tối ưu draw call + thuyết minh tiếng Nga (PR #2), bộ hướng dẫn AI agent + memory bank (PR #3), thời tiết GĐ1–GĐ8 + kịch bản bão có thuyết minh (PR #6), Tour 4 cầu (D-015), Vòng quay Mặt Trời GĐ0–GĐ8 (PR #8, merge `257b905`), tối ưu độ mượt (D-018, merge `ecebdf8`), giao diện điện thoại (D-019, merge `fc53fdd`), Buy me a coffee (D-021, PR #10, merge `cbfda36`).
+- `main` đã có đủ: Hầm vượt sông Hàn (PR #1), hai bờ sông + tối ưu draw call + thuyết minh tiếng Nga (PR #2), bộ hướng dẫn AI agent + memory bank (PR #3), thời tiết GĐ1–GĐ8 + kịch bản bão có thuyết minh (PR #6), Tour 4 cầu (D-015), Vòng quay Mặt Trời GĐ0–GĐ8 (PR #8, merge `257b905`), tối ưu độ mượt (D-018, merge `ecebdf8`), giao diện điện thoại (D-019, merge `fc53fdd`), Buy me a coffee (D-021, PR #10, merge `cbfda36`), đèn đêm đa sắc trên tòa nhà + vệt phản chiếu trên sông (D-023, PR #13).
 - `prompts/` đã chuyển sang `docs/superpowers/` (spec + plan cho từng tính năng; PR #11, merge `66d7ebb`). Lịch sử từng giai đoạn (đã làm, số đo, lần chấm LỖI, hạn chế) nằm trong `docs/superpowers/plans/`; thiết kế như đã xây nằm trong `docs/superpowers/specs/`.
 - Buy me a coffee (D-021) đã triển khai; `CONFIG.ui.donate.url` đã cấu hình, trang MoMo mở được trong trình duyệt, chưa kiểm tra giao dịch trên điện thoại thật. Chi tiết: [plan](../../docs/superpowers/plans/2026-10-29-buy-me-a-coffee.md).
 - Quy tắc chế độ gọn cho agent: `.github/instructions/ui-views.instructions.md`, `tests.instructions.md`. Lệnh test đầy đủ: `copilot-instructions.md` §5. Bảng draw call chuẩn: `tests/KET-QUA.md`.
 
 ## Bước tiếp theo
+- Đèn đêm tòa nhà (D-023, đã merge PR #13): chưa đo sau khi merge, nên chạy `test:drawcalls`, `test:perf --strict` rồi đủ bộ (người dùng chọn chỉ chạy `test:citynight`); đo FPS GPU thật; 6 việc nhỏ còn lại từ review (bậc Thấp vẫn lấy mẫu vệt, LED mảnh rung khi xa, comment lệch, `STREAK_SIGN` thừa, `export` thừa trong test, vệt lem mép trên mirror). [plan](../../docs/superpowers/plans/2026-11-09-den-dem-toa-nha.md)
 0. Tự khám phá (D-020): người bản ngữ duyệt 8 bản dịch `ex*`, đo FPS trên GPU thật; chạy lại đủ bộ test nếu đổi phần ngoài `src/explore/`; va chạm chưa có. [plan](../../docs/superpowers/plans/2026-11-02-tu-kham-pha-du-luon.md)
 1. Giao diện điện thoại (D-019): còn đo trên điện thoại thật; duyệt 7 bản dịch khóa mới; chip cao 36 px (< 44 px); câu hướng dẫn xuống cabin trỏ tới nút trong sheet Góc nhìn. [plan](../../docs/superpowers/plans/2026-10-26-mobile-ui.md)
 2. Tối ưu độ mượt (D-018): chưa đo GPU / điện thoại thật; khung đầu SwiftShader 16,4 s (prewarm); đề xuất test bỏ qua lịch tự quay Cầu sông Hàn khi `?test`. [plan](../../docs/superpowers/plans/2026-10-24-toi-uu-do-muot.md)
