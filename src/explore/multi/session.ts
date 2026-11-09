@@ -47,8 +47,9 @@ export class MultiSession {
     this.onChange();
   }
 
-  sendPos(x: number, y: number, z: number, yaw: number, bank: number): void {
-    if (this.phase === 'flying') this.t?.send({ t: 'pos', x, y, z, yaw, bank });
+  // ts: giờ gửi (ms, đồng hồ của khách này) để người xem đặt mẫu theo trục giờ người gửi
+  sendPos(x: number, y: number, z: number, yaw: number, bank: number, ts: number): void {
+    if (this.phase === 'flying') this.t?.send({ t: 'pos', x, y, z, yaw, bank, ts });
   }
 
   heartbeat(): void {

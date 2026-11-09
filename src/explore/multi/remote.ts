@@ -1,6 +1,6 @@
 /* ===== Dù lượn nhiều người: dù của người bay cùng =====
    Mỗi slot một dù màu riêng (multiParams.colors[slot]), dựng lần đầu slot có người (sync) rồi tái dùng; hình học dùng chung, vật liệu riêng.
-   Vị trí nhận 5 lần/s được nội suy, lấy mẫu chậm interpSends chu kỳ để luôn có hai mẫu kẹp. Slot đổi chủ (đổi tên, hoặc từ trống sang có người)
+   Vị trí nhận 5 lần/s được nội suy theo giờ gửi của từng người (ExTrack.feed), lấy mẫu chậm interpSends chu kỳ để luôn có hai mẫu kẹp. Slot đổi chủ (đổi tên, hoặc từ trống sang có người)
    thì xóa mẫu cũ và ẩn dù tới khi có mẫu đầu, nên dù người mới không trượt từ chỗ người cũ. Không cấp phát mỗi khung (D-018). */
 import * as THREE from 'three';
 import { scene } from '../../core/renderer';
@@ -48,12 +48,12 @@ export const exRemotes = {
     }
   },
 
-  /* Gói vị trí gộp: f = [slot, x, y, z, yaw, bank]; chỉ nhận slot đã biết chủ và không phải của mình */
+  /* Gói vị trí gộp: f = [slot, x, y, z, yaw, bank, giờ gửi?]; chỉ nhận slot đã biết chủ và không phải của mình */
   onPos(f: number[][], nowMs: number): void {
     for (const e of f) {
       const i = e[0], s = slots[i];
       if (!s || i === me || s.name === null) continue;
-      s.track.push(nowMs, e[1], e[2], e[3], e[4], e[5]);
+      s.track.feed(e, nowMs, M.clockRelax, M.clockSlewMs);
     }
   },
 

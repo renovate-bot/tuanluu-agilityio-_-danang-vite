@@ -105,8 +105,8 @@ test('sendPos ngoài flying không gửi; heartbeat chỉ khi flying', async () 
   const { t, s } = await make(); lobby(t, 1);
   s.sendPos(1, 2, 3, 0, 0); s.heartbeat(); assert.equal(t.sent.length, 0);
   s.join('An'); t.onMessage({ t: 'joined', slot: 2 }); t.sent.length = 0;
-  s.sendPos(1, 2, 3, 0.5, 0.1); s.heartbeat();
-  assert.deepEqual(t.sent, [{ t: 'pos', x: 1, y: 2, z: 3, yaw: 0.5, bank: 0.1 }, { t: 'hb' }]);
+  s.sendPos(1, 2, 3, 0.5, 0.1, 1234); s.heartbeat();
+  assert.deepEqual(t.sent, [{ t: 'pos', x: 1, y: 2, z: 3, yaw: 0.5, bank: 0.1, ts: 1234 }, { t: 'hb' }]);   // ts: giờ gửi để người xem nội suy theo trục giờ người gửi
 });
 
 test('pos chuyển cho onPos; dispose đóng và bỏ qua tin sau đó', async () => {

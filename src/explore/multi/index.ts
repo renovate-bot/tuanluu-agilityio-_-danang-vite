@@ -120,7 +120,7 @@ export const exMulti = {
     if (state && session.phase === 'flying' && nowMs - sentAt >= 1000 / M.sendHz) {
       sentAt = nowMs;
       const p = state.pos, r = (v: number) => Math.round(v * 10) / 10, a = (v: number) => Math.round(v * 1000) / 1000;
-      session.sendPos(r(p.x), r(p.y), r(p.z), a(state.yaw), a(state.bank));
+      session.sendPos(r(p.x), r(p.y), r(p.z), a(state.yaw), a(state.bank), Math.round(nowMs));
     }
   },
 

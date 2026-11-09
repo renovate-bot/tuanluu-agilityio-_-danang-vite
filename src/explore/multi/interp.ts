@@ -1,5 +1,6 @@
 /* ===== Dù lượn nhiều người: nội suy vị trí dù người khác (thuần, không import) =====
-   Vòng đệm cố định 8 mẫu (t, x, y, z, yaw, bank), nội suy tuyến tính, yaw đi đường ngắn qua ±π, kẹp ở mẫu cuối. Không cấp phát khi push/sample (D-018). */
+   Vòng đệm cố định 8 mẫu (t, x, y, z, yaw, bank), nội suy tuyến tính, yaw đi đường ngắn qua ±π, kẹp ở mẫu cuối. Không cấp phát khi push/sample (D-018).
+   Mẫu đặt theo giờ của người gửi (e[6]) quy ra giờ khách, nên trễ mạng và việc máy chủ gộp gói không làm dù đứng rồi vọt. */
 const N = 8, W = 6;   // số mẫu tối đa; số trường mỗi mẫu
 export interface ExPose { x: number; y: number; z: number; yaw: number; bank: number }
 
@@ -7,6 +8,7 @@ export class ExTrack {
   private buf = new Float64Array(N * W);
   private head = 0;      // chỉ số ô sẽ ghi tiếp
   private n = 0;         // số mẫu đang có
+  private off = NaN;     // độ lệch giờ người gửi → giờ khách (ms); NaN = chưa có mẫu nào có giờ
   get count(): number { return this.n; }
 
   push(t: number, x: number, y: number, z: number, yaw: number, bank: number): void {
@@ -15,6 +17,27 @@ export class ExTrack {
     b[o] = t; b[o + 1] = x; b[o + 2] = y; b[o + 3] = z; b[o + 4] = yaw; b[o + 5] = bank;
     this.head = (this.head + 1) % N;
     if (this.n < N) this.n++;
+  }
+
+  /* Một mục của gói pos e = [slot, x, y, z, yaw, bank, giờ gửi?] nhận lúc nowMs.
+     Có giờ gửi (máy chủ mới): giờ khách = giờ gửi + độ lệch; độ lệch bám mức nhỏ nhất (gói ít trễ nhất) nhưng mỗi mẫu chỉ giảm tối đa slew ms,
+     và nới lên relax phần chênh khi mạng chậm đi: độ lệch đổi chậm nên dù không bị co giãn thời gian.
+     Không có (máy chủ cũ phát lại vị trí cũ của mọi slot mỗi gói): đóng dấu giờ nhận, bỏ mục trùng mẫu cuối để dù không đứng chờ */
+  feed(e: number[], nowMs: number, relax: number, slew: number): void {
+    const ts = e[6];
+    if (typeof ts === 'number' && Number.isFinite(ts)) {
+      const c = nowMs - ts;
+      if (this.off !== this.off) this.off = c;
+      else if (c < this.off) this.off -= Math.min(this.off - c, slew);
+      else this.off += (c - this.off) * relax;
+      this.push(ts + this.off, e[1], e[2], e[3], e[4], e[5]);
+      return;
+    }
+    if (this.n > 0) {
+      const o = ((this.head + N - 1) % N) * W, b = this.buf;
+      if (b[o + 1] === e[1] && b[o + 2] === e[2] && b[o + 3] === e[3] && b[o + 4] === e[4] && b[o + 5] === e[5]) return;
+    }
+    this.push(nowMs, e[1], e[2], e[3], e[4], e[5]);
   }
 
   /* Ghi vị trí tại thời điểm t vào out; false nếu chưa có mẫu */
@@ -41,5 +64,5 @@ export class ExTrack {
     return true;
   }
 
-  reset(): void { this.n = 0; this.head = 0; }
+  reset(): void { this.n = 0; this.head = 0; this.off = NaN; }
 }
