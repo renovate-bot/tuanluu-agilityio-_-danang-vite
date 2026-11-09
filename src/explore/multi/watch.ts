@@ -2,14 +2,13 @@
    #exMpWatch "Đang xem: tên", #exMpInvite (lời mời khi còn chỗ: ô tên nếu chưa có tên hợp lệ + nút vào bay), #exMpNotice (late / released / lost).
    Không điều khiển camera hay phiên: explore/index.ts gọi exWatchShow / exWatchRender / exWatchHide và tự xử lý chuyển pha.
    Mọi tên người khác chỉ ghi bằng textContent, bọc trong cặp cô lập hướng chữ để tên RTL không làm lệch câu. */
+import { CONFIG } from '../../config';
 import { t, onChange as onLang } from '../../i18n';
 import { exSanitizeName } from './protocol';
 import { exRemotes } from './remote';
 import { loadName, saveName } from './lobby';
 import type { MultiSession } from './session';
 
-const LATE_MS = 5000;   // ms hiện "chỗ vừa bị giành" rồi tự ẩn (ước lượng)
-const PENDING_MS = 4000;   // ms tối đa khóa nút khi chờ máy chủ trả lời (ước lượng)
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 
 let session: MultiSession | null = null;
@@ -18,10 +17,12 @@ let pending = false;       // đã bấm vào bay, chờ máy chủ trả lời:
 let pendingTimer = 0;
 let lateUntil = 0;         // mốc (ms) hết hạn hiện exMpLate
 let lateTimer = 0;
+let rejected: string | null = null;   // tên máy chủ vừa từ chối: không dùng lại, không nhớ
 let noticeKey = '';        // khóa đang hiện ở #exMpNotice ('' = ẩn)
 
-/* Tên hợp lệ đã biết: tên đã dùng trong phiên, hoặc tên nhớ ở sảnh */
-const knownName = (): string | null => (session && exSanitizeName(session.name)) || exSanitizeName(loadName());
+/* Tên hợp lệ đã biết: tên đã dùng trong phiên, hoặc tên nhớ ở sảnh; bỏ tên máy chủ đã từ chối */
+const okName = (n: string): string | null => { const v = exSanitizeName(n); return v !== null && v !== rejected ? v : null; };
+const knownName = (): string | null => (session && okName(session.name)) || okName(loadName());
 
 /* Ghi/ẩn #exMpNotice (dùng cả khi đang bay: mất kết nối) */
 export function exWatchNotice(key: string): void {
@@ -38,11 +39,10 @@ function accept(): void {
   const input = $<HTMLInputElement>('exMpInviteName');
   const name = knownName() ?? exSanitizeName(input.value);
   if (name === null) return;
-  saveName(name);
   pending = true; clearTimeout(pendingTimer);
-  pendingTimer = window.setTimeout(() => { pending = false; exWatchRender(); }, PENDING_MS);
+  pendingTimer = window.setTimeout(() => { pending = false; exWatchRender(); }, CONFIG.explore.multi.pendingMs);
+  session.join(name);   // join xóa notice cũ trước khi vẽ lại, nếu không nameBad cũ sẽ mở khóa nút ngay
   exWatchRender();
-  session.join(name);
 }
 
 export function exWatchRender(): void {
@@ -56,7 +56,12 @@ export function exWatchRender(): void {
   /* Thông báo từ phiên: nút đã có trả lời thì mở khóa */
   if (pending && (s.notice === 'late' || s.notice === 'nameBad')) {
     unlock();
-    if (s.notice === 'late') { lateUntil = performance.now() + LATE_MS; clearTimeout(lateTimer); lateTimer = window.setTimeout(exWatchRender, LATE_MS + 50); }
+    if (s.notice === 'late') { lateUntil = performance.now() + CONFIG.explore.multi.lateMs; clearTimeout(lateTimer); lateTimer = window.setTimeout(exWatchRender, CONFIG.explore.multi.lateMs + 50); }
+  }
+  if (s.notice === 'nameBad' && s.name !== rejected) {   // tên bị từ chối: quên tên đó (cả bản đã nhớ), hiện lại ô nhập để gõ tên khác
+    rejected = s.name;
+    if (exSanitizeName(loadName()) === rejected) saveName('');
+    $<HTMLInputElement>('exMpInviteName').value = '';
   }
   let key = '';
   if (s.notice === 'late') key = performance.now() < lateUntil ? 'exMpLate' : '';
@@ -73,7 +78,7 @@ export function exWatchRender(): void {
 
 /* Bắt đầu hiện giao diện xem cho phiên s */
 export function exWatchShow(s: MultiSession): void {
-  session = s; unlock(); lateUntil = 0;
+  session = s; unlock(); lateUntil = 0; rejected = null;
   if (!bound) {
     bound = true;
     $('exMpInviteFly').addEventListener('click', accept);
@@ -87,6 +92,7 @@ export function exWatchShow(s: MultiSession): void {
 
 /* Gỡ giao diện xem (vào bay, hoặc thoát) */
 export function exWatchHide(): void {
+  if (session && session.phase === 'flying') { const n = exSanitizeName(session.name); if (n !== null) saveName(n); }   // máy chủ đã nhận tên: bấy giờ mới nhớ
   session = null; unlock(); clearTimeout(lateTimer);
   $('exMpWatch').hidden = true; $('exMpInvite').hidden = true;
   exWatchNotice('');

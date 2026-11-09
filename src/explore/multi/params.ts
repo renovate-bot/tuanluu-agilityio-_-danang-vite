@@ -17,6 +17,8 @@ export const multiParams = {
   interpSends: 2.5,      // độ trễ nội suy, tính theo số chu kỳ gửi (ước lượng)
   spawnSpread: 30,       // m lệch điểm cất cánh theo slot để không chồng nhau (ước lượng)
   labelBelow: 9,         // m đặt nhãn tên bên dưới cánh dù (ước lượng)
+  lateMs: 5000,          // ms hiện "chỗ vừa bị giành" ở chế độ xem rồi tự ẩn (ước lượng)
+  pendingMs: 4000,       // ms tối đa khóa nút vào bay khi chờ máy chủ trả lời (ước lượng)
   colors: ['#2f9e6e', '#e8892b', '#a855c7', '#2a8fd6', '#e0c02e'], // màu cánh theo slot (ước lượng)
   bounds: { x0: -2600, x1: 3600, z0: -5600, z1: 2800 }, // m — khung bay, phải bằng CONFIG.explore.bounds (có test kiểm)
   floor: 7,              // m — độ cao tối thiểu, phải bằng CONFIG.explore.floor

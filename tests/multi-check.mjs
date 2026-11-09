@@ -271,12 +271,25 @@ try {
   dropBot(live[0].name);
   await F.page.waitForFunction(() => document.getElementById('exMpInvite').getClientRects().length > 0, null, { timeout: 15000 }).catch(() => {});
   await F.page.evaluate(() => { const s = window.__app.multi.session; window.__joins = 0; const j = s.join.bind(s); s.join = (n) => { window.__joins++; j(n); }; });
+  // Tên bị máy chủ từ chối: ô nhập hiện lại (trống), không gửi lại tên đó, không nhớ; tên đã nhớ mà bị từ chối cũng vậy
+  const badState = () => F.page.evaluate(() => { const i = document.getElementById('exMpInviteName'), b = document.getElementById('exMpInviteFly'); return { input: i.getClientRects().length > 0, v: i.value, off: b.disabled, joins: window.__joins, ls: localStorage.getItem('exMpName'), phase: window.__app.multi.session.phase }; });
+  const waitBad = (n) => F.page.waitForFunction((k) => window.__joins === k && window.__app.multi.session.notice === 'nameBad', n, { timeout: 15000 }).catch(() => {});
+  await F.page.fill('#exMpInviteName', 'fuck');
+  await F.page.click('#exMpInviteFly');
+  await waitBad(1); await frames(F.page, 3);
+  const nb1 = await badState();
+  check(`Tên bị từ chối: ô nhập hiện lại và trống, nút tắt, ${nb1.joins} join, chưa nhớ ("${nb1.ls}"), vẫn xem`, nb1.input && nb1.v === '' && nb1.off && nb1.joins === 1 && nb1.ls !== 'fuck' && nb1.phase === 'watching');
+  await F.page.evaluate(() => { localStorage.setItem('exMpName', 'dit'); document.getElementById('exMpInviteName').dispatchEvent(new Event('input')); });
+  await F.page.click('#exMpInviteFly');
+  await waitBad(2); await frames(F.page, 3);
+  const nb2 = await badState();
+  check(`Tên đã nhớ bị từ chối: ô nhập hiện lại, tên bị xóa khỏi bộ nhớ ("${nb2.ls}"), ${nb2.joins} join`, nb2.input && nb2.v === '' && nb2.off && nb2.joins === 2 && !nb2.ls);
   await F.page.fill('#exMpInviteName', 'Mai');
   await F.page.dblclick('#exMpInviteFly');
   await F.page.waitForFunction(() => window.__app.explore.active() && window.__app.multi.session.phase === 'flying', null, { timeout: 60000 }).catch(() => {});
   await frames(F.page, 5);
-  const fl = await F.page.evaluate(() => { const A = window.__app, g = A.explore.glider, R = A.multi.remotes; return { slot: A.multi.session.mySlot, joins: window.__joins, own: !!g && g.visible && !!g.parent && ![0, 1, 2, 3, 4].some((i) => R.group(i) === g), cls: document.body.classList.contains('ex-watching'), inv: document.getElementById('exMpInvite').getClientRects().length === 0 && document.getElementById('exMpWatch').getClientRects().length === 0, roster: document.getElementById('exMpRoster').innerText, st: !!A.explore.state }; });
-  check(`Bấm mời khi có chỗ: bay được, slot ${fl.slot}, dù riêng của mình, giao diện xem gỡ, roster có Mai, ${fl.joins} lần join dù bấm đúp`, fl.slot >= 0 && fl.own && fl.st && !fl.cls && fl.inv && fl.roster.includes('Mai') && fl.joins === 1);
+  const fl = await F.page.evaluate(() => { const A = window.__app, g = A.explore.glider, R = A.multi.remotes; return { slot: A.multi.session.mySlot, joins: window.__joins, own: !!g && g.visible && !!g.parent && ![0, 1, 2, 3, 4].some((i) => R.group(i) === g), cls: document.body.classList.contains('ex-watching'), inv: document.getElementById('exMpInvite').getClientRects().length === 0 && document.getElementById('exMpWatch').getClientRects().length === 0, roster: document.getElementById('exMpRoster').innerText, ls: localStorage.getItem('exMpName'), st: !!A.explore.state }; });
+  check(`Bấm mời khi có chỗ: bay được, slot ${fl.slot}, dù riêng của mình, giao diện xem gỡ, roster có Mai, ${fl.joins} lần join (2 bị từ chối + 1) dù bấm đúp, tên đã nhớ sau khi vào`, fl.slot >= 0 && fl.own && fl.st && !fl.cls && fl.inv && fl.roster.includes('Mai') && fl.joins === 3 && fl.ls === 'Mai');
 
   // Mô phỏng máy chủ tắt bằng cách gọi onClose của kết nối (bắt tay đóng WebSocket với wrangler dev quá chậm để chờ)
   // Máy chủ tắt khi bay: vẫn bay, người khác biến mất, có exMpLost
