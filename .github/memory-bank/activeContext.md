@@ -10,7 +10,7 @@ _Cập nhật: 2026-11-09 · Nhánh đang làm: `feature/den-dem-toa-nha` · Nh�
 - Quy tắc chế độ gọn cho agent: `.github/instructions/ui-views.instructions.md`, `tests.instructions.md`. Lệnh test đầy đủ: `copilot-instructions.md` §5. Bảng draw call chuẩn: `tests/KET-QUA.md`.
 
 ## Bước tiếp theo
-- Đèn đêm tòa nhà (D-022): trước khi merge nên chạy `test:drawcalls` và `test:perf --strict` (đợt này người dùng chọn chưa chạy đủ bộ, chỉ có `test:citynight`). [plan](../../docs/superpowers/plans/2026-11-09-den-dem-toa-nha.md)
+- Đèn đêm tòa nhà (D-023): trước khi merge nên chạy `test:drawcalls` và `test:perf --strict` (đợt này người dùng chọn chưa chạy đủ bộ, chỉ có `test:citynight`). [plan](../../docs/superpowers/plans/2026-11-09-den-dem-toa-nha.md)
 0. Tự khám phá (D-020): người bản ngữ duyệt 8 bản dịch `ex*`, đo FPS trên GPU thật; chạy lại đủ bộ test nếu đổi phần ngoài `src/explore/`; va chạm chưa có. [plan](../../docs/superpowers/plans/2026-11-02-tu-kham-pha-du-luon.md)
 1. Giao diện điện thoại (D-019): còn đo trên điện thoại thật; duyệt 7 bản dịch khóa mới; chip cao 36 px (< 44 px); câu hướng dẫn xuống cabin trỏ tới nút trong sheet Góc nhìn. [plan](../../docs/superpowers/plans/2026-10-26-mobile-ui.md)
 2. Tối ưu độ mượt (D-018): chưa đo GPU / điện thoại thật; khung đầu SwiftShader 16,4 s (prewarm); đề xuất test bỏ qua lịch tự quay Cầu sông Hàn khi `?test`. [plan](../../docs/superpowers/plans/2026-10-24-toi-uu-do-muot.md)

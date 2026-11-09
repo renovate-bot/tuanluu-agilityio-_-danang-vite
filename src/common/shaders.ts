@@ -33,7 +33,7 @@ export function patchWindows(mat: Mat, opts: { perBuilding?: boolean } = {}) {
   mat.onBeforeCompile = (sh) => {
     sh.uniforms.uNight = shared.uNight;
     sh.vertexShader = sh.vertexShader
-      .replace('#include <common>', '#include <common>\nvarying vec3 vBPos; varying vec3 vBNrm;' + (per ? ' varying vec2 vBId; varying vec3 vBSize; varying float vBBase;' : ''))
+      .replace('#include <common>', '#include <common>\nvarying vec3 vBPos; varying vec3 vBNrm;' + (per ? ' flat varying vec2 vBId; flat varying vec3 vBSize; flat varying float vBBase;' : ''))
       .replace('#include <fog_vertex>', `#include <fog_vertex>
         { vec4 bp = vec4(transformed, 1.0); vec3 bn = objectNormal;
         #ifdef USE_INSTANCING
@@ -46,7 +46,7 @@ export function patchWindows(mat: Mat, opts: { perBuilding?: boolean } = {}) {
         #endif` : ''));
     sh.fragmentShader = sh.fragmentShader
       .replace('#include <common>', `#include <common>
-        varying vec3 vBPos; varying vec3 vBNrm; uniform float uNight;${per ? ' varying vec2 vBId; varying vec3 vBSize; varying float vBBase;' : ''}
+        varying vec3 vBPos; varying vec3 vBNrm; uniform float uNight;${per ? ' flat varying vec2 vBId; flat varying vec3 vBSize; flat varying float vBBase;' : ''}
         float bHash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
         float winMask(out vec2 cell){
           float side = 1.0 - step(0.6, abs(vBNrm.y));

@@ -85,6 +85,11 @@ try {
     await setNight(0.5); const m = await sample(await shot(null), ALL); await setNight(0); const m0 = await sample(await shot(null), ALL); await setNight(1); const m1 = await sample(await shot(null), ALL);
     console.log('dusk:', m0.mean.toFixed(1), m.mean.toFixed(1), m1.mean.toFixed(1), 'sáng', m0.bright, m.bright, m1.bright);
     check(m.mean <= DUSK_REF + 5, `dusk: độ sáng lúc 0,5 = ${m.mean.toFixed(1)} (cần ≤ ${DUSK_REF + 5}, mức có sẵn do bloom bật sớm)`);
+    await setNight(0.5); const r5 = await sample(await shot(null), WATER); await setNight(0.75); const r75 = await sample(await shot(null), WATER); await setNight(1);
+    console.log('nước lúc 0,5 / 0,75:', r5.mean.toFixed(1), r75.mean.toFixed(1));
+    check(r75.mean <= r5.mean + 3, `duskWater: mặt sông lúc 0,75 = ${r75.mean.toFixed(1)}, không được sáng hơn lúc 0,5 = ${r5.mean.toFixed(1)}`);
+    const flat = await page.evaluate(() => { const { renderer } = window.__app, gl = renderer.getContext(), p = renderer.info.programs.find((x) => x.cacheKey.includes('windows-city')); return p ? gl.getShaderSource(p.fragmentShader) : ''; });
+    check(/flat\s+varying\s+vec2\s+vBId/.test(flat) && /flat\s+varying\s+vec3\s+vBSize/.test(flat), 'flatId: định danh từng tòa phải là varying flat (không nội suy)');
     await page.evaluate(() => { window.__app.reflectState.every = 0; }); await frames(page, 3);
     const nm = await sample(await shot(null), WATER);
     check(nm.std <= NOMIRROR_REF + 3, `noMirror: độ lệch chuẩn mặt nước ${nm.std.toFixed(1)} (cần ≤ ${NOMIRROR_REF + 3})`);

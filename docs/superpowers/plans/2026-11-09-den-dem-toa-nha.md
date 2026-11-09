@@ -143,10 +143,10 @@ git commit -m "feat(water): vệt đèn phản chiếu dài trên sông về đ�
 Run: `npm run build`, rồi `test:drawcalls`, `test:tour`, `test:voice`, `test:tunnel`, `test:riverfront`, `test:weather`, `test:sunwheel`, `test:mobile`, `test:explore`, `test:perf -- --strict`, `test:citynight`.
 Expected: tất cả đạt; `test:drawcalls` chênh 0 trừ `swTour`. Báo đúng kết quả thật nếu có lỗi.
 
-- [ ] **Step 3: Ghi `KET-QUA.md`, D-022 trong `decisions.md`, cập nhật `activeContext.md` và `progress.md`** (chưa đo GPU thật nếu vẫn chưa đo).
+- [ ] **Step 3: Ghi `KET-QUA.md`, D-023 trong `decisions.md`, cập nhật `activeContext.md` và `progress.md`** (chưa đo GPU thật nếu vẫn chưa đo).
 - [ ] **Step 4: Commit**
 
 ```bash
 git add tests/KET-QUA.md .github
-git commit -m "docs(city): kết quả kiểm tra và memory bank đèn đêm (D-022)"
+git commit -m "docs(city): kết quả kiểm tra và memory bank đèn đêm (D-023)"
 ```

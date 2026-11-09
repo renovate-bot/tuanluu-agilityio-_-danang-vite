@@ -42,14 +42,14 @@ function patchNightStreak(mat: THREE.ShaderMaterial) {
   const S = CONFIG.cityNight.streak;
   mat.uniforms.uNight = shared.uNight;
   mat.fragmentShader = 'uniform float uNight;\n' + mat.fragmentShader.replace(REFLECTION_LINE, `${REFLECTION_LINE}
-    if ( uNight > 0.6 ) {
+    if ( uNight > 0.85 ) {
       vec3 streak = vec3( 0.0 ); float weight = 0.0;
       for ( int i = 1; i <= ${S.taps}; i ++ ) {
         float t = float( i ) / ${S.taps.toFixed(1)}, w = 1.0 - t * 0.7;
         vec3 c = vec3( texture2D( mirrorSampler, mirrorCoord.xy / mirrorCoord.w + distortion * ( 1.0 + t ) + vec2( 0.0, STREAK_SIGN * t * ${S.reach.toFixed(4)} ) ) );
         streak += max( c - ${S.threshold.toFixed(3)}, 0.0 ) * w; weight += w;
       }
-      reflectionSample += streak / weight * ${S.gain.toFixed(3)} * smoothstep( 0.6, 1.0, uNight );
+      reflectionSample += streak / weight * ${S.gain.toFixed(3)} * smoothstep( 0.85, 1.0, uNight );
     }`).replace(/STREAK_SIGN/g, '1.0');
 }
 
