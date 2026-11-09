@@ -102,9 +102,9 @@ test('exSanitizeName', () => {
   assert.equal(exSanitizeName('Nguyễn Anh'), null);
   assert.equal(exSanitizeName('Đặng Thị A'), null);
   assert.equal(exSanitizeName('Trường'), 'Trường');
-  const fam = '👨‍👩‍👧'.repeat(9);
+  const fam = '👨\u200D👩\u200D👧'.repeat(9);
   assert.equal(exSanitizeName(fam), fam);
-  assert.equal(exSanitizeName('a‮b'), 'ab');
+  assert.equal(exSanitizeName('a\u202Eb'), 'ab');
   assert.equal(exSanitizeName('<b>x</b>'), '<b>x</b>');
 });
 
@@ -138,4 +138,76 @@ test('multiParams.bounds, floor, ceiling khớp CONFIG.explore', () => {
   assert.equal(P.floor, CONFIG.explore.floor);
   assert.equal(P.ceiling, CONFIG.explore.ceiling);
   assert.equal(CONFIG.explore.multi, P);
+});
+
+test('pos chỉ phát slot có vị trí mới; mục kèm giờ gửi (e[6])', () => {
+  const r = new SkyRoom();
+  r.connect('a', 0); r.connect('b', 0); join(r, 'a', 'A'); join(r, 'b', 'B');
+  pos(r, 'a', { x: 1 }, 1000);
+  const o = pos(r, 'b', { x: 2 }, 1100);
+  const m = o[0].msg as any;
+  assert.deepEqual(m.f.map((e: number[]) => e[0]), [1], 'slot 0 không có vị trí mới thì không phát lại');
+  assert.equal(m.f[0][6], 1100, 'khách cũ không gửi ts: giờ máy chủ nhận');
+  const o2 = pos(r, 'a', { x: 3, ts: 98765 }, 1300);
+  assert.equal((o2[0].msg as any).f[0][6], 98765, 'khách mới gửi ts: chuyển nguyên');
+});
+
+test('pos bị hãm trong cửa sổ broadcastMs vẫn được phát ở lần sau, kể cả lần sau là hb', () => {
+  const r = new SkyRoom();
+  r.connect('a', 0); r.connect('b', 0); join(r, 'a', 'A'); join(r, 'b', 'B');
+  pos(r, 'a', { x: 1 }, 1000);
+  assert.deepEqual(pos(r, 'b', { x: 2 }, 1050), []);
+  const o = r.message('a', J({ t: 'hb' }), 1200);
+  assert.equal(o.length, 1);
+  const f = (o[0].msg as any).f;
+  assert.deepEqual(f.map((e: number[]) => [e[0], e[1], e[6]]), [[1, 2, 1050]]);
+  assert.deepEqual(r.message('a', J({ t: 'hb' }), 1400), [], 'không còn gì mới: hb không phát');
+});
+
+test('pos: yaw quấn về ±π, bank kẹp theo bankMax', () => {
+  const r = new SkyRoom(); r.connect('a', 0); join(r, 'a', 'A');
+  const e = (pos(r, 'a', { x: 0, yaw: 3 * Math.PI + 0.5, bank: 9 }, 1000)[0].msg as any).f[0];
+  assert.ok(Math.abs(e[4] - (0.5 - Math.PI)) < 1e-9, 'yaw ' + e[4]);
+  assert.equal(e[5], P.bankMax);
+  const e2 = (pos(r, 'a', { x: 0, yaw: -1e6, bank: -9 }, 1200)[0].msg as any).f[0];
+  assert.ok(e2[4] >= -Math.PI && e2[4] <= Math.PI); assert.equal(e2[5], -P.bankMax);
+  assert.equal(P.bankMax, CONFIG.explore.bankMax);
+});
+
+test('restore sau hibernation: không có tin thì slot hết hạn; người còn bay gửi hb thì giữ', () => {
+  const T = P.slotTimeoutMs, H = P.heartbeatMs, t0 = 50000;
+  const r = new SkyRoom();
+  r.restore([{ id: 'dead', slot: 0, name: 'D' }, { id: 'live', slot: 1, name: 'L' }], t0);
+  r.message('live', J({ t: 'hb' }), t0 + H - 500);
+  const o = r.sweep(t0 + H + 1);
+  assert.equal(r.slotOf('dead'), -1, 'người im lặng bị thu hồi chỉ sau một chu kỳ nhịp sống');
+  assert.equal(has(o, x => x.msg.t === 'released' && x.to === 'dead').length, 1);
+  assert.equal(r.slotOf('live'), 1);
+  r.message('live', J({ t: 'hb' }), t0 + T);
+  r.sweep(t0 + T + H);
+  assert.equal(r.slotOf('live'), 1);
+  // seen đã lưu trong attachment: dùng đúng mốc đó
+  const r2 = new SkyRoom();
+  r2.restore([{ id: 'x', slot: 2, name: 'X', seen: t0 - T - 1 }], t0);
+  r2.sweep(t0); assert.equal(r2.slotOf('x'), -1);
+  assert.equal(r2.seenOf('x'), -1);
+  const r3 = new SkyRoom(); r3.connect('y', 0); join(r3, 'y', 'Y', 700);
+  assert.equal(r3.seenOf('y'), 700);
+});
+
+test('exSanitizeName: tên toàn ký tự vô hình bị từ chối; dấu chồng bị giới hạn', () => {
+  for (const bad of ['\u200D', '\u200D\u200D', '\u3164', '\u2800\u2800', '\u3164 \u2800', '\u115F\u1160', '\uFFA0', '\u00A0', '\u2003', '\u034F'])
+    assert.equal(exSanitizeName(bad), null, JSON.stringify(bad));
+  assert.equal(exSanitizeName('a' + '\u0301'.repeat(240)), null, 'một grapheme mang 240 dấu');
+  assert.equal(exSanitizeName('Nguyễn'), 'Nguyễn');
+  assert.equal(exSanitizeName('Trường'), 'Trường');
+  assert.equal(exSanitizeName('👨\u200D👩\u200D👧'), '👨\u200D👩\u200D👧');
+  assert.equal(exSanitizeName('🇻🇳'), '🇻🇳');
+  assert.equal(exSanitizeName('สมชาย'), 'สมชาย');
+  assert.equal(exSanitizeName('नमस्ते'), 'नमस्ते');
+  assert.equal(exSanitizeName('مرحبا'), 'مرحبا');
+  assert.equal(exSanitizeName('!!'), '!!');
+  assert.equal(exSanitizeName('a\u3164b'), 'a\u3164b');
+  assert.equal(exSanitizeName(('a' + '\u0301'.repeat(5)).repeat(9)), null, '9 grapheme × 6 code point = 54 > nameCpMax');
+  assert.equal(exSanitizeName('👨\u200D👩\u200D👧\u200D👦'), '👨\u200D👩\u200D👧\u200D👦');
 });

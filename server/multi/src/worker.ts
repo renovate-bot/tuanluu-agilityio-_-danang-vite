@@ -4,7 +4,7 @@ import { SkyRoom } from './room';
 import type { Out } from './room';
 
 interface Env { SKY: DurableObjectNamespace; ALLOWED_ORIGINS: string }
-interface Att { id: string; slot: number; name: string }
+interface Att { id: string; slot: number; name: string; seen?: number }   // seen: giờ có tin cuối của người giữ slot, ghi thưa (mỗi heartbeatMs) để sống sót qua hibernation
 
 // So khớp scheme + hostname, bỏ cổng
 function originKey(o: string): string | null {
@@ -26,6 +26,7 @@ export default {
 export class SkyObject implements DurableObject {
   private room = new SkyRoom();
   private names = new Map<number, string>();
+  private armed: boolean | null = null;   // đã đặt alarm chưa; null = chưa biết (vừa dựng hoặc vừa thức dậy): hỏi storage một lần
 
   constructor(private state: DurableObjectState, _env: Env) {
     // Đánh thức sau hibernation: dựng lại phòng từ attachment của từng socket
@@ -63,6 +64,7 @@ export class SkyObject implements DurableObject {
   async webSocketError(ws: WebSocket): Promise<void> { this.drop(ws); }
 
   async alarm(): Promise<void> {
+    this.armed = false;   // alarm đã chạy thì không còn alarm nào chờ
     this.dispatch(this.room.sweep(Date.now()));
     await this.armAlarm();
   }
@@ -72,7 +74,7 @@ export class SkyObject implements DurableObject {
     if (a) this.dispatch(this.room.disconnect(a.id));
   }
 
-  // Gửi tin ra socket rồi ghi lại slot/tên mới vào attachment (để sống sót qua hibernation)
+  // Gửi tin ra socket rồi ghi lại slot/tên/seen mới vào attachment (để sống sót qua hibernation); seen chỉ ghi khi cũ hơn heartbeatMs
   private dispatch(outs: Out[]): void {
     const socks = this.state.getWebSockets();
     for (const o of outs) {
@@ -89,12 +91,16 @@ export class SkyObject implements DurableObject {
       if (!a) continue;
       const slot = this.room.slotOf(a.id);
       const name = slot >= 0 ? (this.names.get(slot) ?? a.name) : '';
-      if (slot !== a.slot || name !== a.name) ws.serializeAttachment({ id: a.id, slot, name } as Att);
+      const seen = this.room.seenOf(a.id);
+      const stale = slot >= 0 && !(seen - (a.seen ?? -Infinity) < P.heartbeatMs);
+      if (slot !== a.slot || name !== a.name || stale) ws.serializeAttachment(slot >= 0 ? { id: a.id, slot, name, seen } : { id: a.id, slot, name } as Att);
     }
   }
 
   private async armAlarm(): Promise<void> {
-    if (!this.room.hasFlyers()) return;
-    if ((await this.state.storage.getAlarm()) === null) await this.state.storage.setAlarm(Date.now() + P.sweepMs);
+    if (!this.room.hasFlyers() || this.armed) return;
+    if (this.armed === null && (await this.state.storage.getAlarm()) !== null) { this.armed = true; return; }
+    this.armed = true;
+    try { await this.state.storage.setAlarm(Date.now() + P.sweepMs); } catch (e) { this.armed = false; throw e; }
   }
 }

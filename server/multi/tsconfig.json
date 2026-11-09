@@ -10,5 +10,5 @@
     "strict": false,
     "allowImportingTsExtensions": false
   },
-  "include": ["src", "../../src/explore/multi"]
+  "include": ["src", "../../src/explore/multi/protocol.ts", "../../src/explore/multi/params.ts"]
 }

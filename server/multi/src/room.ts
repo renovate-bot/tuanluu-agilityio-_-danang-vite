@@ -6,10 +6,12 @@ import { exIsBad } from './badwords';
 
 export type Out = { to: string | 'all'; msg: ServerMsg };
 
-interface Slot { id: string; name: string; seen: number; pos: number[] | null }
+// pos: [slot, x, y, z, yaw, bank, giờ gửi]; giờ gửi = ts của khách (khách mới) hoặc giờ máy chủ nhận (khách cũ); dirty: có vị trí mới chưa phát
+interface Slot { id: string; name: string; seen: number; pos: number[] | null; dirty: boolean }
 interface Conn { stamps: number[] }
 
 const clamp = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v));
+const wrapPi = (a: number) => a - Math.round(a / (2 * Math.PI)) * 2 * Math.PI;   // góc về [−π, π]
 
 export class SkyRoom {
   private conns = new Map<string, Conn>();
@@ -32,11 +34,17 @@ export class SkyRoom {
 
   hasFlyers(): boolean { return this.slots.some(s => s !== null); }
 
-  restore(list: { id: string; slot: number; name: string }[], now: number): void {
+  /* Giờ có tin cuối của người giữ slot (để lưu vào attachment); -1 nếu không giữ slot */
+  seenOf(id: string): number { const i = this.slotOf(id); return i < 0 ? -1 : this.slots[i].seen; }
+
+  /* Dựng lại sau hibernation. seen lấy từ attachment nếu có; không có (attachment cũ) thì coi như vừa im lặng gần hết hạn:
+     người còn bay có một chu kỳ nhịp sống để lên tiếng, người đã chết không được gia hạn thêm mỗi lần thức dậy */
+  restore(list: { id: string; slot: number; name: string; seen?: number }[], now: number): void {
     for (const e of list) {
       if (e.slot < 0 || e.slot >= P.slots) continue;
       if (!this.conns.has(e.id)) this.conns.set(e.id, { stamps: [] });
-      this.slots[e.slot] = { id: e.id, name: e.name, seen: now, pos: null };
+      const seen = typeof e.seen === 'number' && Number.isFinite(e.seen) ? Math.min(e.seen, now) : now - P.slotTimeoutMs + P.heartbeatMs;
+      this.slots[e.slot] = { id: e.id, name: e.name, seen, pos: null, dirty: false };
     }
   }
 
@@ -50,7 +58,7 @@ export class SkyRoom {
     switch (m.t) {
       case 'join': return this.onJoin(id, slot, m.name, now);
       case 'leave': return this.release(id) ? [this.lobby()] : [];
-      case 'hb': if (slot >= 0) this.slots[slot].seen = now; return [];
+      case 'hb': if (slot < 0) return []; this.slots[slot].seen = now; return this.flush(now);
       case 'pos': return slot >= 0 ? this.onPos(conn, slot, m, now) : [];
       default: return [];
     }
@@ -62,23 +70,31 @@ export class SkyRoom {
     if (name === null || exIsBad(name)) return [{ to: id, msg: { t: 'rejected', why: 'name' } }];
     const free = this.slots.findIndex(s => s === null);
     if (free < 0) return [{ to: id, msg: { t: 'rejected', why: 'full' } }];
-    this.slots[free] = { id, name, seen: now, pos: null };
+    this.slots[free] = { id, name, seen: now, pos: null, dirty: false };
     return [{ to: id, msg: { t: 'joined', slot: free } }, this.lobby()];
   }
 
   private onPos(conn: Conn, slot: number, m: any, now: number): Out[] {
-    const { x, y, z, yaw, bank } = m;
+    const { x, y, z, yaw, bank, ts } = m;
     for (const v of [x, y, z, yaw, bank]) if (typeof v !== 'number' || !Number.isFinite(v)) return [];
     conn.stamps = conn.stamps.filter(t => now - t < 1000);
     if (conn.stamps.length >= P.posMaxPerSec) return [];
     conn.stamps.push(now);
     const s = this.slots[slot]!;
     s.seen = now;
-    s.pos = [slot, clamp(x, P.bounds.x0, P.bounds.x1), clamp(y, P.floor, P.ceiling), clamp(z, P.bounds.z0, P.bounds.z1), yaw, bank];
+    s.pos = [slot, clamp(x, P.bounds.x0, P.bounds.x1), clamp(y, P.floor, P.ceiling), clamp(z, P.bounds.z0, P.bounds.z1), wrapPi(yaw), clamp(bank, -P.bankMax, P.bankMax), typeof ts === 'number' && Number.isFinite(ts) ? ts : now];
+    s.dirty = true;
+    return this.flush(now);
+  }
+
+  /* Phát gói gộp các slot có vị trí mới (cách lần trước >= broadcastMs). Vị trí bị hãm trong cửa sổ vẫn dirty nên đi ở lần phát sau (pos hoặc hb của bất kỳ ai).
+     Không phát lại vị trí cũ: khách cũ đóng dấu theo giờ nhận nên mẫu lặp làm dù đứng rồi vọt. Khách mới đặt mẫu theo e[6] */
+  private flush(now: number): Out[] {
     if (now - this.lastBroadcast < P.broadcastMs) return [];
-    this.lastBroadcast = now;
     const f: number[][] = [];
-    for (const t of this.slots) if (t && t.pos) f.push(t.pos);
+    for (const t of this.slots) if (t && t.dirty) { f.push(t.pos!); t.dirty = false; }
+    if (!f.length) return [];
+    this.lastBroadcast = now;
     return [{ to: 'all', msg: { t: 'pos', f } }];
   }
 
