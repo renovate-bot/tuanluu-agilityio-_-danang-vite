@@ -93,7 +93,7 @@ applyNight(0, 0);
 quality.init(() => cam.mode === 'fly');   // bậc chất lượng ban đầu (theo thiết bị / lựa chọn đã lưu); không đổi bậc giữa chuyến bay camera
 setupQualityUI();
 setupCompactUI();
-setupExplore();
+setupExplore(songHan.ctrl);
 
 /* Móc kiểm thử: chỉ bật khi URL có ?test (dùng cho tests/*.mjs đo draw call và chạy Tour) */
 /* Chỉ các lớp three mà tests/*.mjs dùng: đưa cả namespace THREE vào một object làm Rollup giữ lại mọi export của three (D-018) */

@@ -8,6 +8,8 @@ import { exCreate, exStep, exInputFromKeys, type GliderState, type GliderInput }
 import { exBuildGlider, exPlaceGlider } from './glider';
 import { exChase } from './chase';
 import { exShowChooser } from './chooser';
+import { exNight, exNightBind, exNightStep } from './nightShows';
+import type { SwingController } from '../bridges/song-han/SwingController';
 
 const _inp: GliderInput = { turn: 0, climb: 0, throttle: 0 };   // đầu vào tái dùng mỗi khung
 
@@ -31,10 +33,12 @@ function advance(dt: number, inp: GliderInput): void {
   exPlaceGlider(glider!, state!);
   exChase(camera, controls.target, state!, dt);
   exShowSpeed();
+  exNightStep(dt);
 }
 
 export const explore = {
   active,
+  nightShows: exNight,
   get state() { return state; },
   get glider() { return glider; },
   start(): void {
@@ -63,7 +67,8 @@ export const explore = {
   },
 };
 
-export function setupExplore(): void {
+export function setupExplore(ctrl: SwingController): void {
+  exNightBind(ctrl);
   window.addEventListener('keydown', (e) => {
     if (!active()) return;
     if (e.key === 'Escape') { explore.exit(); return; }   // Esc thoát kể cả khi đang focus ô chọn
@@ -82,6 +87,7 @@ export function setupExplore(): void {
     sel.addEventListener('change', () => { if (byMouse && active()) sel.blur(); byMouse = false; });
   }
   const q = new URLSearchParams(location.search);
+  exNight.enabled = !q.has('test');   // test bật tường minh qua __app.explore.nightShows
   if (q.has('test')) document.body.classList.add('ex-test');   // giữ HUD khi bay để test đo draw call
   document.getElementById('btnExExit')?.addEventListener('click', () => explore.exit());
   if (q.get('explore') === 'glider') { explore.start(); return; }

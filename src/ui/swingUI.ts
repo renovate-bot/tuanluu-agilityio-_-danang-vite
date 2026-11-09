@@ -41,7 +41,7 @@ export function setupSwingUI(songHan: SongHanBridge, toggle: Toggle) {
     stateEl.textContent = t('swingWeather'); clearTimeout(blockedT); blockedT = window.setTimeout(swingRender, 4000); });
   ctrl.addEventListener('swingStart', () => {
     audio.horn();
-    if (follow && cam.mode !== 'tour' && cam.flight.then !== 'tour') {
+    if (follow && cam.mode !== 'tour' && cam.mode !== 'glider' && cam.flight.then !== 'tour') {
       saved = { pos: camera.position.toArray(), target: controls.target.toArray() }; exitTour(); flyTo(VIEWS.shSwingCam);
     }
   });
