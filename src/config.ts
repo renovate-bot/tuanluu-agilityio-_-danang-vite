@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { multiParams } from './explore/multi/params';
 
 /* =====================================================================
    CONFIG — toàn bộ thông số (1 đơn vị = 1 mét)
@@ -624,7 +625,7 @@ export const CONFIG = {
   riverfront: riverfrontBase,
   weather: weatherBase,
   tourAll: tourAllBase,
-  explore: exploreBase
+  explore: { ...exploreBase, multi: multiParams }
 };
 export type SongHanConfig = typeof CONFIG.songHan;
 export type HanTunnelConfig = typeof CONFIG.hanTunnel;

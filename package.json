@@ -19,7 +19,8 @@
     "test:sunwheel": "node tests/sunwheel-check.mjs",
     "test:perf": "node tests/perf-check.mjs",
     "test:explore": "node tests/explore-check.mjs",
-    "test:citynight": "node tests/citynight-check.mjs"
+    "test:citynight": "node tests/citynight-check.mjs",
+    "test:multi:unit": "tsx --test tests/multi-unit/*.test.ts"
   },
   "dependencies": {
     "three": "^0.165.0"
@@ -28,6 +29,7 @@
     "@types/three": "^0.165.0",
     "msedge-tts": "^2.1.0",
     "playwright": "^1.56.1",
+    "tsx": "^4.23.15",
     "typescript": "~5.9",
     "vite": "^6.4.4"
   }
