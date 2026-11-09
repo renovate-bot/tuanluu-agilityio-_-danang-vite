@@ -114,3 +114,9 @@ test('pos chuyển cho onPos; dispose đóng và bỏ qua tin sau đó', async (
   t.onMessage({ t: 'pos', f: [[1, 0, 0, 0, 0, 0]] }); assert.deepEqual(got, [[1, 0, 0, 0, 0, 0]]);
   s.dispose(); assert.equal(t.closed, true); t.onClose(); assert.notEqual(s.notice, 'lost');
 });
+
+test('bị giành chỗ ngay ở sảnh (rejected full khi đang lobby): sang xem và báo late', async () => {
+  const { t, s } = await make(); lobby(t, 0, 1, 2, 3);
+  s.join('An'); t.onMessage({ t: 'rejected', why: 'full' });
+  assert.equal(s.phase, 'watching'); assert.equal(s.notice, 'late');
+});

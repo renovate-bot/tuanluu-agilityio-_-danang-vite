@@ -104,8 +104,8 @@ export class MultiSession {
       case 'rejected':
         if (m.why === 'name') this.notice = 'nameBad';
         else {
-          if (this.phase === 'watching') this.notice = 'late';
-          else { this.phase = 'watching'; }
+          this.notice = 'late';   // giành trước khi đang xem, hoặc ngay ở sảnh (chỗ cuối vừa có người lúc bấm): đều báo lý do
+          this.phase = 'watching';
           this.fixWatched();
         }
         break;

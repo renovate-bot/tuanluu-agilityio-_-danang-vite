@@ -44,21 +44,23 @@ export function exShowChooser(onPick: (choice: ExChoice) => void, onWatch: () =>
   const root = el();
   if (!root) return;
   lockGliderOnTouch(root);
-  /* Lần trước mất kết nối khi đang xem (explore.exit tải lại trang): đọc cờ một lần rồi xóa, hiện exMpLost */
+  /* Lần trước mất kết nối khi đang xem (explore.exit tải lại trang): đọc cờ một lần rồi xóa, hiện exMpLostChooser */
   try { if (sessionStorage.getItem('exMpNotice') === 'lost') { sessionStorage.removeItem('exMpNotice'); const n = document.getElementById('exMpLostNote'); if (n) n.hidden = false; } } catch { /* bộ nhớ bị chặn */ }
   wireLang(root);
+  /* Không dùng { once: true }: từ sảnh bấm Quay lại / Esc thì các thẻ phải chọn lại được. Hộp đã đóng (đã chọn xong) thì bỏ qua */
   root.querySelectorAll<HTMLButtonElement>('button[data-pick]').forEach((b) => {
     if (b.disabled) return;
     b.addEventListener('click', () => {
+      if (root.hidden) return;
       const choice = b.dataset.pick as ExChoice;
       /* Dù lượn có máy chủ: sang bước chọn slot + nhập tên (mở kết nối ở đây, không sớm hơn); không có máy chủ: bay một mình ngay như trước */
       if (choice === 'glider' && exMulti.begin(() => {})) {
         const solo = () => { exHideChooser(); onPick('glider'); };
-        exShowLobby(exMulti.session!, { onFly: solo, onWatch: () => { exHideChooser(); onWatch(); }, onSolo: solo });
+        exShowLobby(exMulti.session!, { onFly: solo, onWatch: () => { exHideChooser(); onWatch(); }, onSolo: solo, onBack: () => b.focus({ preventScroll: true }) });
         return;
       }
       exHideChooser(); onPick(choice);
-    }, { once: true });
+    });
   });
   const show = () => { root.hidden = false; setUnderInert(root, true); root.querySelector<HTMLButtonElement>('button[data-pick]:not(:disabled)')?.focus({ preventScroll: true }); };
   const loading = document.getElementById('loading');

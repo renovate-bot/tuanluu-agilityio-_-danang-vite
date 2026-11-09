@@ -1,5 +1,6 @@
 /* ===== Dù lượn nhiều người: giao diện chế độ xem và các thông báo =====
    #exMpWatch "Đang xem: tên", #exMpInvite (lời mời khi còn chỗ: ô tên nếu chưa có tên hợp lệ + nút vào bay), #exMpNotice (late / released / lost).
+   late tự ẩn sau lateMs, released (khi xem) và lost (khi bay) tự ẩn sau noticeMs; nameBad giữ tới khi gõ tên khác.
    Không điều khiển camera hay phiên: explore/index.ts gọi exWatchShow / exWatchRender / exWatchHide và tự xử lý chuyển pha.
    Mọi tên người khác chỉ ghi bằng textContent, bọc trong cặp cô lập hướng chữ để tên RTL không làm lệch câu. */
 import { CONFIG } from '../../config';
@@ -17,6 +18,10 @@ let pending = false;       // đã bấm vào bay, chờ máy chủ trả lời:
 let pendingTimer = 0;
 let lateUntil = 0;         // mốc (ms) hết hạn hiện exMpLate
 let lateTimer = 0;
+let relUntil = 0;          // mốc (ms) hết hạn hiện exMpReleased; 0 = chưa hiện trong lần xem này
+let relTimer = 0;
+let flyKey = '';           // thông báo khi bay đã hiện (không hiện lại sau khi tự ẩn)
+let flyTimer = 0;
 let rejected: string | null = null;   // tên máy chủ vừa từ chối: không dùng lại, không nhớ
 let noticeKey = '';        // khóa đang hiện ở #exMpNotice ('' = ẩn)
 
@@ -33,6 +38,12 @@ export function exWatchNotice(key: string): void {
 }
 
 function unlock(): void { pending = false; clearTimeout(pendingTimer); }
+
+/* Hiện exMpLate thêm lateMs từ bây giờ */
+function armLate(): void {
+  lateUntil = performance.now() + CONFIG.explore.multi.lateMs;
+  clearTimeout(lateTimer); lateTimer = window.setTimeout(exWatchRender, CONFIG.explore.multi.lateMs + 50);
+}
 
 function accept(): void {
   if (!session || session.phase !== 'watching' || pending) return;
@@ -56,7 +67,7 @@ export function exWatchRender(): void {
   /* Thông báo từ phiên: nút đã có trả lời thì mở khóa */
   if (pending && (s.notice === 'late' || s.notice === 'nameBad')) {
     unlock();
-    if (s.notice === 'late') { lateUntil = performance.now() + CONFIG.explore.multi.lateMs; clearTimeout(lateTimer); lateTimer = window.setTimeout(exWatchRender, CONFIG.explore.multi.lateMs + 50); }
+    if (s.notice === 'late') armLate();
   }
   if (s.notice === 'nameBad' && s.name !== rejected) {   // tên bị từ chối: quên tên đó (cả bản đã nhớ), hiện lại ô nhập để gõ tên khác
     rejected = s.name;
@@ -65,7 +76,11 @@ export function exWatchRender(): void {
   }
   let key = '';
   if (s.notice === 'late') key = performance.now() < lateUntil ? 'exMpLate' : '';
-  else if (s.notice === 'released') key = 'exMpReleased';
+  else if (s.notice === 'released') {
+    const now = performance.now();
+    if (!relUntil) { relUntil = now + CONFIG.explore.multi.noticeMs; clearTimeout(relTimer); relTimer = window.setTimeout(exWatchRender, CONFIG.explore.multi.noticeMs + 50); }
+    key = now < relUntil ? 'exMpReleased' : '';
+  }
   else if (s.notice === 'nameBad') key = 'exMpNameBad';
   exWatchNotice(key);
   /* Lời mời */
@@ -78,7 +93,8 @@ export function exWatchRender(): void {
 
 /* Bắt đầu hiện giao diện xem cho phiên s */
 export function exWatchShow(s: MultiSession): void {
-  session = s; unlock(); lateUntil = 0; rejected = null;
+  session = s; unlock(); lateUntil = 0; relUntil = 0; rejected = null;
+  if (s.notice === 'late') armLate();   // bị giành chỗ ngay ở sảnh: vào xem kèm lý do
   if (!bound) {
     bound = true;
     $('exMpInviteFly').addEventListener('click', accept);
@@ -93,13 +109,17 @@ export function exWatchShow(s: MultiSession): void {
 /* Gỡ giao diện xem (vào bay, hoặc thoát) */
 export function exWatchHide(): void {
   if (session && session.phase === 'flying') { const n = exSanitizeName(session.name); if (n !== null) saveName(n); }   // máy chủ đã nhận tên: bấy giờ mới nhớ
-  session = null; unlock(); clearTimeout(lateTimer);
+  session = null; unlock(); clearTimeout(lateTimer); clearTimeout(relTimer);
   $('exMpWatch').hidden = true; $('exMpInvite').hidden = true;
   exWatchNotice('');
 }
 
-/* Khi đang bay: hiện một thông báo (mất kết nối); đổi ngôn ngữ thì dịch lại */
+/* Khi đang bay: hiện một thông báo (mất kết nối) một lần, tự ẩn sau noticeMs; đổi ngôn ngữ thì dịch lại */
 export function exFlyNotice(s: MultiSession, key: string): void {
   session = s;   // để onLang dịch lại
+  if (key === flyKey) return;
+  flyKey = key;
   exWatchNotice(key);
+  clearTimeout(flyTimer);
+  if (key) flyTimer = window.setTimeout(() => { if (noticeKey === key) exWatchNotice(''); }, CONFIG.explore.multi.noticeMs);
 }

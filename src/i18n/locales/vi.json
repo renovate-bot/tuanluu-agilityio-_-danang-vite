@@ -465,5 +465,7 @@
   "exMpLate": "Chỗ vừa có người khác giành trước. Bạn tiếp tục xem.",
   "exMpLost": "Mất kết nối với bầu trời chung. Bạn chỉ còn bay một mình.",
   "exMpReleased": "Bạn đã đứng yên quá lâu nên chỗ bay được nhường lại. Bạn đang xem.",
-  "exMpIdle": "Bạn còn đó không? {s} giây"
+  "exMpIdle": "Bạn còn đó không? {s} giây",
+  "exMpBack": "Quay lại",
+  "exMpLostChooser": "Mất kết nối với bầu trời chung. Chọn Dù lượn để kết nối lại."
 }

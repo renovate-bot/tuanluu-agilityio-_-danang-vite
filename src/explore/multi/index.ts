@@ -83,12 +83,11 @@ function renderRoster(): void {
 }
 
 export const exMulti = {
-  /* Địa chỉ máy chủ: ?multi= nếu có; ?test không có multi= thì rỗng (không mở mạng); còn lại cấu hình */
+  /* Địa chỉ máy chủ: có ?test thì ?multi= nếu có, không có thì rỗng (không mở mạng); không có ?test thì luôn là địa chỉ cấu hình (người ngoài không đổi được máy chủ qua URL) */
   url(): string {
     const q = new URLSearchParams(location.search);
-    const u = q.get('multi');
-    if (u !== null) return u;
-    return q.has('test') ? '' : M.url;
+    if (!q.has('test')) return M.url;
+    return q.get('multi') ?? '';
   },
   get session(): MultiSession | null { return session; },
   onChange: (() => {}) as () => void,   // móc cho giao diện sảnh (Task 6) và test
@@ -110,6 +109,15 @@ export const exMulti = {
     };
     s.open();
     return true;
+  },
+
+  /* Đóng phiên (Quay lại / Esc ở sảnh, hoặc chọn Bay một mình khi có máy chủ): đóng WebSocket, ẩn dù người khác, nhãn, danh sách; begin() mở lại được */
+  end(): void {
+    if (!session) return;
+    session.dispose(); session = null;
+    exMulti.onChange = () => {};
+    idleStop(); exRemotes.clear(); exLabelsClear();
+    rosterKey = ''; renderRoster();
   },
 
   /* Mỗi khung khi đang bay: dù người khác, nhãn, gửi vị trí sendHz lần/s */

@@ -264,6 +264,8 @@ body.compact #swStormNote{top:calc(124px + env(safe-area-inset-top,0px));max-wid
 .ex-mp-btn:hover:not(:disabled){background:var(--gold);}
 .ex-mp-btn:disabled{opacity:.45;cursor:not-allowed;}
 .ex-mp-btn:focus-visible{outline:2px solid #fff;outline-offset:2px;}
+.ex-mp-btn.ex-mp-alt{color:var(--text);background:transparent;border-color:var(--gold);font-weight:600;}   /* nút phụ: Quay lại, Bay một mình khi có máy chủ */
+.ex-mp-btn.ex-mp-alt:hover:not(:disabled){background:rgba(255,255,255,.08);}
 /* Khi bay: chỉ còn ngôn ngữ, Ngày/Đêm, Chất lượng hình, dòng hướng dẫn và nút Thoát; mọi nút góc nhìn / cầu / Tour ẩn để không thoát chế độ bay bằng đường khác */
 #exHint,#exSpeed,#btnExExit,#exMpLabels,#exMpRoster,#exMpNotice{display:none;}
 body.explore #exSpeed{display:block;position:fixed;left:50%;transform:translateX(-50%);bottom:calc(14px + env(safe-area-inset-bottom,0px));padding:6px 14px;font-size:13px;color:var(--text);direction:ltr;font-variant-numeric:tabular-nums;white-space:nowrap;pointer-events:none;}

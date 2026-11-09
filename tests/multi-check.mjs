@@ -4,6 +4,8 @@
 //   Mục 3 (Task 6): bước chọn slot + nhập tên trong màn chọn — số chỗ trực tiếp, tên, chống chèn HTML/RTL, nhớ tên, máy chủ tắt, đổi ngôn ngữ.
 //   Mục 4 (Task 7): chế độ xem (5 bot), lời mời vào chỗ trống, giành trước, người xem rời, ô tên không lái dù, Esc, mất máy chủ khi xem và khi bay.
 //   Mục 5 (Task 8): rời máy — đếm ngược, trả slot, camera giữ nguyên, lời mời còn dùng, phím giữ slot, nhịp sống không nhân đôi, đóng trang, tab ẩn + rAF dừng.
+//   Sửa sau review cuối: bot bay thẳng thì dù nội suy đi đều (Mục 1); ?multi= bị bỏ qua khi không có ?test (Mục 2b); Quay lại / Esc ở bước sảnh,
+//   Bay một mình hiện cả khi có máy chủ (Mục 3); bị giành chỗ ngay ở sảnh có báo (Mục 4); thông báo mất kết nối / nhường chỗ tự ẩn (Mục 4, 5).
 //   Tự spawn `wrangler dev` ở cổng 8799 và luôn kill khi xong hoặc lỗi.
 //
 //   npm run build && npm run test:multi
@@ -33,6 +35,17 @@ function bot(name, ox, oz) {
   b.close = () => { clearInterval(b.timer); try { ws.close(); } catch { /* bỏ qua */ } };
   return b;
 }
+// Bot bay thẳng theo +X với vận tốc v (m/s), gửi ts = giờ của bot như khách thật
+function lineBot(name, v, oz) {
+  const ws = new WebSocket(`ws://${HOST}/sky`, { headers: { Origin: 'http://127.0.0.1' } });
+  const b = { ws, timer: null }, t0 = Date.now();
+  ws.onopen = () => ws.send(JSON.stringify({ t: 'join', name }));
+  ws.onmessage = (e) => {
+    if (JSON.parse(e.data).t === 'joined' && !b.timer) b.timer = setInterval(() => { const ts = Date.now(); ws.send(JSON.stringify({ t: 'pos', x: Math.round((BASE.x + 60 + v * (ts - t0) / 1000) * 10) / 10, y: BASE.y + 5, z: BASE.z + oz, yaw: 0, bank: 0, ts })); }, 200);
+  };
+  b.close = () => { clearInterval(b.timer); try { ws.close(); } catch { /* bỏ qua */ } };
+  return b;
+}
 
 let srv, browser, page;
 const bots = [];
@@ -52,6 +65,20 @@ try {
     await P.page.close();
   }
 
+  // Mục 2b — không có ?test thì ?multi= bị bỏ qua (dùng địa chỉ cấu hình). Mọi WebSocket bị chặn giả, không ra mạng thật
+  {
+    const Q = await browser.newPage({ viewport: { width: 480, height: 270 } });
+    await Q.route(/fonts\.(googleapis|gstatic)\.com/, (r) => r.abort());
+    const urls = [];
+    await Q.routeWebSocket(/.*/, (ws) => { urls.push(ws.url()); ws.close(); });
+    await Q.goto(srv.url + '?chooser&multi=' + encodeURIComponent(`ws://${HOST}/sky`), { waitUntil: 'load', timeout: 180000 });
+    await Q.waitForSelector('#chooser', { state: 'visible', timeout: 240000 });
+    await Q.click('#chooser [data-pick="glider"]');
+    for (let i = 0; i < 40 && !urls.length; i++) await sleep(250);
+    check(`Không có ?test: ?multi= bị bỏ qua, WebSocket mở tới địa chỉ cấu hình (${urls.join(', ')})`, urls.length >= 1 && urls.every((u) => !u.includes(HOST)));
+    await Q.close();
+  }
+
   // Mục 3 — bước chọn slot và nhập tên (bắt đầu từ phòng trống; mọi bot/trang đóng trước Mục 1)
   {
     const URL3 = srv.url + '?chooser&multi=' + encodeURIComponent(`ws://${HOST}/sky`);
@@ -69,6 +96,32 @@ try {
     check(`Bấm Dù lượn: sảnh hiện "${seats2}" (Còn 2) và 3 tên bot`, /Còn 2 trên 5/.test(seats2 || '') && (await rows()).length === 3);
     const sk = await L.page.evaluate(() => ({ lobbyVisible: !document.getElementById('exMpLobby').hidden, cardsHidden: document.querySelector('#chooser .ex-cards').hidden, heading: document.querySelector('#exMpLobby h2').innerText, filled: document.querySelectorAll('#exMpDots i.on').length, total: document.querySelectorAll('#exMpDots i').length, inert: !!document.getElementById('exLang').closest('[inert]') }));
     check(`Sảnh thay thẻ trong cùng hộp thoại: tiêu đề "${sk.heading}", ${sk.filled}/${sk.total} chấm, ô ngôn ngữ còn dùng được`, sk.lobbyVisible && sk.cardsHidden && sk.heading === 'Bầu trời Đà Nẵng' && sk.filled === 3 && sk.total === 5 && !sk.inert);
+    // Bay một mình hiện cả khi có máy chủ; Esc và nút Quay lại về các thẻ, đóng kết nối, chọn Dù lượn lại vẫn vào sảnh
+    // Đếm socket khách tự đóng (close() rồi readyState CLOSING/CLOSED); sự kiện close của Playwright chờ bắt tay đóng với wrangler dev quá lâu
+    await L.page.evaluate(() => { window.__wsClosed = 0; const c = WebSocket.prototype.close; WebSocket.prototype.close = function (...a) { c.apply(this, a); if (this.readyState >= 2) window.__wsClosed++; }; });
+    const closedNow = () => L.page.evaluate(() => window.__wsClosed);
+    const soloOnline = await L.page.evaluate(() => document.getElementById('exMpSolo').getClientRects().length > 0);
+    check('Có máy chủ: nút Bay một mình vẫn hiện ở sảnh', soloOnline);
+    const backState = () => L.page.evaluate(() => { const c = document.getElementById('chooser'); return { cards: !c.querySelector('.ex-cards').hidden, lobby: !document.getElementById('exMpLobby').hidden, title: !document.getElementById('exTitle').hidden, label: c.getAttribute('aria-labelledby'), session: window.__app.multi.session, open: !c.hidden, focus: document.activeElement && document.activeElement.dataset ? document.activeElement.dataset.pick : null }; });
+    const reenter = async (label) => {
+      await L.page.click('#chooser [data-pick="glider"]');
+      const ok = await L.page.waitForFunction(() => /Còn 2 trên 5/.test(document.getElementById('exMpSeats')?.innerText || '') && !document.getElementById('exMpLobby').hidden, null, { timeout: 30000 }).then(() => true, () => false);
+      check(`${label}: chọn Dù lượn lại vào sảnh, "Còn 2 trên 5"`, ok && (await rows()).length === 3);
+    };
+    const wsBefore = ws3, closedBefore = await closedNow();
+    await L.page.keyboard.press('Escape');
+    await L.page.waitForFunction(() => window.__app.multi.session === null, null, { timeout: 10000 }).catch(() => {});
+    await sleep(500);
+    const e1 = await backState(), c1 = await closedNow() - closedBefore;
+    check(`Esc ở sảnh: về các thẻ (tiêu đề hiện, aria-labelledby=${e1.label}, focus ${e1.focus}), hộp vẫn mở, phiên đóng, ${c1} WebSocket đóng`, e1.cards && !e1.lobby && e1.title && e1.label === 'exTitle' && e1.session === null && e1.open && e1.focus === 'glider' && c1 === 1);
+    await reenter('Sau Esc');
+    await L.page.click('#exMpBack');
+    await L.page.waitForFunction(() => window.__app.multi.session === null, null, { timeout: 10000 }).catch(() => {});
+    await sleep(500);
+    const e2 = await backState(), c2 = await closedNow() - closedBefore;
+    check(`Nút Quay lại: về các thẻ, phiên đóng, tổng ${c2} WebSocket đóng`, e2.cards && !e2.lobby && e2.title && e2.label === 'exTitle' && e2.session === null && e2.open && c2 === 2);
+    await reenter('Sau Quay lại');
+    check(`Quay lại rồi vào lại: mỗi lần vào một WebSocket (${ws3 - wsBefore} mới)`, ws3 - wsBefore === 2);
     lobbyBots.push(bot('مرحبا', 150, 0));
     await L.page.waitForFunction(() => /Còn 1 trên 5/.test(document.getElementById('exMpSeats')?.innerText || ''), null, { timeout: 30000 }).catch(() => {});
     const r4 = await rows();
@@ -181,6 +234,22 @@ try {
   }));
   check(`Bot đóng kết nối: dù biến mất (còn ${after.n}), roster còn 4 người bay (3 bot + mình), nhãn còn ${after.vis}`, after.n === 3 && /4\/5/.test(after.roster) && !after.roster.includes('Dung') && after.vis === 3);
 
+  // Bot bay thẳng 15 m/s vào chỗ trống: vị trí nội suy lấy mỗi 50 ms trên đoạn đã nhận phải tiến đều (không đứng rồi vọt)
+  bots.push(lineBot('Line', 15, 40));
+  await page.waitForFunction(() => [0, 1, 2, 3, 4].some((i) => window.__app.multi.remotes.name(i) === 'Line' && window.__app.multi.remotes.slotState(i)), null, { timeout: 30000 }).catch(() => {});
+  await page.evaluate(() => { const s = window.__app.multi.session, o = s.onPos; window.__lastPos = 0; s.onPos = (f) => { window.__lastPos = performance.now(); o(f); }; });
+  await sleep(4000);
+  const line = await page.evaluate(() => {
+    const A = window.__app, R = A.multi.remotes, i = [0, 1, 2, 3, 4].find((k) => R.name(k) === 'Line');
+    if (i === undefined) return null;
+    const la = window.__lastPos, delay = 2.5 * 1000 / 5, xs = [];
+    for (let t = la - 1300; t <= la - 700; t += 50) { R.update(t + delay); const st = R.slotState(i); xs.push(st ? st.pos.x : NaN); }
+    R.update(performance.now());
+    return xs.slice(1).map((x, k) => x - xs[k]);
+  });
+  const lineOk = line && line.length >= 10 && line.every((d) => Math.abs(d - 0.75) < 0.2);
+  check(`Bot bay thẳng 15 m/s: bước nội suy mỗi 50 ms đều quanh 0,75 m (${line ? line.map((d) => d.toFixed(2)).join(' ') : 'không thấy bot'})`, lineOk);
+
   check('console không lỗi', P.errors.length === 0);
   if (P.errors.length) console.log(P.errors.join('\n'));
 
@@ -194,8 +263,27 @@ try {
   const dropBot = (n) => { const i = live.findIndex((b) => b.name === n); if (i >= 0) live.splice(i, 1)[0].close(); };
   const watchedName = (pg) => pg.evaluate(() => { const A = window.__app, s = A.multi.session; return A.multi.remotes.name(s.watched); });
   const enterWatch = async (pg) => { await pg.waitForSelector('#chooser', { state: 'visible', timeout: 240000 }); await pg.click('#chooser [data-pick="glider"]'); await pg.waitForFunction(() => window.__app.explore.watching, null, { timeout: 30000 }).catch(() => {}); };
-  ['W1', 'W2', 'W3', 'W4', 'W5'].forEach(addBot);
+  ['W1', 'W2', 'W3', 'W4'].forEach(addBot);
   await sleep(2500);
+
+  // Bị giành chỗ ngay ở sảnh (bấm Bay ngay đúng lúc chỗ cuối có người): sang chế độ xem và báo lý do
+  {
+    const X = await openApp(browser, URLW);
+    await X.page.waitForSelector('#chooser', { state: 'visible', timeout: 240000 });
+    await X.page.click('#chooser [data-pick="glider"]');
+    await X.page.waitForFunction(() => /Còn 1 trên 5/.test(document.getElementById('exMpSeats')?.innerText || ''), null, { timeout: 30000 }).catch(() => {});
+    await X.page.evaluate(() => { const s = window.__app.multi.session; const orig = s.recv; s.recv = function (m) { if (m.t === 'lobby') return; return orig.call(this, m); }; });
+    addBot('W5');
+    await sleep(1500);
+    await X.page.fill('#exMpNameIn', 'Kha');
+    await X.page.click('#exMpFly');
+    await X.page.waitForFunction(() => window.__app.explore.watching, null, { timeout: 30000 }).catch(() => {});
+    await X.page.waitForFunction(() => { const n = document.getElementById('exMpNotice'); return n.getClientRects().length > 0 && n.innerText.trim().length > 0; }, null, { timeout: 10000 }).catch(() => {});
+    const xl = await X.page.evaluate(() => { const n = document.getElementById('exMpNotice'); return { phase: window.__app.multi.session.phase, notice: window.__app.multi.session.notice, txt: n.innerText, vis: n.getClientRects().length > 0 }; });
+    check(`Bị giành chỗ ở sảnh: sang xem và báo "${xl.txt}"`, xl.phase === 'watching' && xl.notice === 'late' && xl.vis && /giành trước/.test(xl.txt));
+    check('Lỗi console của trang bị giành chỗ ở sảnh = 0', X.errors.length === 0);
+    await X.page.close();
+  }
 
   const W = await openApp(browser, URLW);
   await enterWatch(W.page);
@@ -299,6 +387,8 @@ try {
   await frames(F.page, 5);
   const fl2 = await F.page.evaluate(() => { const A = window.__app, n = document.getElementById('exMpNotice'); return { active: A.explore.active(), others: [0, 1, 2, 3, 4].filter((i) => A.multi.remotes.slotState(i) || A.multi.remotes.group(i)).length, txt: n.innerText, shown: n.getClientRects().length > 0, roster: document.getElementById('exMpRoster').getClientRects().length > 0 }; });
   check(`Máy chủ tắt khi bay: vẫn bay, ${fl2.others} dù người khác, thông báo "${fl2.txt}"`, fl2.active && fl2.others === 0 && fl2.shown && /Mất kết nối/.test(fl2.txt) && !fl2.roster);
+  const lostGone = await F.page.waitForFunction(() => document.getElementById('exMpNotice').getClientRects().length === 0, null, { timeout: 14000 }).then(() => true, () => false);
+  check('Thông báo mất kết nối khi bay tự ẩn sau vài giây', lostGone && await F.page.evaluate(() => window.__app.explore.active()));
   check('Lỗi console của trang bay = 0', F.errors.length === 0);
   if (F.errors.length) console.log(F.errors.join('\n'));
   await F.page.close();   // đóng trang bay trước khi mở trang khác: SwiftShader dùng chung CPU
@@ -315,7 +405,7 @@ try {
   await L.page.waitForFunction(() => window.__app && document.getElementById('loading')?.classList.contains('done'), null, { timeout: 180000 });
   await L.page.waitForSelector('#chooser', { state: 'visible', timeout: 240000 });
   const lost = await L.page.evaluate(() => ({ txt: document.getElementById('exMpLostNote').innerText, shown: document.getElementById('exMpLostNote').getClientRects().length > 0, flag: sessionStorage.getItem('exMpNotice') }));
-  check(`Màn chọn hiện "${lost.txt}" một lần (cờ đã xóa: ${lost.flag})`, lost.shown && /Mất kết nối/.test(lost.txt) && lost.flag === null);
+  check(`Màn chọn hiện "${lost.txt}" một lần (cờ đã xóa: ${lost.flag}), không nói "bay một mình"`, lost.shown && /Mất kết nối/.test(lost.txt) && /Chọn Dù lượn/.test(lost.txt) && !/một mình/.test(lost.txt) && lost.flag === null);
   await L.page.close();
 
   // Mục 5 (Task 8) — rời máy. Dọn bot Mục 4 để phòng trống, một ws chỉ nghe sảnh để đếm số người bay
@@ -334,6 +424,8 @@ try {
     const A = window.__app; window.__hb = 0; window.__camLast = null; window.__idleTexts = [];
     const el = document.getElementById('exMpIdle');
     new MutationObserver(() => { if (!el.hidden && el.textContent) window.__idleTexts.push(el.textContent); }).observe(el, { childList: true, characterData: true, subtree: true, attributes: true });
+    const nt = document.getElementById('exMpNotice'); window.__noticeTexts = [];   // thông báo nay tự ẩn sau noticeMs: ghi lại lúc hiện, khung SwiftShader chậm có thể làm lần đọc sau trễ hơn
+    new MutationObserver(() => { if (!nt.hidden && nt.textContent) window.__noticeTexts.push(nt.textContent); }).observe(nt, { childList: true, characterData: true, subtree: true, attributes: true });
     const wrap = setInterval(() => { const t = A.multi.session && A.multi.session.t; if (!t) return; clearInterval(wrap); const send = t.send.bind(t); t.send = (m) => { if (m.t === 'hb') window.__hb++; send(m); }; }, 20);
     const rec = () => { const s = A.multi.session; if (s && s.phase === 'flying') window.__camLast = A.camera.position.toArray(); requestAnimationFrame(rec); }; rec();
     A.multi.fly('Idle');
@@ -345,12 +437,14 @@ try {
   const warnTxts = await I.page.evaluate(() => window.__idleTexts);
   check(`Không phím: hiện đếm ngược ("${warnTxts[0]}" ... "${warnTxts.at(-1)}", ${warnTxts.length} lần đổi chữ, có số giây giảm dần)`, warnTxts.length >= 2 && warnTxts.every((x) => /^Bạn còn đó không\? \d+ giây$/.test(x)) && Number(warnTxts[0].match(/\d+/)[0]) > Number(warnTxts.at(-1).match(/\d+/)[0]));
   await frames(I.page, 10);
-  const rel = await I.page.evaluate(() => { const A = window.__app, s = A.multi.session, c = A.camera.position.toArray(), l = window.__camLast; return { phase: s.phase, watching: A.explore.watching, st: A.explore.state, glider: A.explore.glider && A.explore.glider.visible, keys: A.keys.size, notice: document.getElementById('exMpNotice').innerText, noticeVis: document.getElementById('exMpNotice').getClientRects().length > 0, idle: document.getElementById('exMpIdle').getClientRects().length > 0, inv: document.getElementById('exMpInvite').getClientRects().length > 0, sn: s.notice, dist: l ? Math.hypot(c[0] - l[0], c[1] - l[1], c[2] - l[2]) : -1, body: document.body.classList.contains('ex-watching') }; });
+  const rel = await I.page.evaluate(() => { const A = window.__app, s = A.multi.session, c = A.camera.position.toArray(), l = window.__camLast; return { phase: s.phase, watching: A.explore.watching, st: A.explore.state, glider: A.explore.glider && A.explore.glider.visible, keys: A.keys.size, notice: window.__noticeTexts.find((x) => /đứng yên/.test(x)) || '', noticeVis: window.__noticeTexts.some((x) => /đứng yên/.test(x)), idle: document.getElementById('exMpIdle').getClientRects().length > 0, inv: document.getElementById('exMpInvite').getClientRects().length > 0, sn: s.notice, dist: l ? Math.hypot(c[0] - l[0], c[1] - l[1], c[2] - l[2]) : -1, body: document.body.classList.contains('ex-watching') }; });
   check(`Hết giờ: sang chế độ xem, thông báo "${rel.notice}", đếm ngược ẩn, camera lệch ${rel.dist.toFixed(2)} m so với lúc còn bay, không dù riêng`, rel.phase === 'watching' && rel.watching && rel.st === null && !rel.glider && rel.sn === 'released' && rel.noticeVis && /đứng yên/.test(rel.notice) && !rel.idle && rel.body && rel.dist >= 0 && rel.dist < 2);
   check('Lobby máy chủ giảm một người (1 -> 0)', await lobbyIs(0, 4000));
   check('Lời mời hiện sau khi nhường chỗ', rel.inv);
   const hbWatch = await I.page.evaluate(async () => { const a = window.__hb; await new Promise((r) => setTimeout(r, 3500)); return window.__hb - a; });
   check(`Đang xem: không còn nhịp sống (${hbWatch} hb trong 3,5 s)`, hbWatch === 0);
+  const relGone = await I.page.waitForFunction(() => document.getElementById('exMpNotice').getClientRects().length === 0, null, { timeout: 12000 }).then(() => true, () => false);
+  check('Thông báo nhường chỗ tự ẩn sau vài giây, vẫn xem, lời mời còn', relGone && await I.page.evaluate(() => window.__app.explore.watching && document.getElementById('exMpInvite').getClientRects().length > 0));
   await I.page.click('#exMpInviteFly');
   await I.page.waitForFunction(() => window.__app.explore.active() && window.__app.multi.session.phase === 'flying', null, { timeout: 30000 }).catch(() => {});
   const t0 = Date.now();
