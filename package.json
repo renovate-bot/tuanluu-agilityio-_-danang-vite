@@ -20,6 +20,7 @@
     "test:perf": "node tests/perf-check.mjs",
     "test:explore": "node tests/explore-check.mjs",
     "test:citynight": "node tests/citynight-check.mjs",
+    "test:multi": "node tests/multi-check.mjs",
     "test:multi:unit": "tsx --test tests/multi-unit/*.test.ts",
     "test:multi:worker": "node tests/multi-unit/worker.integration.mjs"
   },

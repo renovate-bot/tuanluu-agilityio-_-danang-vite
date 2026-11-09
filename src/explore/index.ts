@@ -9,6 +9,8 @@ import { exBuildGlider, exPlaceGlider } from './glider';
 import { exChase } from './chase';
 import { exShowChooser } from './chooser';
 import { exNight, exNightBind, exNightStep } from './nightShows';
+import { exMulti } from './multi';
+import { CONFIG } from '../config';
 import type { SwingController } from '../bridges/song-han/SwingController';
 
 const _inp: GliderInput = { turn: 0, climb: 0, throttle: 0 };   // đầu vào tái dùng mỗi khung
@@ -34,6 +36,7 @@ function advance(dt: number, inp: GliderInput): void {
   exChase(camera, controls.target, state!, dt);
   exShowSpeed();
   exNightStep(dt);
+  exMulti.update(dt, performance.now(), state);   // dù người khác, nhãn tên, gửi vị trí (không làm gì khi bay một mình)
 }
 
 export const explore = {
@@ -43,6 +46,8 @@ export const explore = {
   get glider() { return glider; },
   start(): void {
     state = exCreate();
+    const slot = exMulti.session ? exMulti.session.mySlot : -1;
+    if (slot >= 0) state.pos.z += CONFIG.explore.multi.spawnSpread * (slot - 2);   // mỗi slot cất cánh lệch một đoạn để không chồng nhau
     if (!glider) glider = exBuildGlider();
     if (!glider.parent) scene.add(glider);
     cam.flight.then = null; cam.mode = 'glider'; controls.enabled = false;

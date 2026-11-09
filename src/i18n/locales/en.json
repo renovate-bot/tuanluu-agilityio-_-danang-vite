@@ -449,5 +449,6 @@
   "exSoon": "Coming soon",
   "exDesktopOnly": "Desktop only",
   "exHint": "W/S or ↑/↓ to climb/descend · A/D or ←/→ to turn · Q/E to slow down/speed up · Esc to exit",
-  "exExit": "Exit"
+  "exExit": "Exit",
+  "exMpFlying": "Flying {n}/5"
 }

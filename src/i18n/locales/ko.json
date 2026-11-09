@@ -449,5 +449,6 @@
   "exSoon": "곧 제공",
   "exDesktopOnly": "데스크톱 전용",
   "exHint": "W/S 또는 ↑/↓ 상승/하강 · A/D 또는 ←/→ 회전 · Q/E 감속/가속 · Esc 종료",
-  "exExit": "나가기"
+  "exExit": "나가기",
+  "exMpFlying": "비행 중 {n}/5"
 }

@@ -43,7 +43,7 @@ export const exRemotes = {
       if (name === null) { s.name = null; hide(s); continue; }
       if (name !== s.name) {
         s.name = name; hide(s);
-        if (!s.group) { s.group = exBuildGlider(M.colors[i % M.colors.length]); s.group.visible = false; scene.add(s.group); }
+        if (!s.group) { s.group = exBuildGlider(M.colors[i % M.colors.length]); s.group.visible = false; s.group.traverse(o => o.layers.set(1)); scene.add(s.group); }   // lớp 1: không vẽ vào phản chiếu nước, giữ draw call ≈ 1 mỗi dù
       }
     }
   },
@@ -74,6 +74,10 @@ export const exRemotes = {
     const s = slots[slot];
     return s && s.live ? s.state : null;
   },
+
+  /* Dù và tên của slot (cho nhãn tên và test); null nếu slot trống */
+  group(slot: number): THREE.Group | null { const s = slots[slot]; return s && s.name !== null ? s.group : null; },
+  name(slot: number): string | null { const s = slots[slot]; return s ? s.name : null; },
 
   /* Rời phòng: ẩn hết, quên tên (dù đã dựng giữ lại để tái dùng) */
   clear(): void {

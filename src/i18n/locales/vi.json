@@ -449,5 +449,6 @@
   "exSoon": "Sắp có",
   "exDesktopOnly": "Chỉ dùng trên máy tính",
   "exHint": "W/S hoặc ↑/↓ để lên/xuống · A/D hoặc ←/→ để rẽ · Q/E để giảm/tăng tốc · Esc để thoát",
-  "exExit": "Thoát"
+  "exExit": "Thoát",
+  "exMpFlying": "Đang bay {n}/5"
 }
