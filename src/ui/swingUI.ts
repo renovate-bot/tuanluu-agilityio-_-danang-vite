@@ -50,7 +50,7 @@ export function setupSwingUI(songHan: SongHanBridge, toggle: Toggle) {
   let lastAuto = '';
   setInterval(() => {
     const A = CONFIG.songHan.autoSchedule, now = new Date(Date.now() + A.utcOffset * 3600e3), key = now.toISOString().slice(0, 10);
-    if (A.days.includes(now.getUTCDay()) && now.getUTCHours() === A.hour && now.getUTCMinutes() < 10 && lastAuto !== key && ctrl.state === 'CLOSED') {
+    if (A.days.includes(now.getUTCDay()) && now.getUTCHours() === A.hour && now.getUTCMinutes() < 10 && lastAuto !== key && ctrl.state === 'CLOSED' && cam.mode !== 'glider') {
       lastAuto = key; speedSel.value = '1'; ctrl.start(1);
     }
   }, 20000);

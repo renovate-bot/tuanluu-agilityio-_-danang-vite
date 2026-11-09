@@ -441,6 +441,16 @@ try {
     check('6e không bay dù: không tự chạy', !o.on && o.state === 'CLOSED');
     await O.page.close();
   }
+
+  // Mục 7 — lịch 23:00 không chạy khi bay dù (bộ tự chạy tắt do ?test)
+  {
+    const S = await openApp(browser, srv.url + '?explore=glider');
+    await frames(S.page, 3);
+    await S.page.evaluate(() => { const t = Date.UTC(2026, 10, 7, 16, 2, 0); Date.now = () => t; });   // 23:02 thứ Bảy giờ Việt Nam
+    await new Promise((r) => setTimeout(r, 21000));
+    check('7 lịch 23:00 không quay cầu khi bay dù', await S.page.evaluate(() => window.__app.songHan.ctrl.state === 'CLOSED'));
+    await S.page.close();
+  }
 } catch (e) {
   problems.push('ngoại lệ: ' + e); console.log(e);
 } finally {
