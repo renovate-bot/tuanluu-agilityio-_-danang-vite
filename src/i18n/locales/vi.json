@@ -437,5 +437,17 @@
   "tourExitTouch": "Chạm vào cảnh để thoát",
   "wxStormHintTouch": "Kéo màn hình để tự điều khiển camera — thời tiết vẫn chạy",
   "swRideHintTouch": "Kéo để nhìn quanh · bấm lại nút để xuống cabin",
-  "donateAria": "Mời tác giả một ly cà phê qua MoMo (mở tab mới)"
+  "donateAria": "Mời tác giả một ly cà phê qua MoMo (mở tab mới)",
+  "exTitle": "Bạn muốn khám phá Đà Nẵng thế nào?",
+  "exGlider": "Dù lượn",
+  "exGliderDesc": "Bay tự do trên sông Hàn",
+  "exCar": "Ô tô",
+  "exBike": "Xe máy",
+  "exWalk": "Đi bộ",
+  "exGuided": "Tham quan có hướng dẫn",
+  "exGuidedDesc": "Tour, góc nhìn và thuyết minh",
+  "exSoon": "Sắp có",
+  "exDesktopOnly": "Chỉ dùng trên máy tính",
+  "exHint": "W/S hoặc ↑/↓ để lên/xuống · A/D hoặc ←/→ để rẽ · Q/E để giảm/tăng tốc · Esc để thoát",
+  "exExit": "Thoát"
 }

@@ -554,6 +554,45 @@ const uiBase = {
   }
 };
 
+/* ------------------------- Tự khám phá bằng dù lượn -------------------------
+   Chế độ bay tự do (W/A/S/D), mô hình bay ở explore/flight.ts. Mọi số đều (ước lượng) */
+const exploreBase = {
+  speed: 50,           // m/s — tốc độ ngang khi cất cánh (ước lượng)
+  speedMin: 15,        // m/s — tốc độ ngang nhỏ nhất, giữ Q (ước lượng)
+  speedMax: 100,       // m/s — tốc độ ngang lớn nhất, giữ E (ước lượng)
+  speedAccel: 30,      // m/s² — mức tăng/giảm tốc khi giữ Q/E (ước lượng)
+  turnRate: 0.6,       // rad/s — tốc độ đổi hướng ở góc nghiêng tối đa (ước lượng)
+  bankMax: 0.45,       // rad — góc nghiêng tối đa (ước lượng)
+  bankRate: 2.5,       // 1/s — tốc độ tiến tới góc nghiêng đích (ước lượng)
+  climbRate: 20,      // m/s — tốc độ lên/xuống khi giữ W/S (ước lượng)
+  floor: 7,            // m — độ cao tối thiểu, y thế giới; chân người treo thấp hơn gốc ~4,4 m nên vẫn trên mặt đất (2,5 m), đủ chui gầm cầu (ước lượng)
+  ceiling: 800,        // m — độ cao tối đa, y thế giới (ước lượng)
+  takeoff: [2600, 702, -4700] as [number, number, number],   // m — điểm cất cánh [x, y, z], đỉnh Sơn Trà phía Bắc (ước lượng)
+  takeoffYaw: Math.atan2(-1800, -2600),   // rad — hướng ban đầu về phía Thuận Phước (0, −2900) (ước lượng)
+  bounds: { x0: -2600, x1: 3600, z0: -5600, z1: 2800 },   // m — khung được phép bay; ra sát mép thì bị lái vòng về, không tường cứng (ước lượng)
+  returnMargin: 400,   // m — bề rộng dải sát mép khung bắt đầu lái về trong (ước lượng)
+  returnEngage: 0.3,   // không đơn vị — trong dải sát mép, hướng bay · hướng vào dưới số này thì bỏ qua phím và lái về (ước lượng)
+  returnRelease: 0.6,  // không đơn vị — hướng bay · hướng vào đạt số này thì trả phím cho người chơi; lớn hơn returnEngage để có trễ (ước lượng)
+  returnShort: 150,    // m — gần mép hơn số này thì rẽ đường ngắn về trong, xa hơn thì giữ chiều đang rẽ của người chơi (ước lượng)
+  returnTurnSpeed: 40, // m/s — khi đang tự lái về khung mà bay nhanh hơn số này thì rẽ gắt theo tỉ lệ, giữ bán kính vòng về (ước lượng)
+  chase: { back: 18, up: 9, lookDown: 4, lag: 0.25, lagSpeed: 25, look: 30 },   // m phía sau, m phía trên, m điểm nhìn thấp hơn dù (giữ người treo trong khung), s trễ của camera bám đuôi, m/s bay nhanh hơn số này thì giảm trễ để dù không tụt xa, m nhìn trước (ước lượng)
+  glider: {
+    span: 11,         // m sải cánh (ước lượng)
+    lines: 7,         // m khoảng treo: người treo cách cánh xuống dưới bao nhiêu mét (ước lượng)
+    originAt: 0.55,   // tỉ lệ khoảng treo tính từ cánh xuống tới gốc group, không đơn vị (ước lượng)
+    lineCount: 7,     // số dây treo mỗi bên, từ cánh xuống vai (ước lượng)
+    chord: 2.6,       // m dây cung cánh (ước lượng)
+    arch: 0.28,       // độ võng hai đầu cánh, tỉ lệ theo nửa sải (không đơn vị, ước lượng)
+    segs: 16,         // số đoạn cánh theo sải (ước lượng)
+    flagRed: '#da251d',    // màu nền cánh: đỏ cờ Việt Nam (ước lượng theo màu cờ thường dùng)
+    flagStar: '#ffcd00',   // màu sao vàng (ước lượng theo màu cờ thường dùng)
+    starRadius: 1.05,      // m bán kính ngoài ngôi sao, ~2/5 dây cung như tỉ lệ sao trên cờ (ước lượng)
+    cells: 36,             // số ô khí vẽ trên cánh theo sải (ước lượng)
+    tilt: 0.35,            // rad nghiêng cánh cho mép sau hạ xuống, để camera bám đuôi thấy được hình in (ước lượng)
+    roughness: 0.6         // độ nhám vải dù, thấp hơn để có ánh bóng (ước lượng)
+  }
+};
+
 export const CONFIG = {
   ...base,
   perf: perfBase,
@@ -566,7 +605,8 @@ export const CONFIG = {
   sunWheel: deriveSunWheel(sunWheelBase),
   riverfront: riverfrontBase,
   weather: weatherBase,
-  tourAll: tourAllBase
+  tourAll: tourAllBase,
+  explore: exploreBase
 };
 export type SongHanConfig = typeof CONFIG.songHan;
 export type HanTunnelConfig = typeof CONFIG.hanTunnel;

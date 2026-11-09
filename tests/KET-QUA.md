@@ -1,8 +1,27 @@
-# Kết quả kiểm tra (cập nhật 2026-10-24, nhánh `feature/sun-wheel` GĐ8; bảng `now` bên dưới là của lần chạy GĐ8 Vòng quay)
+| exHigh | 259 | 1710,8 | 287 | 561,4 | 2/2 || exTp | 137 | 567,2 | 159 | 285,1 | 2/2 || exDragon | 292 | 1452,4 | 314 | 559,4 | 2/2 || exTakeoff | 247 | 1245,0 | 266 | 631,8 | 2/2 |# Kết quả kiểm tra (cập nhật 2026-10-24, nhánh `feature/sun-wheel` GĐ8; bảng `now` bên dưới là của lần chạy GĐ8 Vòng quay)
 
 Chromium + SwiftShader, khung 480×270. Draw call = renderer.info.render.calls (gồm bóng đổ, phản chiếu nước, bloom), trung vị 5 khung hình.
 
 Khung test mặc định 480×270 khớp `(max-height: 500px)` nên cả bộ test chạy ở chế độ gọn (không blur): draw call không đổi; số hitch của `test:perf` không so sát được với mốc D-018 (đo khi còn blur).
+
+## Tự khám phá bằng dù lượn (2026-11-09, nhánh `feature/explore-du-luon`, D-020)
+
+Bảng số đo là lần cuối (có cánh cờ, người treo, camera cao 9 m); bảng kết quả lệnh dưới đó đo tại `3985ce2`, sau đó chỉ chạy lại `test:explore` và `test:mobile` (đều đạt). Chromium + SwiftShader. Draw call là trung vị 5 khung thật của app (gồm bloom khi đêm). Phần dù = chênh khi bật/tắt `ex-glider`.
+
+| Tư thế | Draw call ngày | ms ngày | Draw call đêm | ms đêm | Phần dù (ngày/đêm) |
+|---|---|---|---|---|---|
+| exTakeoff | 247 | 1808,7 | 266 | 924,2 | 2/2 |
+| exDragon | 290 | 1572,3 | 312 | 1363,0 | 2/2 |
+| exTp | 135 | 570,9 | 157 | 621,4 | 2/2 |
+| exHigh | 256 | 1414,1 | 284 | 856,9 | 2/2 |
+
+| Lệnh | Kết quả |
+|---|---|
+| `npm run build` | đạt |
+| `npm run test:explore` | đạt |
+| `npm run test:drawcalls` | 72/74 khớp bảng `now`, chênh 0; `swTour` ngày 187 vs 188, đêm 209 vs 207 = dao động đã biết (D-018) |
+| `test:tour`, `test:tunnel`, `test:riverfront`, `test:voice`, `test:weather`, `test:sunwheel`, `test:mobile` | đạt (chạy hai lần trên cùng commit, cả hai đạt) |
+| `npm run test:perf -- --strict` | exit 0 lúc 04:02; log của lần đó đã bị ghi đè nên không có số ms ở đây |
 
 ## Giao diện điện thoại (2026-10-27, nhánh `feature/mobile-ui`, D-019)
 

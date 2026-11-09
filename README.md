@@ -28,6 +28,7 @@ npm run test:voice                            # thuyết minh: đủ clip, thờ
 npm run test:weather                          # thời tiết: preset, mưa/gió/bão, đóng cầu, kịch bản 120 s, không rò rỉ bộ nhớ
 npm run test:sunwheel                         # Vòng quay Mặt Trời: kích thước, quay, cabin, LED, ngồi cabin, thời tiết, Tour
 npm run test:perf     -- [--strict]           # độ mượt: khung dài nhất và số shader biên dịch thêm khi đổi đêm/mặt cắt/bóng/mưa
+npm run test:explore                          # tự khám phá (dù lượn): mô hình bay, camera, màn chọn, giao diện khi bay, i18n, đo draw call các tư thế
 npm run test:mobile                           # điện thoại: bố cục gọn dọc/ngang, sheet, tràn chữ 9 ngôn ngữ, RTL
 ```
 
@@ -51,6 +52,7 @@ src/
   environment/       sông Hàn, núi, đường phố, thành phố, cây, giao thông
     riverfront/      hai bờ sông: địa danh thật, mặt dựng LED trái tim + "DN", bảng quảng cáo, chi tiết dải đi bộ
     weather/         thời tiết: khí quyển 4 preset, mưa + mặt ướt, gió (cây, dây, thuyền), bão (chớp, đóng cầu, kịch bản 120 s), nắng hè, cây đổ, âm thanh
+  explore/           tự khám phá bằng dù lượn: mô hình bay thuần, dù, camera bám, màn chọn phương tiện, điều phối
   views/             góc nhìn có sẵn, flyTo, Tour (đường cong + điểm dừng)
   audio/             nhạc, còi, tiếng xe; narration.ts phát giọng thuyết trình của Tour
   ui/                bảng điều khiển, nút quay cầu, âm thanh, chất lượng hình, chế độ gọn cho điện thoại (compactUI.ts)

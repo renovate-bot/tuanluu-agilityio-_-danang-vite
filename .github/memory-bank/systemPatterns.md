@@ -64,6 +64,14 @@ Không kế thừa `BridgeBase`: module `index.ts` giữ một đối tượng `
 - Phần tử nằm trong panel có thể đang bị tờ đóng che → test dùng `tap`/`pick` (`tests/lib.mjs`, gọi `__app.ui.reveal`), KHÔNG gọi `page.click` trực tiếp. Kiểm "đang hiện" bằng `checkVisibility()`, vì `offsetParent` luôn null với phần tử `position: fixed`.
 - Chữ hướng dẫn khác nhau chuột/cảm ứng: hai `<span>` ẩn/hiện bằng `(hover:none)`, không dò `navigator`. Khóa i18n mới thêm bằng script `scripts/add-*-locales.mjs`; `apply()` có chốt bỏ qua khóa thiếu thay vì hiện nguyên khóa.
 
+## Mẫu chế độ điều khiển tự do (`src/explore/`, D-020)
+- Mô hình thuần (`flight.ts`: tư thế + bước + phím → đầu vào, không đụng three scene) tách khỏi hiển thị (`glider.ts`, `chase.ts`) để test được bằng `__app.exFlight`; điều phối ở `index.ts` (`explore.update(dt)` gọi sau `updateCamera`, camera do explore đặt).
+- Mép khung bay và camera bám phụ thuộc tốc độ: đổi `speedMax` thì phải chạy lại mục 1e/1f của `test:explore` (kiểm ở cả tốc độ thấp nhất và cao nhất). Đổi `chase` thì sửa số ghi cứng trong mục 2e/2f/3e của test.
+- Camera là `CameraMode` riêng (`'glider'`) và tắt `controls` như `walk`; giao diện đổi bằng class `body.explore` (giữ lại một danh sách phần tử, ẩn phần còn lại), không dựng lại DOM.
+- Đối tượng chỉ có khi chế độ bật (dù) thì thêm vào scene lúc vào chế độ, không thêm lúc dựng cảnh: các góc nhìn cũ không đổi draw call.
+- Thoát chế độ bằng tải lại trang bỏ tham số URL, để không phải viết code khôi phục trạng thái dùng chung.
+- Gốc nhóm mô hình đặt ở tâm hình học cần bám (giữa cánh và người), không phải mép.
+
 ## Mẫu ngày/đêm và hiệu ứng
 - Đọc `shared.uNight` (0 → 1) trong shader hoặc `update()`; không tự giữ trạng thái ngày/đêm riêng.
 - Đèn: emissive + bloom (`core/postprocessing.ts`). Không thêm đèn động mới.

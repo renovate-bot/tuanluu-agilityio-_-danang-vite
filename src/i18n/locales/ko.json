@@ -437,5 +437,17 @@
   "tourExitTouch": "장면을 터치하면 종료됩니다",
   "wxStormHintTouch": "화면을 드래그하면 카메라를 직접 조작합니다 — 날씨는 계속 진행됩니다",
   "swRideHintTouch": "드래그하여 둘러보기 · 버튼을 다시 누르면 캐빈에서 내립니다",
-  "donateAria": "MoMo로 제작자에게 커피 한 잔 사주기 (새 탭에서 열림)"
+  "donateAria": "MoMo로 제작자에게 커피 한 잔 사주기 (새 탭에서 열림)",
+  "exTitle": "다낭을 어떻게 둘러보시겠어요?",
+  "exGlider": "패러글라이더",
+  "exGliderDesc": "한강 위를 자유롭게 비행",
+  "exCar": "자동차",
+  "exBike": "오토바이",
+  "exWalk": "도보",
+  "exGuided": "가이드 투어",
+  "exGuidedDesc": "투어, 시점, 해설",
+  "exSoon": "곧 제공",
+  "exDesktopOnly": "데스크톱 전용",
+  "exHint": "W/S 또는 ↑/↓ 상승/하강 · A/D 또는 ←/→ 회전 · Q/E 감속/가속 · Esc 종료",
+  "exExit": "나가기"
 }
