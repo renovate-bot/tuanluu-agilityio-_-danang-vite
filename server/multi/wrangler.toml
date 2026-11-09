@@ -1,0 +1,15 @@
+name = "danang-sky"
+main = "src/worker.ts"
+compatibility_date = "2025-01-01"
+
+[[durable_objects.bindings]]
+name = "SKY"
+class_name = "SkyObject"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["SkyObject"]
+
+[vars]
+# So khớp scheme + hostname, bỏ cổng
+ALLOWED_ORIGINS = "https://danangbridges.netlify.app,http://localhost,http://127.0.0.1"
