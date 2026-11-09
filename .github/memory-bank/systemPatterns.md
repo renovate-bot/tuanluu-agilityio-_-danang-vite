@@ -66,6 +66,7 @@ Không kế thừa `BridgeBase`: module `index.ts` giữ một đối tượng `
 
 ## Mẫu chế độ điều khiển tự do (`src/explore/`, D-020)
 - Mô hình thuần (`flight.ts`: tư thế + bước + phím → đầu vào, không đụng three scene) tách khỏi hiển thị (`glider.ts`, `chase.ts`) để test được bằng `__app.exFlight`; điều phối ở `index.ts` (`explore.update(dt)` gọi sau `updateCamera`, camera do explore đặt).
+- Mép khung bay và camera bám phụ thuộc tốc độ: đổi `speedMax` thì phải chạy lại mục 1e/1f của `test:explore` (kiểm ở cả tốc độ thấp nhất và cao nhất). Đổi `chase` thì sửa số ghi cứng trong mục 2e/2f/3e của test.
 - Camera là `CameraMode` riêng (`'glider'`) và tắt `controls` như `walk`; giao diện đổi bằng class `body.explore` (giữ lại một danh sách phần tử, ẩn phần còn lại), không dựng lại DOM.
 - Đối tượng chỉ có khi chế độ bật (dù) thì thêm vào scene lúc vào chế độ, không thêm lúc dựng cảnh: các góc nhìn cũ không đổi draw call.
 - Thoát chế độ bằng tải lại trang bỏ tham số URL, để không phải viết code khôi phục trạng thái dùng chung.

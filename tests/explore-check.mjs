@@ -81,7 +81,7 @@ try {
     check('1a không Q/E: tốc độ ngang giữ đúng C.speed', r.a);
     check(`1i E lên tới ${r.iMax}, Q xuống tới ${r.iMin}, phím ${r.iKeys}`, r.iMax === 100 && r.iMin === 15 && r.iHold && r.iKeys === true);
     check(`1b A rẽ trái (+${r.bL.toFixed(2)}), D rẽ phải (${r.bR.toFixed(2)})`, r.bL > 0.5 && r.bR < -0.5);
-    check(`1c W lên tới 800, S xuống tới 6 (${r.cUp}, ${r.cDown})`, r.cUp === 800 && r.cDown === 6);
+    check(`1c W lên tới 800, S xuống tới 7 (${r.cUp}, ${r.cDown})`, r.cUp === 800 && r.cDown === 7);
     check(`1d thả phím tự cân bằng (bank ${r.dBank.toExponential(1)}, Δyaw ${r.dYaw.toExponential(1)})`, Math.abs(r.dBank) < 0.01 && Math.abs(r.dYaw) < 0.005);
     check(`1e bay thẳng / giữ A / giữ D 600 s: ${r.e} bước bị kẹp cứng (= 0)`, r.e === 0);
     check(`1f ${r.fCases} ca xuất phát trong dải sát mép (150/300 m, ra ngoài): ${r.f} bước bị kẹp (= 0), bank đổi dấu tối đa ${r.fFlips} lần trong 60 s cuối (≤ 2)`, r.f === 0 && r.fFlips <= 2);
@@ -104,8 +104,14 @@ try {
         const out = {};
         const g = exBuildGlider();
         let meshes = 0; g.traverse((o) => { if (o.isMesh) { meshes++; out.cast = o.castShadow; } });
-        const bb = new THREE.Box3().setFromObject(g); out.meshes = meshes; out.width = bb.max.x - bb.min.x; out.wz = bb.max.z - bb.min.z; out.wy = bb.max.y - bb.min.y;
-        out.notInScene = !scene.getObjectByName('ex-glider');
+        const bb = new THREE.Box3().setFromObject(g); out.meshes = meshes; out.width = bb.max.x - bb.min.x; out.wz = bb.max.z - bb.min.z; out.wy = bb.max.y - bb.min.y;        out.notInScene = !scene.getObjectByName('ex-glider');
+        // 2j người treo: thấp nhất vẫn trên mặt đất khi ở sàn, số đỉnh có giới hạn
+        out.vHuman = g.children[0].geometry.attributes.position.count; out.lowHuman = new THREE.Box3().setFromObject(g).min.y;
+        // 2i cờ: sao vàng giữa cánh, nền đỏ; uv mặt cánh trải đủ 0..1 theo sải
+        const fm = g.children[0].material, fim = fm.map.image, fctx = fim.getContext('2d'), px = (x, y) => [...fctx.getImageData(x, y, 1, 1).data];
+        out.flagStar = px(526, 108); out.flagRed = px(40, 30);
+        const uvs = g.children[0].geometry.attributes.uv; let uMin = 1, uMax = 0; for (let i = 0; i < uvs.count; i++) { uMin = Math.min(uMin, uvs.getX(i)); uMax = Math.max(uMax, uvs.getX(i)); }
+        out.uMin = uMin; out.uMax = uMax;
         // 2c draw call
         const s = exCreate(), tgt = new THREE.Vector3();
         exChase(camera, tgt, s, 1 / 60, true); exPlaceGlider(g, s);
@@ -123,7 +129,7 @@ try {
         out.tgt = Math.hypot(tgt.x - (s2.pos.x + fx * 30), tgt.z - (s2.pos.z + fz * 30));
         // 2f trễ
         s2.pos.x += fx * 20; s2.pos.z += fz * 20;
-        const wantNew = new THREE.Vector3(s2.pos.x - fx * 18, s2.pos.y + 6, s2.pos.z - fz * 18);
+        const wantNew = new THREE.Vector3(s2.pos.x - fx * 18, s2.pos.y + 9, s2.pos.z - fz * 18);
         exChase(camera, tgt, s2, 1 / 60); out.lag1 = camera.position.distanceTo(wantNew);
         for (let i = 1; i < 180; i++) exChase(camera, tgt, s2, 1 / 60);
         out.lag3 = camera.position.distanceTo(wantNew);
@@ -133,7 +139,8 @@ try {
       check('2b chưa bay: scene không có ex-glider', r2.notInScene);
       check(`2c ngày: thêm dù +${r2.dCalls} draw call`, r2.dCalls >= 1 && r2.dCalls <= 2);
       check(`2d bank 0.45 → góc cuộn ${r2.roll.toFixed(4)}, yaw giữ ${r2.gyaw === r2.syaw}`, Math.abs(r2.roll - 0.45) < 1e-3 && Math.abs(r2.gyaw - r2.syaw) < 1e-6);
-      check(`2e snap: cách ${r2.dist.toFixed(3)}, cao ${r2.dh.toFixed(3)}, sau ${r2.behind.toFixed(1)}, target lệch ${r2.tgt.toExponential(1)}`, Math.abs(r2.dist - Math.hypot(18, 6)) < 0.01 && Math.abs(r2.dh - 6) < 0.01 && r2.behind > 0 && r2.tgt < 1e-6);
+      check(`2e snap: cách ${r2.dist.toFixed(3)}, cao ${r2.dh.toFixed(3)}, sau ${r2.behind.toFixed(1)}, target lệch ${r2.tgt.toExponential(1)}`, Math.abs(r2.dist - Math.hypot(18, 9)) < 0.01 && Math.abs(r2.dh - 9) < 0.01 && r2.behind > 0 && r2.tgt < 1e-6);      check(`2j người ${r2.vHuman} đỉnh, thấp nhất ${r2.lowHuman.toFixed(2)} m`, r2.vHuman < 30000 && 7 + r2.lowHuman > 2.5);
+      check(`2i cờ: sao ${r2.flagStar}, nền ${r2.flagRed}, u ${r2.uMin.toFixed(2)}..${r2.uMax.toFixed(2)}`, r2.flagStar[0] > 200 && r2.flagStar[1] > 150 && r2.flagStar[2] < 90 && r2.flagRed[0] > 150 && r2.flagRed[1] < 70 && r2.uMin < 0.01 && r2.uMax > 0.99);
       check(`2f trễ: sau 1 bước còn ${r2.lag1.toFixed(2)} m, sau 3 s còn ${r2.lag3.toFixed(4)} m`, r2.lag1 > 0 && r2.lag3 < 0.05);
       await setNight(1);
       const r2n = await P.page.evaluate(() => {
@@ -195,7 +202,7 @@ try {
     // 3e controls.target bám điểm nhìn
     await G.page.evaluate(() => window.__app.explore.step(1 / 60, { turn: 1, climb: 0 }));
     await frames(G.page, 2);
-    const e3 = await G.page.evaluate(() => { const a = window.__app, s = a.explore.state, t = a.controls.target; const fx = Math.cos(s.yaw), fz = -Math.sin(s.yaw); return Math.hypot(t.x - (s.pos.x + fx * 30), t.y - s.pos.y, t.z - (s.pos.z + fz * 30)); });
+    const e3 = await G.page.evaluate(() => { const a = window.__app, s = a.explore.state, t = a.controls.target; const fx = Math.cos(s.yaw), fz = -Math.sin(s.yaw); return Math.hypot(t.x - (s.pos.x + fx * 30), t.y - (s.pos.y - 4), t.z - (s.pos.z + fz * 30)); });
     check(`3e controls.target bám pos + forward·30 (lệch ${e3.toFixed(3)} m)`, e3 < 1);
     // 3f Esc → tải lại, bỏ tham số explore
     await G.page.evaluate(() => { window.__reloadMark = 1; });

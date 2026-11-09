@@ -127,3 +127,11 @@ Về lâu dài có bốn phương tiện: dù lượn, ô tô, xe máy, đi bộ
 - Cách gom các phần tử cần ẩn (class `body.explore` là gợi ý).
 - Tên khóa i18n.
 - Ghi D-020 vào `decisions.md` và cập nhật memory bank khi xong.
+
+## Cập nhật sau khi người dùng dùng thử (2026-11-09)
+
+Các điểm sau thay cho quyết định #11, #17 và mục hoãn "tăng/giảm tốc" ở trên, theo yêu cầu của người dùng:
+
+- Tốc độ 15–100 m/s, khởi đầu 50, giữ E/Q để đổi; lên/xuống 20 m/s; sàn 7 m để chui được gầm cầu; có đồng hồ `#exSpeed`.
+- Cánh in cờ đỏ sao vàng (atlas canvas), người treo dựng bằng code; camera cao 9 m, nhìn thấp hơn dù 4 m, cánh nghiêng 0,35 rad để thấy hình in.
+- Vẫn không va chạm; bay sát có thể xuyên qua công trình.

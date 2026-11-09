@@ -565,7 +565,7 @@ const exploreBase = {
   bankMax: 0.45,       // rad — góc nghiêng tối đa (ước lượng)
   bankRate: 2.5,       // 1/s — tốc độ tiến tới góc nghiêng đích (ước lượng)
   climbRate: 20,      // m/s — tốc độ lên/xuống khi giữ W/S (ước lượng)
-  floor: 6,            // m — độ cao tối thiểu, y thế giới; người treo thấp hơn gốc ~4 m nên vẫn trên mặt đất, đủ chui gầm cầu (ước lượng)
+  floor: 7,            // m — độ cao tối thiểu, y thế giới; chân người treo thấp hơn gốc ~4,4 m nên vẫn trên mặt đất (2,5 m), đủ chui gầm cầu (ước lượng)
   ceiling: 800,        // m — độ cao tối đa, y thế giới (ước lượng)
   takeoff: [2600, 702, -4700] as [number, number, number],   // m — điểm cất cánh [x, y, z], đỉnh Sơn Trà phía Bắc (ước lượng)
   takeoffYaw: Math.atan2(-1800, -2600),   // rad — hướng ban đầu về phía Thuận Phước (0, −2900) (ước lượng)
@@ -575,7 +575,7 @@ const exploreBase = {
   returnRelease: 0.6,  // không đơn vị — hướng bay · hướng vào đạt số này thì trả phím cho người chơi; lớn hơn returnEngage để có trễ (ước lượng)
   returnShort: 150,    // m — gần mép hơn số này thì rẽ đường ngắn về trong, xa hơn thì giữ chiều đang rẽ của người chơi (ước lượng)
   returnTurnSpeed: 40, // m/s — khi đang tự lái về khung mà bay nhanh hơn số này thì rẽ gắt theo tỉ lệ, giữ bán kính vòng về (ước lượng)
-  chase: { back: 18, up: 6, lag: 0.25, lagSpeed: 25, look: 30 },   // m phía sau, m phía trên, s trễ của camera bám đuôi, m/s bay nhanh hơn số này thì giảm trễ để dù không tụt xa, m nhìn trước (ước lượng)
+  chase: { back: 18, up: 9, lookDown: 4, lag: 0.25, lagSpeed: 25, look: 30 },   // m phía sau, m phía trên, m điểm nhìn thấp hơn dù (giữ người treo trong khung), s trễ của camera bám đuôi, m/s bay nhanh hơn số này thì giảm trễ để dù không tụt xa, m nhìn trước (ước lượng)
   glider: {
     span: 11,         // m sải cánh (ước lượng)
     lines: 7,         // m khoảng treo: người treo cách cánh xuống dưới bao nhiêu mét (ước lượng)
@@ -583,7 +583,13 @@ const exploreBase = {
     lineCount: 7,     // số dây treo mỗi bên, từ cánh xuống vai (ước lượng)
     chord: 2.6,       // m dây cung cánh (ước lượng)
     arch: 0.28,       // độ võng hai đầu cánh, tỉ lệ theo nửa sải (không đơn vị, ước lượng)
-    segs: 16          // số đoạn cánh theo sải (ước lượng)
+    segs: 16,         // số đoạn cánh theo sải (ước lượng)
+    flagRed: '#da251d',    // màu nền cánh: đỏ cờ Việt Nam (ước lượng theo màu cờ thường dùng)
+    flagStar: '#ffcd00',   // màu sao vàng (ước lượng theo màu cờ thường dùng)
+    starRadius: 1.05,      // m bán kính ngoài ngôi sao, ~2/5 dây cung như tỉ lệ sao trên cờ (ước lượng)
+    cells: 36,             // số ô khí vẽ trên cánh theo sải (ước lượng)
+    tilt: 0.35,            // rad nghiêng cánh cho mép sau hạ xuống, để camera bám đuôi thấy được hình in (ước lượng)
+    roughness: 0.6         // độ nhám vải dù, thấp hơn để có ánh bóng (ước lượng)
   }
 };
 

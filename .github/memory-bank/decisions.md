@@ -85,8 +85,9 @@ Bối cảnh: ngoài góc nhìn đặt sẵn và Tour, người dùng muốn t�
 Quyết định:
 - Cùng một trang và một cảnh; màn chọn phương tiện (`#chooser`) hiện mỗi lần vào trang, trừ khi có `?test` (bỏ qua màn chọn, mọi `test:*` chạy y như cũ — theo thiết kế, chưa đo). `?explore=glider` bay thẳng, `?chooser` (kèm `?test`) hiện màn chọn.
 - Mã mới nằm trong `src/explore/`: `flight.ts` (mô hình thuần, không đụng cảnh), `glider.ts` (1 Mesh, thêm vào scene khi bay), `chase.ts` (camera góc nhìn thứ ba, trễ mượt), `chooser.ts`, `index.ts` (điều phối); thêm `CameraMode` `'glider'`. Thông số ở `CONFIG.explore`.
-- Tốc độ ngang cố định 25 m/s; A/D rẽ (dù nghiêng), W/S lên/xuống trong sàn 30 m, trần 800 m; thả phím tự cân bằng. Không va chạm; tới mép khung bay thì dù tự vòng về, không có tường vô hình.
-- Không chữ, nhãn, thuyết minh, thời tiết khi bay. Giao diện khi bay do `body.explore` ẩn hết, chỉ giữ sáng/tối, ngôn ngữ, chất lượng, dòng hướng dẫn phím, nút Thoát.
+- Tốc độ ngang 15–100 m/s, khởi đầu 50, giữ E tăng / Q giảm (bản đầu cố định 25 m/s, người dùng thấy quá chậm); A/D rẽ (dù nghiêng), W/S lên/xuống 20 m/s trong sàn 7 m, trần 800 m (sàn 30 m cũ nằm trên gầm cầu Rồng ~27 m nên không bay sát cầu được); thả phím tự cân bằng. Không va chạm; tới mép khung bay thì dù tự vòng về, không có tường vô hình. Đang tự lái về mà nhanh hơn `returnTurnSpeed` thì nghiêng và rẽ gắt theo tỉ lệ tốc độ, nếu không ở 100 m/s bán kính vòng ~167 m sẽ đụng mép.
+- Cánh in cờ đỏ sao vàng bằng atlas canvas (không ảnh ngoài), người treo dựng bằng khối bo tròn trong code, vẫn 1 Mesh. Camera bám cao 9 m và cánh nghiêng `tilt` 0,35 rad về sau là có chủ đích: camera cao 6 m nhìn gần như ngang cánh nên hình in dẹt thành một vạch.
+- Không chữ, nhãn, thuyết minh, thời tiết khi bay. Giao diện khi bay do `body.explore` ẩn hết, chỉ giữ sáng/tối, ngôn ngữ, chất lượng, dòng hướng dẫn phím, đồng hồ tốc độ/độ cao `#exSpeed`, nút Thoát.
 - Thoát (Esc hoặc `#btnExExit`) = tải lại trang bỏ `?explore=`; nhờ vậy bản hướng dẫn sau khi bay giống hệt lúc mới mở, không cần code dọn trạng thái dùng chung. Từ bản hướng dẫn muốn về màn chọn thì tải lại trang.
 - Gốc nhóm dù đặt giữa cánh và người lái (`originAt`) để người lái nằm trong khung hình của camera bám; vì vậy `state.pos` là điểm giữa dù chứ không phải mũi người.
 - `#exLang`: màn chọn có ô ngôn ngữ riêng, vì panel Cài đặt che mất hộp chọn.
