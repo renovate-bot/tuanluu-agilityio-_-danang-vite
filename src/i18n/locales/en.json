@@ -458,5 +458,11 @@
   "exMpFly": "Fly now",
   "exMpSolo": "Fly solo",
   "exMpOffline": "Can't reach the server. You can still fly, but alone.",
-  "exMpNameBad": "That name can't be used. Please pick another."
+  "exMpNameBad": "That name can't be used. Please pick another.",
+  "exMpWatching": "Watching: {name}",
+  "exMpInvite": "A seat is free. Want to fly?",
+  "exMpInviteFly": "Join in",
+  "exMpLate": "Someone else just took the seat. You keep watching.",
+  "exMpLost": "Connection to the shared sky was lost. You are now flying alone.",
+  "exMpReleased": "You were idle for too long, so your seat was given up. You are watching."
 }

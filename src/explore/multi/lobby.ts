@@ -15,8 +15,8 @@ const M = CONFIG.explore.multi;
 const NAME_KEY = 'exMpName';
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 
-function loadName(): string { try { return localStorage.getItem(NAME_KEY) || ''; } catch { return ''; } }
-function saveName(n: string): void { try { localStorage.setItem(NAME_KEY, n); } catch { /* bộ nhớ trình duyệt bị chặn */ } }
+export function loadName(): string { try { return localStorage.getItem(NAME_KEY) || ''; } catch { return ''; } }
+export function saveName(n: string): void { try { localStorage.setItem(NAME_KEY, n); } catch { /* bộ nhớ trình duyệt bị chặn */ } }
 
 let listKey = '';
 let langBound = false;
@@ -27,7 +27,7 @@ export function exShowLobby(session: MultiSession, cb: LobbyCallbacks): void {
   const root = $('exMpLobby'), box = root.closest('#chooser') as HTMLElement;
   const input = $<HTMLInputElement>('exMpNameIn'), fly = $<HTMLButtonElement>('exMpFly'), solo = $<HTMLButtonElement>('exMpSolo');
   box.querySelector<HTMLElement>('.ex-cards')!.hidden = true;
-  $('exTitle').hidden = true;
+  $('exTitle').hidden = true; $('exMpLostNote').hidden = true;
   box.setAttribute('aria-labelledby', 'exMpSky');
   root.hidden = false;
   if (!input.value) input.value = loadName();

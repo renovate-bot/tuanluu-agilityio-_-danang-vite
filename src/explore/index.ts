@@ -10,6 +10,7 @@ import { exChase } from './chase';
 import { exShowChooser } from './chooser';
 import { exNight, exNightBind, exNightStep } from './nightShows';
 import { exMulti } from './multi';
+import { exWatchShow, exWatchHide, exWatchRender, exFlyNotice } from './multi/watch';
 import { CONFIG } from '../config';
 import type { SwingController } from '../bridges/song-han/SwingController';
 
@@ -17,9 +18,33 @@ const _inp: GliderInput = { turn: 0, climb: 0, throttle: 0 };   // đầu vào t
 
 let glider: THREE.Group | null = null;
 let state: GliderState | null = null;
+let watching = false;   // đang xem người khác bay (hết chỗ hoặc vừa nhường chỗ): không có dù của mình, không đọc phím
+let chased = false;     // camera đã bám người được xem lần nào chưa (lần đầu đặt thẳng, không trượt từ xa)
 let readout = '';   // chữ đang hiện ở #exSpeed: chỉ ghi DOM khi đổi
 
 const active = () => cam.mode === 'glider' && state !== null;
+const inGlider = () => active() || watching;   // Esc và giao diện bay áp cho cả chế độ xem
+
+/* Mỗi khung khi xem: dù người khác, nhãn, danh sách; camera bám dù đang xem (không có người thì giữ nguyên) */
+function watchStep(dt: number): void {
+  exMulti.update(dt, performance.now(), null);
+  const st = exMulti.watchState();
+  if (st) { exChase(camera, controls.target, st, dt, !chased); chased = true; }
+  exNightStep(dt);
+}
+
+/* Đổi phiên khi đang xem hoặc bay: vào bay, mất kết nối, bị thu hồi chỗ */
+function onMultiChange(): void {
+  const s = exMulti.session; if (!s) return;
+  if (watching) {
+    if (s.phase === 'flying') { explore.start(); return; }   // chấp nhận lời mời: cất cánh mới như bay thường
+    if (s.phase === 'solo') { try { sessionStorage.setItem('exMpNotice', 'lost'); } catch { /* bộ nhớ bị chặn */ } explore.exit(); return; }   // màn chọn đọc cờ này và hiện exMpLost
+    exWatchRender();
+  } else if (active()) {
+    if (s.phase === 'watching') { state = null; if (glider) glider.visible = false; explore.startWatching(true); return; }   // chỗ bị thu hồi: sang xem, camera giữ nguyên
+    if (s.phase === 'solo' && s.notice === 'lost') exFlyNotice(s, 'exMpLost');   // vẫn bay, người khác đã biến mất
+  }
+}
 
 /* Đồng hồ tốc độ (km/h) và độ cao (m): chỉ số và đơn vị nên không cần dịch */
 function exShowSpeed(): void {
@@ -44,19 +69,34 @@ export const explore = {
   nightShows: exNight,
   get state() { return state; },
   get glider() { return glider; },
+  get watching() { return watching; },
   start(): void {
+    if (watching) { watching = false; document.body.classList.remove('ex-watching'); exWatchHide(); }
+    exMulti.onChange = onMultiChange;
     state = exCreate();
     const slot = exMulti.session ? exMulti.session.mySlot : -1;
     if (slot >= 0) state.pos.z += CONFIG.explore.multi.spawnSpread * (slot - 2);   // mỗi slot cất cánh lệch một đoạn để không chồng nhau
     if (!glider) glider = exBuildGlider();
     if (!glider.parent) scene.add(glider);
+    glider.visible = true;
     cam.flight.then = null; cam.mode = 'glider'; controls.enabled = false;
     exPlaceGlider(glider, state);
     exChase(camera, controls.target, state, 0, true);
     exShowSpeed();
     document.body.classList.add('explore');
   },
+  /* Chế độ xem: cam.mode = 'glider' nhưng không có state/dù của mình; carry = true khi vừa nhường chỗ (camera đang ở sau dù cũ) */
+  startWatching(carry = false): void {
+    const s = exMulti.session; if (!s) return;
+    watching = true; chased = carry;
+    keys.clear();
+    cam.flight.then = null; cam.mode = 'glider'; controls.enabled = false;
+    document.body.classList.add('explore', 'ex-watching');
+    exMulti.onChange = onMultiChange;
+    exWatchShow(s);
+  },
   update(dt: number): void {
+    if (watching) { watchStep(dt); return; }
     if (!active()) return;
     advance(dt, exInputFromKeys(keys, _inp));
   },
@@ -75,8 +115,9 @@ export const explore = {
 export function setupExplore(ctrl: SwingController): void {
   exNightBind(ctrl);
   window.addEventListener('keydown', (e) => {
-    if (!active()) return;
+    if (!inGlider()) return;
     if (e.key === 'Escape') { explore.exit(); return; }   // Esc thoát kể cả khi đang focus ô chọn
+    if (watching) return;   // xem: không lái, không ghi phím
     if (e.ctrlKey || e.metaKey || e.altKey) return;   // phím tắt trình duyệt (Cmd+S...) không lái dù, tránh kẹt phím
     const t = e.target as HTMLElement | null;
     if (t && /^(SELECT|INPUT|TEXTAREA)$/.test(t.tagName)) return;   // phím trong ô chọn/nhập không lái dù
@@ -96,5 +137,5 @@ export function setupExplore(ctrl: SwingController): void {
   if (q.has('test')) document.body.classList.add('ex-test');   // giữ HUD khi bay để test đo draw call
   document.getElementById('btnExExit')?.addEventListener('click', () => explore.exit());
   if (q.get('explore') === 'glider') { explore.start(); return; }
-  if (!q.has('test') || q.has('chooser')) exShowChooser((choice) => { if (choice === 'glider') explore.start(); });   // 'guided': màn chọn tự ẩn, giao diện cũ
+  if (!q.has('test') || q.has('chooser')) exShowChooser((choice) => { if (choice === 'glider') explore.start(); }, () => explore.startWatching());   // 'guided': màn chọn tự ẩn, giao diện cũ
 }

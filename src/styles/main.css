@@ -278,6 +278,16 @@ body.explore #exMpRoster:not([hidden]){display:flex;flex-direction:column;gap:3p
 .ex-mp-row.me{font-weight:600;}
 .ex-mp-row i{width:9px;height:9px;border-radius:50%;flex:none;}
 body.explore #exMpNotice:not([hidden]){display:block;position:fixed;left:50%;transform:translateX(-50%);top:calc(100px + env(safe-area-inset-top,0px));padding:8px 14px;font-size:12px;color:var(--text);z-index:5;}
+/* Chế độ xem (hết chỗ hoặc vừa nhường chỗ): không có dù của mình nên ẩn dòng hướng dẫn lái và đồng hồ; hiện "Đang xem" và lời mời */
+body.ex-watching #exHint,body.ex-watching #exSpeed{display:none;}
+#exMpWatch,#exMpInvite{display:none;}
+body.ex-watching #exMpWatch:not([hidden]){display:block;position:fixed;left:50%;transform:translateX(-50%);top:calc(14px + env(safe-area-inset-top,0px));padding:8px 14px;font-size:13px;color:var(--text);max-width:calc(100vw - 32px);box-sizing:border-box;text-align:center;pointer-events:none;z-index:5;}
+body.ex-watching #exMpInvite:not([hidden]){display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center;position:fixed;left:50%;transform:translateX(-50%);bottom:calc(14px + env(safe-area-inset-bottom,0px));padding:10px 14px;font-size:13px;color:var(--text);max-width:calc(100vw - 32px);box-sizing:border-box;z-index:6;}
+#exMpInvite input{font:500 14px/1.2 var(--font-body);color:var(--text);background:rgba(0,0,0,.35);border:1px solid var(--gold);border-radius:4px;padding:7px 10px;width:130px;box-sizing:border-box;}
+#exMpInvite input[hidden]{display:none;}
+#exMpInvite .ex-mp-btn{width:auto;padding:8px 16px;}
+.ex-mp-note{margin:0 0 12px;font-size:12.5px;line-height:1.45;color:var(--gold);}
+.ex-mp-note[hidden]{display:none;}
 body.explore .views,body.explore .specs,body.explore #tourCaption,body.explore #wxScenario,body.explore #hint,body.explore #swRideHint,body.explore #swStormNote,body.explore #hrLabels{display:none!important;}
 body.explore h1,body.explore .eyebrow,body.explore #btnShadow,body.explore .audio-row,body.explore .slider,body.explore .weather-row,body.explore .donate{display:none!important;}
 body.explore:not(.ex-test) .stats{display:none;}   /* HUD giữ khi URL có ?test để test đo draw call */

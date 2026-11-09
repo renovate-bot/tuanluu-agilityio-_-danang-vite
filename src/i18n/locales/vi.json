@@ -458,5 +458,11 @@
   "exMpFly": "Bay ngay",
   "exMpSolo": "Bay một mình",
   "exMpOffline": "Không kết nối được máy chủ. Bạn vẫn bay được, nhưng một mình.",
-  "exMpNameBad": "Tên này không dùng được, hãy chọn tên khác."
+  "exMpNameBad": "Tên này không dùng được, hãy chọn tên khác.",
+  "exMpWatching": "Đang xem: {name}",
+  "exMpInvite": "Có chỗ trống. Bạn muốn bay không?",
+  "exMpInviteFly": "Vào bay",
+  "exMpLate": "Chỗ vừa có người khác giành trước. Bạn tiếp tục xem.",
+  "exMpLost": "Mất kết nối với bầu trời chung. Bạn chỉ còn bay một mình.",
+  "exMpReleased": "Bạn đã đứng yên quá lâu nên chỗ bay được nhường lại. Bạn đang xem."
 }

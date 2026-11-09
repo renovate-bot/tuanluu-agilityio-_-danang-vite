@@ -458,5 +458,11 @@
   "exMpFly": "立即起飞",
   "exMpSolo": "单独飞行",
   "exMpOffline": "无法连接服务器。你仍可单独飞行。",
-  "exMpNameBad": "此名字不可用，请换一个。"
+  "exMpNameBad": "此名字不可用，请换一个。",
+  "exMpWatching": "正在观看：{name}",
+  "exMpInvite": "有空位。想飞行吗？",
+  "exMpInviteFly": "加入",
+  "exMpLate": "位置刚被别人抢先占了，你继续观看。",
+  "exMpLost": "与共享天空的连接已断开，现在只能单独飞行。",
+  "exMpReleased": "你停留太久，位置已让出，现在为观看状态。"
 }

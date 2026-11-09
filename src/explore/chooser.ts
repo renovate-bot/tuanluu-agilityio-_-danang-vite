@@ -44,6 +44,8 @@ export function exShowChooser(onPick: (choice: ExChoice) => void, onWatch: () =>
   const root = el();
   if (!root) return;
   lockGliderOnTouch(root);
+  /* Lần trước mất kết nối khi đang xem (explore.exit tải lại trang): đọc cờ một lần rồi xóa, hiện exMpLost */
+  try { if (sessionStorage.getItem('exMpNotice') === 'lost') { sessionStorage.removeItem('exMpNotice'); const n = document.getElementById('exMpLostNote'); if (n) n.hidden = false; } } catch { /* bộ nhớ bị chặn */ }
   wireLang(root);
   root.querySelectorAll<HTMLButtonElement>('button[data-pick]').forEach((b) => {
     if (b.disabled) return;

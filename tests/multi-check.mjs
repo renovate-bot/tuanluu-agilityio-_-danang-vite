@@ -2,6 +2,7 @@
 //   Mục 1: 4 bot Node WebSocket bay cùng — dù, màu, nhãn tên, nhãn dưới cánh, draw call (≤ +4), roster, bot thoát.
 //   Mục 2: ?test không có multi= thì không mở WebSocket nào.
 //   Mục 3 (Task 6): bước chọn slot + nhập tên trong màn chọn — số chỗ trực tiếp, tên, chống chèn HTML/RTL, nhớ tên, máy chủ tắt, đổi ngôn ngữ.
+//   Mục 4 (Task 7): chế độ xem (5 bot), lời mời vào chỗ trống, giành trước, người xem rời, ô tên không lái dù, Esc, mất máy chủ khi xem và khi bay.
 //   Tự spawn `wrangler dev` ở cổng 8799 và luôn kill khi xong hoặc lỗi.
 //
 //   npm run build && npm run test:multi
@@ -181,6 +182,129 @@ try {
 
   check('console không lỗi', P.errors.length === 0);
   if (P.errors.length) console.log(P.errors.join('\n'));
+
+  // Mục 4 (Task 7) — chế độ xem và lời mời vào chỗ trống. Dọn Mục 1 trước để phòng trống
+  await page.close();
+  bots.splice(0).forEach((b) => b.close());
+  await sleep(2000);
+  const URLW = srv.url + '?chooser&multi=' + encodeURIComponent(`ws://${HOST}/sky`);
+  const live = [];
+  const addBot = (n) => { const i = live.length; const b = bot(n, 90 + i * 20, (i - 2) * 15); b.name = n; live.push(b); return b; };
+  const dropBot = (n) => { const i = live.findIndex((b) => b.name === n); if (i >= 0) live.splice(i, 1)[0].close(); };
+  const watchedName = (pg) => pg.evaluate(() => { const A = window.__app, s = A.multi.session; return A.multi.remotes.name(s.watched); });
+  const enterWatch = async (pg) => { await pg.waitForSelector('#chooser', { state: 'visible', timeout: 240000 }); await pg.click('#chooser [data-pick="glider"]'); await pg.waitForFunction(() => window.__app.explore.watching, null, { timeout: 30000 }).catch(() => {}); };
+  ['W1', 'W2', 'W3', 'W4', 'W5'].forEach(addBot);
+  await sleep(2500);
+
+  const W = await openApp(browser, URLW);
+  await enterWatch(W.page);
+  await W.page.waitForFunction(() => [0, 1, 2, 3, 4].filter((i) => window.__app.multi.remotes.slotState(i)).length === 5, null, { timeout: 60000 }).catch(() => {});
+  await frames(W.page, 20);
+  const w0 = await W.page.evaluate(() => { const A = window.__app, s = A.multi.session, el = document.getElementById('exMpWatch'); return { watching: A.explore.watching, active: A.explore.active(), mode: A.cam.mode, phase: s.phase, text: el.innerText, vis: el.getClientRects().length > 0, own: A.explore.glider, st: A.explore.state, body: document.body.classList.contains('explore'), chooser: document.getElementById('chooser').hidden, inviteHidden: document.getElementById('exMpInvite').getClientRects().length === 0 }; });
+  const wn0 = await watchedName(W.page);
+  check(`5 bot: Dù lượn vào thẳng chế độ xem, dòng "${w0.text}" có tên "${wn0}", không dù của mình, không có lời mời`, w0.watching && !w0.active && w0.mode === 'glider' && w0.phase === 'watching' && w0.vis && w0.text.includes(wn0) && /Đang xem/.test(w0.text) && w0.own === null && w0.st === null && w0.body && w0.chooser && w0.inviteHidden);
+  const poses = () => W.page.evaluate(() => { const R = window.__app.multi.remotes, o = {}; for (let i = 0; i < 5; i++) { const st = R.slotState(i); if (st) o[i] = [st.pos.x, st.pos.y, st.pos.z]; } return o; });
+  const before = await poses();
+  for (const k of ['w', 'a', 's', 'd', 'ArrowUp', 'q']) await W.page.keyboard.press(k);
+  await frames(W.page, 5);
+  const after0 = await poses();
+  const k0 = await W.page.evaluate(() => ({ keys: window.__app.keys.size, state: window.__app.explore.state, own: window.__app.explore.glider }));
+  check('Xem: phím WASD/mũi tên/Q không đổi vị trí dù nào, keys rỗng, không có dù của mình', JSON.stringify(before) === JSON.stringify(after0) && k0.keys === 0 && k0.state === null && k0.own === null);
+
+  // Draw call: cùng một tư thế camera, 0 và 5 dù người khác
+  const dc = await W.page.evaluate((B) => {
+    const A = window.__app, R = A.multi.remotes, { renderer, scene, camera } = A;
+    const gs = [0, 1, 2, 3, 4].map((i) => R.group(i)).filter(Boolean);
+    camera.position.set(B.x - 60, B.y + 25, B.z + 10); camera.lookAt(B.x + 130, B.y, B.z); camera.updateMatrixWorld(true);
+    const meas = () => { renderer.render(scene, camera); renderer.info.reset(); renderer.render(scene, camera); return renderer.info.render.calls; };
+    const withB = meas(); gs.forEach((g) => { g.visible = false; }); const without = meas(); gs.forEach((g) => { g.visible = true; });
+    return { withB, without, n: gs.length };
+  }, BASE);
+  check(`Draw call ${dc.without} (0 bot) -> ${dc.withB} (${dc.n} bot) cùng tư thế camera: chênh ${dc.withB - dc.without} ≤ +5`, dc.n === 5 && dc.withB - dc.without <= 5 && dc.withB - dc.without >= 1);
+
+  // Một bot (không phải người đang xem) rời: hiện lời mời, camera vẫn bám
+  const gone = ['W1', 'W2', 'W3', 'W4', 'W5'].find((n) => n !== wn0);
+  dropBot(gone);
+  await W.page.waitForFunction(() => document.getElementById('exMpInvite').getClientRects().length > 0, null, { timeout: 15000 }).catch(() => {});
+  await frames(W.page, 15);
+  const inv = await W.page.evaluate(() => { const A = window.__app, s = A.multi.session, st = A.multi.remotes.slotState(s.watched), c = A.camera.position; return { text: document.getElementById('exMpWatch').innerText, invite: s.invite, input: document.getElementById('exMpInviteName').getClientRects().length > 0, msg: document.getElementById('exMpInvite').innerText, dist: st ? Math.hypot(st.pos.x - c.x, st.pos.y - c.y, st.pos.z - c.z) : -1, hasState: !!st }; });
+  check(`Một bot rời: lời mời "${inv.msg.replace(/\n/g, ' ')}", ô tên hiện (chưa nhớ tên), vẫn xem "${wn0}", camera cách dù ${Math.round(inv.dist)} m`, inv.invite && inv.input && inv.text.includes(wn0) && inv.hasState && inv.dist > 0 && inv.dist < 300);
+
+  // Gõ wasd trong ô tên của lời mời (ô chỉ hiện khi chưa có tên hợp lệ nên làm trước lần bấm mời)
+  await W.page.click('#exMpInviteName');
+  await W.page.keyboard.type('wasd');
+  await frames(W.page, 3);
+  const typed = await W.page.evaluate(() => ({ v: document.getElementById('exMpInviteName').value, keys: window.__app.keys.size, watching: window.__app.explore.watching }));
+  check(`Gõ wasd trong ô tên lời mời: ô nhận "${typed.v}", keys rỗng (${typed.keys}), vẫn xem`, typed.v === 'wasd' && typed.keys === 0 && typed.watching);
+  await W.page.fill('#exMpInviteName', '');
+
+  // Bot khác giành trước: chặn bản tin lobby ở khách để lời mời còn cũ, rồi bot mới vào kịp trước khi bấm
+  await W.page.evaluate(() => { const s = window.__app.multi.session; const orig = s.recv; s.recv = function (m) { if (m.t === 'lobby') return; return orig.call(this, m); }; });
+  addBot('Late');
+  await sleep(1000);
+  await W.page.fill('#exMpInviteName', 'Mai');
+  await W.page.click('#exMpInviteFly');
+  await W.page.waitForFunction(() => { const n = document.getElementById('exMpNotice'); return !n.hidden && n.innerText.trim().length > 0; }, null, { timeout: 15000 }).catch(() => {});
+  const late = await W.page.evaluate(() => { const A = window.__app, n = document.getElementById('exMpNotice'); delete A.multi.session.recv; return { txt: n.innerText, phase: A.multi.session.phase, watching: A.explore.watching, btn: document.getElementById('exMpInviteFly').disabled }; });
+  check(`Bot khác giành trước: hiện "${late.txt}", vẫn xem, nút mở lại`, /giành trước/.test(late.txt) && late.phase === 'watching' && late.watching && late.btn === false);
+
+  // Người đang xem rời: dòng Đang xem đổi tên khác trong 1 giây
+  const wn1 = await watchedName(W.page);
+  const textBefore = await W.page.evaluate(() => document.getElementById('exMpWatch').innerText);
+  dropBot(wn1);
+  const changed = await W.page.waitForFunction((old) => { const t = document.getElementById('exMpWatch').innerText; return t && t !== old; }, textBefore, { timeout: 1000 }).then(() => true, () => false);
+  const wn2 = await watchedName(W.page);
+  check(`Người đang xem ("${wn1}") rời: đổi sang "${wn2}" trong 1 giây`, changed && wn2 && wn2 !== wn1);
+
+  // Esc khi xem: thoát
+  await Promise.all([W.page.waitForNavigation({ timeout: 90000 }).catch(() => null), W.page.keyboard.press('Escape')]);
+  check('Esc khi xem: thoát, trang tải lại không còn ?chooser', !/chooser/.test(W.page.url()));
+  check('Lỗi console của trang xem = 0', W.errors.length === 0);
+  if (W.errors.length) console.log(W.errors.join('\n'));
+  await W.page.close();
+
+  // Bấm mời khi có chỗ: bay được (trang mới, phòng đầy rồi một bot rời)
+  addBot('Y');
+  await sleep(2500);
+  const F = await openApp(browser, URLW);
+  await enterWatch(F.page);
+  dropBot(live[0].name);
+  await F.page.waitForFunction(() => document.getElementById('exMpInvite').getClientRects().length > 0, null, { timeout: 15000 }).catch(() => {});
+  await F.page.evaluate(() => { const s = window.__app.multi.session; window.__joins = 0; const j = s.join.bind(s); s.join = (n) => { window.__joins++; j(n); }; });
+  await F.page.fill('#exMpInviteName', 'Mai');
+  await F.page.dblclick('#exMpInviteFly');
+  await F.page.waitForFunction(() => window.__app.explore.active() && window.__app.multi.session.phase === 'flying', null, { timeout: 60000 }).catch(() => {});
+  await frames(F.page, 5);
+  const fl = await F.page.evaluate(() => { const A = window.__app, g = A.explore.glider, R = A.multi.remotes; return { slot: A.multi.session.mySlot, joins: window.__joins, own: !!g && g.visible && !!g.parent && ![0, 1, 2, 3, 4].some((i) => R.group(i) === g), cls: document.body.classList.contains('ex-watching'), inv: document.getElementById('exMpInvite').getClientRects().length === 0 && document.getElementById('exMpWatch').getClientRects().length === 0, roster: document.getElementById('exMpRoster').innerText, st: !!A.explore.state }; });
+  check(`Bấm mời khi có chỗ: bay được, slot ${fl.slot}, dù riêng của mình, giao diện xem gỡ, roster có Mai, ${fl.joins} lần join dù bấm đúp`, fl.slot >= 0 && fl.own && fl.st && !fl.cls && fl.inv && fl.roster.includes('Mai') && fl.joins === 1);
+
+  // Mô phỏng máy chủ tắt bằng cách gọi onClose của kết nối (bắt tay đóng WebSocket với wrangler dev quá chậm để chờ)
+  // Máy chủ tắt khi bay: vẫn bay, người khác biến mất, có exMpLost
+  await F.page.evaluate(() => window.__app.multi.session.t.onClose());
+  await F.page.waitForFunction(() => window.__app.multi.session.phase === 'solo', null, { timeout: 15000 }).catch(() => {});
+  await frames(F.page, 5);
+  const fl2 = await F.page.evaluate(() => { const A = window.__app, n = document.getElementById('exMpNotice'); return { active: A.explore.active(), others: [0, 1, 2, 3, 4].filter((i) => A.multi.remotes.slotState(i) || A.multi.remotes.group(i)).length, txt: n.innerText, shown: n.getClientRects().length > 0, roster: document.getElementById('exMpRoster').getClientRects().length > 0 }; });
+  check(`Máy chủ tắt khi bay: vẫn bay, ${fl2.others} dù người khác, thông báo "${fl2.txt}"`, fl2.active && fl2.others === 0 && fl2.shown && /Mất kết nối/.test(fl2.txt) && !fl2.roster);
+  check('Lỗi console của trang bay = 0', F.errors.length === 0);
+  if (F.errors.length) console.log(F.errors.join('\n'));
+  await F.page.close();   // đóng trang bay trước khi mở trang khác: SwiftShader dùng chung CPU
+  addBot('Z');   // phòng lại đủ 5 (4 bot + Z) để trang tiếp theo vào thẳng chế độ xem
+  await sleep(2500);
+
+  // Máy chủ tắt khi xem: quay về màn chọn và hiện exMpLost (phòng đủ 5)
+  const L = await openApp(browser, URLW);
+  await enterWatch(L.page);
+  await Promise.all([L.page.waitForNavigation({ timeout: 90000 }).catch(() => null), L.page.evaluate(() => window.__app.multi.session.t.onClose())]);
+  const flag = await L.page.evaluate(() => sessionStorage.getItem('exMpNotice'));
+  check(`Máy chủ tắt khi xem: gọi thoát (trang tải lại), cờ sessionStorage "${flag}"`, flag === 'lost' && !/chooser/.test(L.page.url()));
+  await L.page.goto(srv.url + '?chooser&test&multi=' + encodeURIComponent('ws://127.0.0.1:9/sky'), { waitUntil: 'load' });
+  await L.page.waitForFunction(() => window.__app && document.getElementById('loading')?.classList.contains('done'), null, { timeout: 180000 });
+  await L.page.waitForSelector('#chooser', { state: 'visible', timeout: 240000 });
+  const lost = await L.page.evaluate(() => ({ txt: document.getElementById('exMpLostNote').innerText, shown: document.getElementById('exMpLostNote').getClientRects().length > 0, flag: sessionStorage.getItem('exMpNotice') }));
+  check(`Màn chọn hiện "${lost.txt}" một lần (cờ đã xóa: ${lost.flag})`, lost.shown && /Mất kết nối/.test(lost.txt) && lost.flag === null);
+  await L.page.close();
+
+  live.splice(0).forEach((b) => b.close());
 } catch (e) {
   check('ngoại lệ: ' + e.message, false);
 } finally {
