@@ -1,6 +1,6 @@
 /* ===== Dù lượn nhiều người: thông số dùng chung khách + máy chủ (không import gì; config.ts import file này) ===== */
 export const multiParams = {
-  url: '',               // địa chỉ WebSocket của máy chủ Cloudflare; rỗng = chưa cấu hình, chỉ bay một mình (ước lượng)
+  url: 'wss://danang-sky.tuanlv5490.workers.dev/sky', // địa chỉ WebSocket của máy chủ Cloudflare; rỗng = chỉ bay một mình
   slots: 5,              // số chỗ bay cùng lúc (theo thiết kế)
   nameMax: 9,            // số grapheme tối đa của tên hiển thị (ước lượng)
   sendHz: 5,             // lần/s khách gửi vị trí (ước lượng, đo ở giai đoạn đầu)

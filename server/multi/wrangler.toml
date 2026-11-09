@@ -1,6 +1,9 @@
 name = "danang-sky"
 main = "src/worker.ts"
 compatibility_date = "2025-01-01"
+# Bật địa chỉ workers.dev, tắt địa chỉ xem trước
+workers_dev = true
+preview_urls = false
 
 [[durable_objects.bindings]]
 name = "SKY"
