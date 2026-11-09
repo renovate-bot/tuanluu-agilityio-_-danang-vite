@@ -96,3 +96,8 @@ Hệ quả: dù chỉ vào scene khi bay nên góc nhìn cũ không đổi draw 
 
 ## D-021: Liên kết ủng hộ MoMo thuần trong Cài đặt — 2026-11-04 — Chấp nhận
 Bối cảnh: cần nút Buy me a coffee nhưng không thêm script/widget bên thứ ba hoặc phụ thuộc runtime. Quyết định: dùng thẻ `<a>` tới trang MoMo, cấu hình URL rỗng thì ẩn, chỉ chấp nhận HTTPS; chữ nút giữ tiếng Anh và `aria-label` dịch đủ 9 ngôn ngữ. Không bật URL thật cho tới khi có alias riêng đã xác minh, vì URL nằm công khai trong bundle. Hệ quả: không thêm mesh/draw call; điện thoại dùng sheet Cài đặt hiện có.
+
+## D-022: Dù lượn ban đêm — cầu sông Hàn tự xoay, Cầu Rồng tự phun — 2026-11-09 — Chấp nhận
+Bối cảnh: nút Quay cầu và Phun lửa & nước nằm trong khung Góc nhìn, bị ẩn khi bay. Đầy đủ ở §6 của [spec](../../docs/superpowers/specs/2026-11-09-du-luon-hieu-ung-dem-design.md).
+Quyết định: chỉ khi `cam.mode === 'glider'` và `dayNight.target > 0.5`, `src/explore/nightShows.ts` bật `show.on` và điều khiển `SwingController` có sẵn (30×, đóng khi tàu qua, nghỉ 30 s, lặp). Sang ngày: ngừng phun ngay, cầu đang quay đi nốt tới khi đóng. `swingUI.ts` không kéo camera và không chạy lịch 23:00 khi đang bay. Không dùng `ctrl.fromTour`; hỏi `canStart()` trước `start()` để bão không phát `swingBlocked` mỗi khung.
+Hệ quả: `?test` tắt bộ tự chạy để phép đo đêm không dao động; test bật qua `__app.explore.nightShows.enabled`. Không thêm mesh, i18n. Bay dù vẫn không có tiếng vì hàng âm thanh bị ẩn.

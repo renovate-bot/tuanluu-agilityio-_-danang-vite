@@ -1,6 +1,6 @@
 # Active Context
 
-_Cập nhật: 2026-11-09 · Nhánh đang làm: không · Nhánh chính: `main`_
+_Cập nhật: 2026-11-09 · Nhánh đang làm: `feature/du-luon-hieu-ung-dem` (D-022, chưa merge) · Nhánh chính: `main`_
 
 ## Trạng thái
 - Chế độ tự khám phá bằng dù lượn (D-020) đã merge vào `main` (merge cục bộ): chỉnh tốc độ Q/E, sàn 7 m để bay sát cầu, cánh cờ đỏ sao vàng, người treo; kết quả ở `tests/KET-QUA.md`.
@@ -10,6 +10,7 @@ _Cập nhật: 2026-11-09 · Nhánh đang làm: không · Nhánh chính: `main`_
 - Quy tắc chế độ gọn cho agent: `.github/instructions/ui-views.instructions.md`, `tests.instructions.md`. Lệnh test đầy đủ: `copilot-instructions.md` §5. Bảng draw call chuẩn: `tests/KET-QUA.md`.
 
 ## Bước tiếp theo
+- Dù lượn ban đêm (D-022): xem bằng mắt ở bản chạy thật (`?explore=glider`, không `?test`), đo FPS GPU thật khi cầu quay và phun cùng lúc. Theo yêu cầu người dùng chỉ chạy `test:explore`, `test:tour`; các test khác chưa chạy để chốt. [plan](../../docs/superpowers/plans/2026-11-09-du-luon-hieu-ung-dem.md)
 0. Tự khám phá (D-020): người bản ngữ duyệt 8 bản dịch `ex*`, đo FPS trên GPU thật; chạy lại đủ bộ test nếu đổi phần ngoài `src/explore/`; va chạm chưa có. [plan](../../docs/superpowers/plans/2026-11-02-tu-kham-pha-du-luon.md)
 1. Giao diện điện thoại (D-019): còn đo trên điện thoại thật; duyệt 7 bản dịch khóa mới; chip cao 36 px (< 44 px); câu hướng dẫn xuống cabin trỏ tới nút trong sheet Góc nhìn. [plan](../../docs/superpowers/plans/2026-10-26-mobile-ui.md)
 2. Tối ưu độ mượt (D-018): chưa đo GPU / điện thoại thật; khung đầu SwiftShader 16,4 s (prewarm); đề xuất test bỏ qua lịch tự quay Cầu sông Hàn khi `?test`. [plan](../../docs/superpowers/plans/2026-10-24-toi-uu-do-muot.md)
