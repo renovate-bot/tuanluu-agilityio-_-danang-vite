@@ -516,6 +516,21 @@ const tourAllBase = {
 
 /* ------------------------- Hiệu năng (tối ưu, D-018) -------------------------
    Đo thời gian khung (HUD) và ngưỡng giật khựng dùng chung cho test:perf / test:weather */
+/* Đèn đêm trên tòa nhà khu phố và nhà quanh Thuận Phước (spec 2026-11-09) */
+const cityNightBase = {
+  towerH: 60,        // m — từ chiều cao này trở lên coi là tháp cao: đèn dày hơn, có thể có sắc xanh, có viền LED (ước lượng)
+  lowLit: 0.58,      // tỉ lệ cửa sổ sáng ở nhà thấp, 0..1 (ước lượng)
+  towerLit: 0.85,    // tỉ lệ cửa sổ sáng ở tháp cao, 0..1 (ước lượng)
+  lowGain: 0.75,      // cường độ phát sáng cửa sổ nhà thấp, hệ số (ước lượng)
+  towerGain: 1.05,    // cường độ phát sáng cửa sổ tháp cao, hệ số (ước lượng)
+  coolShare: 1 / 6,  // tỉ lệ tháp cao có cửa sổ xanh dương / xanh ngọc, 0..1 (ước lượng)
+  ledBand: 3,      // m — bề cao dải LED quanh nóc (ước lượng)
+  ledEdgeFrac: 0.5,  // phần trên của cạnh đứng có LED, 0..1 chiều cao tháp (ước lượng)
+  ledWidth: 1.4,     // m — bề rộng dải LED ở cạnh đứng (ước lượng)
+  ledGain: 1.7,      // cường độ phát sáng LED, hệ số (ước lượng)
+  farGlow: 0.16      // cường độ ánh vàng của khối nhà ở xa, hệ số (ước lượng)
+};
+
 const perfBase = {
   hudSamples: 240,    // số khung giữ trong vòng mẫu để tính trung bình / p95 / max trên HUD (≈ 4 s ở 60 FPS)
   maxHitchMs: 150,    // ms — khung dài nhất cho phép khi đổi trạng thái (đêm, mặt cắt, bóng, bay tới công trình) (ước lượng, theo weather.perf.maxFrameMs)
@@ -596,6 +611,7 @@ const exploreBase = {
 export const CONFIG = {
   ...base,
   perf: perfBase,
+  cityNight: cityNightBase,
   ui: uiBase,
   mainTotal: sum(base.mainSpans),
   thuanPhuoc: deriveTp(thuanPhuocBase),

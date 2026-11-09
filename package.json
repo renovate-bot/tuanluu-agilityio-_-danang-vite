@@ -18,7 +18,8 @@
     "test:mobile": "node tests/mobile-check.mjs",
     "test:sunwheel": "node tests/sunwheel-check.mjs",
     "test:perf": "node tests/perf-check.mjs",
-    "test:explore": "node tests/explore-check.mjs"
+    "test:explore": "node tests/explore-check.mjs",
+    "test:citynight": "node tests/citynight-check.mjs"
   },
   "dependencies": {
     "three": "^0.165.0"
