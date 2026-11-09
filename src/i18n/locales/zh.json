@@ -450,5 +450,13 @@
   "exDesktopOnly": "仅限电脑",
   "exHint": "W/S 或 ↑/↓ 升降 · A/D 或 ←/→ 转向 · Q/E 减速/加速 · Esc 退出",
   "exExit": "退出",
-  "exMpFlying": "飞行中 {n}/5"
+  "exMpFlying": "飞行中 {n}/5",
+  "exMpSeats": "5个位置，还剩{n}个",
+  "exMpSky": "岘港的天空",
+  "exMpName": "你的名字",
+  "exMpNameMax": "最多{n}个字符",
+  "exMpFly": "立即起飞",
+  "exMpSolo": "单独飞行",
+  "exMpOffline": "无法连接服务器。你仍可单独飞行。",
+  "exMpNameBad": "此名字不可用，请换一个。"
 }

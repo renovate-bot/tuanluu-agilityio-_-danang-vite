@@ -225,6 +225,19 @@
       <button type="button" class="ex-card" data-pick="walk" disabled><b data-i18n="exWalk">Đi bộ</b><i class="ex-note" data-i18n="exSoon">Sắp có</i></button>
       <button type="button" class="ex-card" data-pick="guided"><b data-i18n="exGuided">Tham quan có hướng dẫn</b><span data-i18n="exGuidedDesc">Tour, góc nhìn và thuyết minh</span></button>
     </div>
+    <section id="exMpLobby" class="ex-mp-lobby" hidden>
+      <h2 id="exMpSky" data-i18n="exMpSky">Bầu trời Đà Nẵng</h2>
+      <div id="exMpOnline">
+        <div class="ex-mp-seatline"><span id="exMpDots" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span><span id="exMpSeats" role="status"></span></div>
+        <div id="exMpList"></div>
+        <label class="ex-mp-field"><span data-i18n="exMpName">Tên của bạn</span><input id="exMpNameIn" type="text" autocomplete="off" spellcheck="false" dir="auto"></label>
+        <small id="exMpNameHint"></small>
+        <small id="exMpNameBad" role="alert" data-i18n="exMpNameBad" hidden>Tên này không dùng được, hãy chọn tên khác.</small>
+        <button type="button" id="exMpFly" class="ex-mp-btn" data-i18n="exMpFly" disabled>Bay ngay</button>
+      </div>
+      <div id="exMpOffline" role="alert" data-i18n="exMpOffline" hidden>Không kết nối được máy chủ. Bạn vẫn bay được, nhưng một mình.</div>
+      <button type="button" id="exMpSolo" class="ex-mp-btn" data-i18n="exMpSolo" hidden>Bay một mình</button>
+    </section>
   </div>
 </div>
 <div id="exHint" class="panel" data-i18n="exHint">W/S hoặc ↑/↓ để lên/xuống · A/D hoặc ←/→ để rẽ · Q/E để giảm/tăng tốc · Esc để thoát</div>

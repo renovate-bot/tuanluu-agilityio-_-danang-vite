@@ -1,6 +1,7 @@
 // Kiểm tra dù lượn nhiều người ở phía khách (kế hoạch feature/du-luon-nhieu-nguoi, Task 5).
 //   Mục 1: 4 bot Node WebSocket bay cùng — dù, màu, nhãn tên, nhãn dưới cánh, draw call (≤ +4), roster, bot thoát.
 //   Mục 2: ?test không có multi= thì không mở WebSocket nào.
+//   Mục 3 (Task 6): bước chọn slot + nhập tên trong màn chọn — số chỗ trực tiếp, tên, chống chèn HTML/RTL, nhớ tên, máy chủ tắt, đổi ngôn ngữ.
 //   Tự spawn `wrangler dev` ở cổng 8799 và luôn kill khi xong hoặc lỗi.
 //
 //   npm run build && npm run test:multi
@@ -47,6 +48,81 @@ try {
     const u = await P.page.evaluate(() => window.__app.multi.url());
     check(`Không có multi= (${q || '?test'}): không có WebSocket nào được mở`, ws === 0 && u === '' && await P.page.evaluate(() => window.__app.multi.session) === null);
     await P.page.close();
+  }
+
+  // Mục 3 — bước chọn slot và nhập tên (bắt đầu từ phòng trống; mọi bot/trang đóng trước Mục 1)
+  {
+    const URL3 = srv.url + '?chooser&multi=' + encodeURIComponent(`ws://${HOST}/sky`);
+    const lobbyBots = [bot('Linh', 90, 0), bot('<img src>', 110, 18), bot('Sakura', 130, -18)];
+    await sleep(2500);
+    const L = await openApp(browser, URL3);
+    await L.page.waitForSelector('#chooser', { state: 'visible', timeout: 240000 });
+    let ws3 = 0; L.page.on('websocket', () => ws3++);
+    check('Chưa bấm Dù lượn: không có phiên, không WebSocket', ws3 === 0 && await L.page.evaluate(() => window.__app.multi.session) === null);
+    const txt = (sel) => L.page.evaluate((s) => document.querySelector(s)?.innerText ?? null, sel);
+    const rows = () => L.page.evaluate(() => [...document.querySelectorAll('#exMpList .ex-mp-row span')].map((e) => e.textContent));
+    await L.page.click('#chooser [data-pick="glider"]');
+    await L.page.waitForFunction(() => /Còn 2 trên 5/.test(document.getElementById('exMpSeats')?.innerText || ''), null, { timeout: 30000 }).catch(() => {});
+    const seats2 = await txt('#exMpSeats');
+    check(`Bấm Dù lượn: sảnh hiện "${seats2}" (Còn 2) và 3 tên bot`, /Còn 2 trên 5/.test(seats2 || '') && (await rows()).length === 3);
+    const sk = await L.page.evaluate(() => ({ lobbyVisible: !document.getElementById('exMpLobby').hidden, cardsHidden: document.querySelector('#chooser .ex-cards').hidden, heading: document.querySelector('#exMpLobby h2').innerText, filled: document.querySelectorAll('#exMpDots i.on').length, total: document.querySelectorAll('#exMpDots i').length, inert: !!document.getElementById('exLang').closest('[inert]') }));
+    check(`Sảnh thay thẻ trong cùng hộp thoại: tiêu đề "${sk.heading}", ${sk.filled}/${sk.total} chấm, ô ngôn ngữ còn dùng được`, sk.lobbyVisible && sk.cardsHidden && sk.heading === 'Bầu trời Đà Nẵng' && sk.filled === 3 && sk.total === 5 && !sk.inert);
+    lobbyBots.push(bot('مرحبا', 150, 0));
+    await L.page.waitForFunction(() => /Còn 1 trên 5/.test(document.getElementById('exMpSeats')?.innerText || ''), null, { timeout: 30000 }).catch(() => {});
+    const r4 = await rows();
+    check(`Bot thứ tư vào: "Còn 1" không tải lại (${r4.join(' | ')})`, /Còn 1 trên 5/.test(await txt('#exMpSeats')) && r4.length === 4);
+    const html = await L.page.evaluate(() => ({ imgs: document.querySelectorAll('#chooser img').length, body: getComputedStyle(document.body).direction, root: document.documentElement.dir }));
+    check('Tên "<img src>" hiện nguyên chuỗi, không tạo phần tử img; tên RTL không đổi dir của body/trang', r4.includes('<img src>') && r4.includes('مرحبا') && html.imgs === 0 && html.body === 'ltr' && html.root === 'ltr');
+    // Tên 10 ký tự tắt nút; 'Trường' bật
+    await L.page.fill('#exMpNameIn', '1234567890');
+    const dis10 = await L.page.evaluate(() => document.getElementById('exMpFly').disabled);
+    await L.page.fill('#exMpNameIn', 'Trường');
+    const dis6 = await L.page.evaluate(() => document.getElementById('exMpFly').disabled);
+    await L.page.fill('#exMpNameIn', '');
+    const disEmpty = await L.page.evaluate(() => document.getElementById('exMpFly').disabled);
+    check(`Tên 10 ký tự: nút tắt (${dis10}); "Trường": bật (${!dis6}); rỗng: tắt (${disEmpty})`, dis10 && !dis6 && disEmpty);
+    // Đổi ngôn ngữ ngay ở bước riêng: dòng số chỗ dịch, tên giữ nguyên
+    await L.page.fill('#exMpNameIn', 'Trường');
+    await L.page.selectOption('#exLang', 'en');
+    const en = await L.page.evaluate(() => ({ seats: document.getElementById('exMpSeats').innerText, names: [...document.querySelectorAll('#exMpList .ex-mp-row span')].map((e) => e.textContent), btn: document.getElementById('exMpFly').innerText, v: document.getElementById('exMpNameIn').value }));
+    check(`Đổi sang en: "${en.seats}", nút "${en.btn}", tên bot và tên đã gõ giữ nguyên`, /1 of 5/.test(en.seats) && en.names.join('|') === r4.join('|') && en.v === 'Trường' && en.btn === 'Fly now');
+    await L.page.selectOption('#exLang', 'ar');
+    await frames(L.page, 3);
+    const ar = await L.page.evaluate(() => { const b = document.querySelector('#chooser .ex-box'), r = b.getBoundingClientRect(); return { dir: document.documentElement.dir, over: b.scrollWidth - b.clientWidth, inView: r.left >= 0 && r.right <= innerWidth }; });
+    check(`lang=ar: dir=${ar.dir}, hộp không tràn ngang (${ar.over} px) và nằm trong khung nhìn`, ar.dir === 'rtl' && ar.over <= 0 && ar.inView);
+    await L.page.selectOption('#exLang', 'vi');
+    // Tải lại: tên đã nhớ sẵn
+    await L.page.reload({ waitUntil: 'load' });
+    await L.page.waitForFunction(() => window.__app && document.getElementById('loading')?.classList.contains('done'), null, { timeout: 180000 });
+    await L.page.waitForSelector('#chooser', { state: 'visible', timeout: 240000 });
+    await L.page.click('#chooser [data-pick="glider"]');
+    await L.page.waitForFunction(() => /Còn 1 trên 5/.test(document.getElementById('exMpSeats')?.innerText || ''), null, { timeout: 30000 }).catch(() => {});
+    const kept = await L.page.evaluate(() => ({ v: document.getElementById('exMpNameIn').value, off: document.getElementById('exMpFly').disabled, ls: localStorage.getItem('exMpName') }));
+    check(`Tải lại: tên đã nhớ sẵn ("${kept.v}", localStorage "${kept.ls}"), nút Bay ngay bật`, kept.v === 'Trường' && kept.ls === 'Trường' && !kept.off);
+    // Bay ngay -> vào trời với slot cuối
+    await L.page.click('#exMpFly');
+    await L.page.waitForFunction(() => window.__app.explore.active() && window.__app.multi.session.phase === 'flying', null, { timeout: 60000 });
+    await frames(L.page, 5);
+    const fl = await L.page.evaluate(() => ({ hidden: document.getElementById('chooser').hidden, slot: window.__app.multi.session.mySlot, roster: document.getElementById('exMpRoster').innerText }));
+    check(`Bay ngay: hộp đóng, slot ${fl.slot}, roster đủ 5/5 có Trường và tên chứa thẻ HTML`, fl.hidden && fl.slot === 4 && /5\/5/.test(fl.roster) && fl.roster.includes('Trường') && fl.roster.includes('<img src>'));
+    check('Lỗi console của trang sảnh = 0', L.errors.length === 0);
+    if (L.errors.length) console.log(L.errors.join('\n'));
+    await L.page.close();
+    lobbyBots.forEach((b) => b.close());
+
+    // Máy chủ tắt: cổng không có gì
+    const O = await openApp(browser, srv.url + '?chooser&multi=' + encodeURIComponent('ws://127.0.0.1:9/sky'));
+    await O.page.waitForSelector('#chooser', { state: 'visible', timeout: 240000 });
+    await O.page.click('#chooser [data-pick="glider"]');
+    await O.page.waitForFunction(() => !document.getElementById('exMpOffline').hidden, null, { timeout: 30000 }).catch(() => {});
+    const off = await O.page.evaluate(() => ({ msg: document.getElementById('exMpOffline').innerText, solo: !document.getElementById('exMpSolo').hidden, name: document.getElementById('exMpNameIn').offsetParent !== null, fly: document.getElementById('exMpFly').offsetParent !== null }));
+    check(`Máy chủ tắt: hiện "${off.msg}" và nút Bay một mình, không đòi tên`, off.msg.length > 0 && off.solo && !off.name && !off.fly);
+    await O.page.click('#exMpSolo');
+    await O.page.waitForFunction(() => window.__app.explore.active(), null, { timeout: 60000 }).catch(() => {});
+    check('Bấm Bay một mình: bay được, hộp đóng', await O.page.evaluate(() => window.__app.explore.active() && document.getElementById('chooser').hidden));
+    check('Lỗi console của trang ngoại tuyến = 0', O.errors.length === 0);
+    await O.page.close();
+    await sleep(1500);
   }
 
   // Mục 1

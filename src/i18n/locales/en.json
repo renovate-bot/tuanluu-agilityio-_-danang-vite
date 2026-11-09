@@ -450,5 +450,13 @@
   "exDesktopOnly": "Desktop only",
   "exHint": "W/S or ↑/↓ to climb/descend · A/D or ←/→ to turn · Q/E to slow down/speed up · Esc to exit",
   "exExit": "Exit",
-  "exMpFlying": "Flying {n}/5"
+  "exMpFlying": "Flying {n}/5",
+  "exMpSeats": "{n} of 5 seats free",
+  "exMpSky": "Da Nang sky",
+  "exMpName": "Your name",
+  "exMpNameMax": "Up to {n} characters",
+  "exMpFly": "Fly now",
+  "exMpSolo": "Fly solo",
+  "exMpOffline": "Can't reach the server. You can still fly, but alone.",
+  "exMpNameBad": "That name can't be used. Please pick another."
 }

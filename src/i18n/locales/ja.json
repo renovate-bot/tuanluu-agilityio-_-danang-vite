@@ -450,5 +450,13 @@
   "exDesktopOnly": "パソコン専用",
   "exHint": "W/S または ↑/↓ で上昇/下降 · A/D または ←/→ で旋回 · Q/E で減速/加速 · Esc で終了",
   "exExit": "終了",
-  "exMpFlying": "飛行中 {n}/5"
+  "exMpFlying": "飛行中 {n}/5",
+  "exMpSeats": "5席中、残り{n}席",
+  "exMpSky": "ダナンの空",
+  "exMpName": "あなたの名前",
+  "exMpNameMax": "最大{n}文字",
+  "exMpFly": "今すぐ飛ぶ",
+  "exMpSolo": "一人で飛ぶ",
+  "exMpOffline": "サーバーに接続できません。一人で飛ぶことはできます。",
+  "exMpNameBad": "この名前は使えません。別の名前にしてください。"
 }

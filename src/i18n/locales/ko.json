@@ -450,5 +450,13 @@
   "exDesktopOnly": "데스크톱 전용",
   "exHint": "W/S 또는 ↑/↓ 상승/하강 · A/D 또는 ←/→ 회전 · Q/E 감속/가속 · Esc 종료",
   "exExit": "나가기",
-  "exMpFlying": "비행 중 {n}/5"
+  "exMpFlying": "비행 중 {n}/5",
+  "exMpSeats": "5자리 중 {n}자리 남음",
+  "exMpSky": "다낭의 하늘",
+  "exMpName": "내 이름",
+  "exMpNameMax": "최대 {n}자",
+  "exMpFly": "바로 비행",
+  "exMpSolo": "혼자 비행",
+  "exMpOffline": "서버에 연결할 수 없습니다. 혼자서는 비행할 수 있습니다.",
+  "exMpNameBad": "사용할 수 없는 이름입니다. 다른 이름을 입력하세요."
 }
