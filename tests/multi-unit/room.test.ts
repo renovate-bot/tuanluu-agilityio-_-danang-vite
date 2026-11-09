@@ -150,6 +150,8 @@ test('pos chỉ phát slot có vị trí mới; mục kèm giờ gửi (e[6])', 
   assert.equal(m.f[0][6], 1100, 'khách cũ không gửi ts: giờ máy chủ nhận');
   const o2 = pos(r, 'a', { x: 3, ts: 98765 }, 1300);
   assert.equal((o2[0].msg as any).f[0][6], 98765, 'khách mới gửi ts: chuyển nguyên');
+  const o3 = pos(r, 'a', { x: 4, ts: 1.79e308 }, 1500);
+  assert.equal((o3[0].msg as any).f[0][6], 1500, 'ts quá lớn (> 2^53): coi như không gửi, dùng giờ máy chủ');
 });
 
 test('pos bị hãm trong cửa sổ broadcastMs vẫn được phát ở lần sau, kể cả lần sau là hb', () => {

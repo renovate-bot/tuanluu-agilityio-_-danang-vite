@@ -82,7 +82,7 @@ export class SkyRoom {
     conn.stamps.push(now);
     const s = this.slots[slot]!;
     s.seen = now;
-    s.pos = [slot, clamp(x, P.bounds.x0, P.bounds.x1), clamp(y, P.floor, P.ceiling), clamp(z, P.bounds.z0, P.bounds.z1), wrapPi(yaw), clamp(bank, -P.bankMax, P.bankMax), typeof ts === 'number' && Number.isFinite(ts) ? ts : now];
+    s.pos = [slot, clamp(x, P.bounds.x0, P.bounds.x1), clamp(y, P.floor, P.ceiling), clamp(z, P.bounds.z0, P.bounds.z1), wrapPi(yaw), clamp(bank, -P.bankMax, P.bankMax), typeof ts === 'number' && Math.abs(ts) <= Number.MAX_SAFE_INTEGER ? ts : now];  // ts ngoài ±2^53 (kể cả NaN/∞) coi như không gửi, tránh đẩy độ lệch giờ của khách thành ∞
     s.dirty = true;
     return this.flush(now);
   }
