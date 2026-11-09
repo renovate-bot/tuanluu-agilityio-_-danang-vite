@@ -370,6 +370,100 @@ try {
     if (R.errors.length) console.log(R.errors.join('\n'));
     await R.page.close();
   }
+
+  // Mục 6 — hiệu ứng ban đêm khi bay dù (rút ngắn thời gian bằng config: SwiftShader chậm, dt bị chặn 0,05 s)
+  {
+    const G = await openApp(browser, srv.url + '?explore=glider');
+    await frames(G.page, 3);
+    check('6 ?test mặc định tắt bộ tự chạy', await G.page.evaluate(() => window.__app.explore.nightShows.enabled === false));
+    await G.page.evaluate(() => {
+      const a = window.__app, n = a.exFlight.CONFIG_explore.nightShows;
+      n.swingSpeed = 600; n.swingRest = 0.2; a.explore.nightShows.enabled = true;
+      window.__c = { starts: 0, closed: 0, blocked: 0, leftGlider: false };
+      const c = a.songHan.ctrl, C = window.__c;
+      c.addEventListener('swingStart', () => C.starts++);
+      c.addEventListener('swingClosed', () => C.closed++);
+      c.addEventListener('swingBlocked', () => C.blocked++);
+      const watch = () => { if (a.cam.mode !== 'glider') C.leftGlider = true; requestAnimationFrame(watch); }; watch();
+    });
+    const setNight = (v) => G.page.evaluate((v) => { window.__app.dayNight.target = v; }, v);
+    const until = (fn, name) => G.page.waitForFunction(fn, { timeout: 120000 }).then(() => check(name, true), () => check(name + ' (hết giờ)', false));
+    const read = () => G.page.evaluate(() => { const a = window.__app; return { on: a.explore.nightShows.show.on, fire: a.explore.nightShows.show.fireOn, state: a.songHan.ctrl.state, ...window.__c }; });
+
+    await frames(G.page, 20);
+    let r = await read();
+    check('6a ngày: không phun, cầu đóng', !r.on && r.state === 'CLOSED' && r.starts === 0);
+
+    await setNight(1);
+    await until(() => window.__app.explore.nightShows.show.fireOn, '6b đêm: có phun lửa');
+    await until(() => window.__c.starts >= 2 && window.__c.closed >= 1, '6b đêm: cầu quay hết một lượt rồi quay lượt tiếp');
+    const y0 = await G.page.evaluate(() => { const s = window.__app.explore.state, y = s.yaw; for (let i = 0; i < 30; i++) window.__app.explore.step(1 / 60, { turn: 1, climb: 0, throttle: 0 }); return s.yaw - y; });
+    r = await read();
+    check('6b vẫn lái được dù, không rời chế độ glider', y0 !== 0 && !r.leftGlider);
+
+    // 6c: giữ cầu ở OPEN (giả lập tàu chưa qua), chuyển sang ngày
+    await G.page.evaluate(() => { const c = window.__app.songHan.ctrl; window.__cc = c.canClose; c.canClose = () => false; });
+    await until(() => window.__app.songHan.ctrl.state === 'OPEN', '6c cầu đã mở');
+    await setNight(0);
+    await frames(G.page, 5);
+    r = await read();
+    check('6c sang ngày: dừng phun, cầu vẫn chờ tàu', !r.on && !r.fire && r.state === 'OPEN');
+    await G.page.evaluate(() => { window.__app.songHan.ctrl.canClose = window.__cc; });
+    await until(() => window.__app.songHan.ctrl.state === 'CLOSED', '6c tàu qua: cầu đóng');
+    const s6c = (await read()).starts;
+    await frames(G.page, 20);
+    check('6c ban ngày không có lượt mới', (await read()).starts === s6c);
+
+    // 6d: bão chặn rồi hết
+    await G.page.evaluate(() => { window.__app.songHan.ctrl.canStart = () => false; window.__c.blocked = 0; });
+    await setNight(1);
+    await frames(G.page, 20);
+    r = await read();
+    check('6d bão: không quay, không phát swingBlocked', r.state === 'CLOSED' && r.blocked === 0);
+    await G.page.evaluate(() => { window.__app.songHan.ctrl.canStart = () => true; window.__c.starts = 0; });
+    await until(() => window.__c.starts >= 1, '6d hết bão: quay lượt mới');
+    await setNight(0);
+    await until(() => window.__app.songHan.ctrl.state === 'CLOSED', '6d về trạng thái đóng');
+
+    // 6f: đang quay 1× khi đang bay thì tăng tốc và đóng xong
+    await G.page.evaluate(() => { window.__app.songHan.ctrl.start(1); });
+    await until(() => window.__app.songHan.ctrl.speed === 600, '6f cầu đang quay 1× được tăng tốc');
+    await until(() => window.__app.songHan.ctrl.state === 'CLOSED', '6f cầu đóng xong');
+    check('console sạch (mục 6)', G.errors.length === 0);
+    await G.page.close();
+
+    // 6e: ban đêm nhưng không bay dù
+    const O = await openApp(browser, srv.url);
+    await frames(O.page, 3);
+    await O.page.evaluate(() => { const a = window.__app; a.explore.nightShows.enabled = true; a.dayNight.target = 1; });
+    await frames(O.page, 20);
+    const o = await O.page.evaluate(() => { const a = window.__app; return { on: a.explore.nightShows.show.on, state: a.songHan.ctrl.state }; });
+    check('6e không bay dù: không tự chạy', !o.on && o.state === 'CLOSED');
+    await O.page.close();
+
+    // 6g: cầu đã quay (camera theo dõi đã lưu vị trí) trước khi vào dù; lúc cầu đóng không được kéo camera
+    const J = await openApp(browser, srv.url);
+    await frames(J.page, 3);
+    await J.page.evaluate(() => {
+      const a = window.__app, n = a.exFlight.CONFIG_explore.nightShows;
+      n.swingSpeed = 600; a.songHan.ctrl.start(1); a.explore.start(); a.explore.nightShows.enabled = true;
+      window.__closed = false; a.songHan.ctrl.addEventListener('swingClosed', () => { window.__closed = true; });
+    });
+    await J.page.waitForFunction(() => window.__closed, { timeout: 120000 });
+    await frames(J.page, 3);
+    check('6g cầu quay trước khi vào dù: đóng xong vẫn ở glider', await J.page.evaluate(() => window.__app.cam.mode === 'glider'));
+    await J.page.close();
+  }
+
+  // Mục 7 — lịch 23:00 không chạy khi bay dù (bộ tự chạy tắt do ?test)
+  {
+    const S = await openApp(browser, srv.url + '?explore=glider');
+    await frames(S.page, 3);
+    await S.page.evaluate(() => { const t = Date.UTC(2026, 10, 7, 16, 2, 0); Date.now = () => t; });   // 23:02 thứ Bảy giờ Việt Nam
+    await new Promise((r) => setTimeout(r, 21000));
+    check('7 lịch 23:00 không quay cầu khi bay dù', await S.page.evaluate(() => window.__app.songHan.ctrl.state === 'CLOSED'));
+    await S.page.close();
+  }
 } catch (e) {
   problems.push('ngoại lệ: ' + e); console.log(e);
 } finally {

@@ -41,16 +41,16 @@ export function setupSwingUI(songHan: SongHanBridge, toggle: Toggle) {
     stateEl.textContent = t('swingWeather'); clearTimeout(blockedT); blockedT = window.setTimeout(swingRender, 4000); });
   ctrl.addEventListener('swingStart', () => {
     audio.horn();
-    if (follow && cam.mode !== 'tour' && cam.flight.then !== 'tour') {
+    if (follow && cam.mode !== 'tour' && cam.mode !== 'glider' && cam.flight.then !== 'tour') {
       saved = { pos: camera.position.toArray(), target: controls.target.toArray() }; exitTour(); flyTo(VIEWS.shSwingCam);
     }
   });
-  ctrl.addEventListener('swingClosed', () => { audio.horn(); if (follow && saved && cam.mode !== 'tour') flyTo(saved); saved = null; });
+  ctrl.addEventListener('swingClosed', () => { audio.horn(); if (follow && saved && cam.mode !== 'tour' && cam.mode !== 'glider') flyTo(saved); saved = null; });   // đang bay dù: không kéo camera (cầu có thể đã quay trước khi vào dù)
   // tự quay lúc 23:00 thứ Bảy, Chủ nhật theo giờ Việt Nam (UTC+7) nếu trang đang mở; chạy tốc độ thật 1×
   let lastAuto = '';
   setInterval(() => {
     const A = CONFIG.songHan.autoSchedule, now = new Date(Date.now() + A.utcOffset * 3600e3), key = now.toISOString().slice(0, 10);
-    if (A.days.includes(now.getUTCDay()) && now.getUTCHours() === A.hour && now.getUTCMinutes() < 10 && lastAuto !== key && ctrl.state === 'CLOSED') {
+    if (A.days.includes(now.getUTCDay()) && now.getUTCHours() === A.hour && now.getUTCMinutes() < 10 && lastAuto !== key && ctrl.state === 'CLOSED' && cam.mode !== 'glider') {
       lastAuto = key; speedSel.value = '1'; ctrl.start(1);
     }
   }, 20000);

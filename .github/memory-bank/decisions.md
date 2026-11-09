@@ -97,6 +97,11 @@ Hệ quả: dù chỉ vào scene khi bay nên góc nhìn cũ không đổi draw 
 ## D-021: Liên kết ủng hộ MoMo thuần trong Cài đặt — 2026-11-04 — Chấp nhận
 Bối cảnh: cần nút Buy me a coffee nhưng không thêm script/widget bên thứ ba hoặc phụ thuộc runtime. Quyết định: dùng thẻ `<a>` tới trang MoMo, cấu hình URL rỗng thì ẩn, chỉ chấp nhận HTTPS; chữ nút giữ tiếng Anh và `aria-label` dịch đủ 9 ngôn ngữ. Không bật URL thật cho tới khi có alias riêng đã xác minh, vì URL nằm công khai trong bundle. Hệ quả: không thêm mesh/draw call; điện thoại dùng sheet Cài đặt hiện có.
 
+## D-022: Dù lượn ban đêm — cầu sông Hàn tự xoay, Cầu Rồng tự phun — 2026-11-09 — Chấp nhận
+Bối cảnh: nút Quay cầu và Phun lửa & nước nằm trong khung Góc nhìn, bị ẩn khi bay. Đầy đủ ở §6 của [spec](../../docs/superpowers/specs/2026-11-09-du-luon-hieu-ung-dem-design.md).
+Quyết định: chỉ khi `cam.mode === 'glider'` và `dayNight.target > 0.5`, `src/explore/nightShows.ts` bật `show.on` và điều khiển `SwingController` có sẵn (30×, đóng khi tàu qua, nghỉ 30 s, lặp). Sang ngày: ngừng phun ngay, cầu đang quay đi nốt tới khi đóng. `swingUI.ts` không kéo camera và không chạy lịch 23:00 khi đang bay. Không dùng `ctrl.fromTour`; hỏi `canStart()` trước `start()` để bão không phát `swingBlocked` mỗi khung.
+Hệ quả: `?test` tắt bộ tự chạy để phép đo đêm không dao động; test bật qua `__app.explore.nightShows.enabled`. Không thêm mesh, i18n. Bay dù vẫn không có tiếng vì hàng âm thanh bị ẩn.
+
 ## D-023: Đèn đêm đa sắc của tòa nhà chỉ làm trong shader — 2026-11-09 — Chấp nhận
 Bối cảnh: người dùng muốn cảnh đêm giống ảnh tham chiếu (vàng ấm, tháp lung linh, vệt đèn trên sông), ban ngày giữ nguyên. Quyết định: `patchWindows(mat, { perBuilding: true })` lấy định danh từng tòa từ `instanceMatrix` (khóa `windows-city`; địa danh giữ khóa `windows`), khối `far` dùng `patchFarGlow`, shader nước lấy thêm mẫu mirror dọc trục V cho **mọi** nguồn sáng trong ảnh phản chiếu. Vệt chỉ bật khi `uNight > 0.85` (mặt trời xuống dưới chân trời): trước đó trời còn sáng hơn ngưỡng, cả mặt nước sẽ bị coi là vệt.
 Hệ quả: tone mapping ACES và bloom làm đèn sáng bạc thành trắng, nên giữ cường độ emissive thấp và màu đậm; muốn đổi màu đèn thì xem ảnh chụp, đừng chỉ tăng gain. Không thêm mesh hay lượt vẽ (theo thiết kế, chưa đo bằng `test:drawcalls`).

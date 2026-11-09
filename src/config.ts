@@ -591,6 +591,7 @@ const exploreBase = {
   returnRelease: 0.6,  // không đơn vị — hướng bay · hướng vào đạt số này thì trả phím cho người chơi; lớn hơn returnEngage để có trễ (ước lượng)
   returnShort: 150,    // m — gần mép hơn số này thì rẽ đường ngắn về trong, xa hơn thì giữ chiều đang rẽ của người chơi (ước lượng)
   returnTurnSpeed: 40, // m/s — khi đang tự lái về khung mà bay nhanh hơn số này thì rẽ gắt theo tỉ lệ, giữ bán kính vòng về (ước lượng)
+  nightShows: { swingSpeed: 30, swingRest: 30 },   // hệ số tăng tốc quay Cầu sông Hàn khi bay ban đêm (như Tour), s nghỉ giữa hai lượt (ước lượng)
   chase: { back: 18, up: 9, lookDown: 4, lag: 0.25, lagSpeed: 25, look: 30 },   // m phía sau, m phía trên, m điểm nhìn thấp hơn dù (giữ người treo trong khung), s trễ của camera bám đuôi, m/s bay nhanh hơn số này thì giảm trễ để dù không tụt xa, m nhìn trước (ước lượng)
   glider: {
     span: 11,         // m sải cánh (ước lượng)
