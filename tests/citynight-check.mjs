@@ -3,6 +3,7 @@
 // 2. warmDominant, coolSeen, ledSeen: đêm có vàng ấm áp đảo, thấy tháp xanh, thấy viền LED.
 // 3. landmark: địa danh giữ khóa shader cũ, nhà khu phố dùng biến thể mới.
 // 4. corridor: instance đã thu về scale 0 (hành lang Hầm) vẫn vô hình về đêm.
+// 5. streak, dusk, noMirror: mặt sông có vệt đèn; chuyển ngày → đêm tăng dần; tắt phản chiếu không sinh vệt sai.
 //
 //   npm run build && node tests/citynight-check.mjs [--baseline] [--no-shots]
 import { fileURLToPath } from 'node:url';
@@ -47,6 +48,8 @@ export const sample = (b64, rect, refB64) => page.evaluate(async ([b64, r, refB6
   return { n, bright, warm, cool, led, mean, std: Math.sqrt(Math.max(0, sq / n - mean * mean)), diff: diff / n };
 }, [b64, rect, refB64]);
 
+// Mốc đo trên bản đã có đèn theo từng tòa nhưng chưa có vệt phản chiếu (960×540)
+const STREAK_REF = 3367, DUSK_REF = 215.3, NOMIRROR_REF = 19.5;
 const VIEW = [[0, 28, 500], [0, 30, -1200]], TOP = [0, 0, 1, 0.5], ALL = [0, 0, 1, 1];
 const base = (n) => `${SCREENS}citynight-base-${n}.png`;
 try {
@@ -75,6 +78,17 @@ try {
     });
     check(keys.lm === 'windows', `landmark: khóa địa danh "${keys.lm}"`);
     check(keys.city === 'windows-city', `landmark: khóa nhà khu phố "${keys.city}"`);
+    const WATER = [0, 0.6, 1, 1], SHORE = [0, 0.58, 1, 0.85];
+    const w = await sample(night, SHORE), lit = w.warm + w.cool + w.led;
+    console.log('nước gần bờ:', JSON.stringify(w));
+    check(lit >= 2 * STREAK_REF, `streak: ${lit} pixel màu đèn trên sông (cần ≥ 2 lần mức chưa có vệt, ${STREAK_REF})`);
+    await setNight(0.5); const m = await sample(await shot(null), ALL); await setNight(0); const m0 = await sample(await shot(null), ALL); await setNight(1); const m1 = await sample(await shot(null), ALL);
+    console.log('dusk:', m0.mean.toFixed(1), m.mean.toFixed(1), m1.mean.toFixed(1), 'sáng', m0.bright, m.bright, m1.bright);
+    check(m.mean <= DUSK_REF + 5, `dusk: độ sáng lúc 0,5 = ${m.mean.toFixed(1)} (cần ≤ ${DUSK_REF + 5}, mức có sẵn do bloom bật sớm)`);
+    await page.evaluate(() => { window.__app.reflectState.every = 0; }); await frames(page, 3);
+    const nm = await sample(await shot(null), WATER);
+    check(nm.std <= NOMIRROR_REF + 3, `noMirror: độ lệch chuẩn mặt nước ${nm.std.toFixed(1)} (cần ≤ ${NOMIRROR_REF + 3})`);
+    await page.evaluate(() => { window.__app.reflectState.every = 1; }); await frames(page, 2);
     await aim([-500, 120, -1700], [-500, 0, -1699]);
     const c = await sample(await shot(null), [0.45, 0.45, 0.55, 0.55]);
     check(c.warm === 0, `corridor: hành lang Hầm có ${c.warm} pixel đèn (cần 0)`);

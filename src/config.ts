@@ -528,7 +528,8 @@ const cityNightBase = {
   ledEdgeFrac: 0.5,  // phần trên của cạnh đứng có LED, 0..1 chiều cao tháp (ước lượng)
   ledWidth: 1.4,     // m — bề rộng dải LED ở cạnh đứng (ước lượng)
   ledGain: 1.7,      // cường độ phát sáng LED, hệ số (ước lượng)
-  farGlow: 0.16      // cường độ ánh vàng của khối nhà ở xa, hệ số (ước lượng)
+  farGlow: 0.16,      // cường độ ánh vàng của khối nhà ở xa, hệ số (ước lượng)
+  streak: { taps: 8, reach: 0.16, threshold: 0.35, gain: 2.8 }   // vệt đèn trên sông: số mẫu, độ dài theo tọa độ ảnh phản chiếu 0..1, ngưỡng độ sáng, hệ số (ước lượng)
 };
 
 const perfBase = {
