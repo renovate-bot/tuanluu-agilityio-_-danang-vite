@@ -45,7 +45,7 @@ export function setupSwingUI(songHan: SongHanBridge, toggle: Toggle) {
       saved = { pos: camera.position.toArray(), target: controls.target.toArray() }; exitTour(); flyTo(VIEWS.shSwingCam);
     }
   });
-  ctrl.addEventListener('swingClosed', () => { audio.horn(); if (follow && saved && cam.mode !== 'tour') flyTo(saved); saved = null; });
+  ctrl.addEventListener('swingClosed', () => { audio.horn(); if (follow && saved && cam.mode !== 'tour' && cam.mode !== 'glider') flyTo(saved); saved = null; });   // đang bay dù: không kéo camera (cầu có thể đã quay trước khi vào dù)
   // tự quay lúc 23:00 thứ Bảy, Chủ nhật theo giờ Việt Nam (UTC+7) nếu trang đang mở; chạy tốc độ thật 1×
   let lastAuto = '';
   setInterval(() => {

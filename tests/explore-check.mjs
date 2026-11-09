@@ -440,6 +440,19 @@ try {
     const o = await O.page.evaluate(() => { const a = window.__app; return { on: a.explore.nightShows.show.on, state: a.songHan.ctrl.state }; });
     check('6e không bay dù: không tự chạy', !o.on && o.state === 'CLOSED');
     await O.page.close();
+
+    // 6g: cầu đã quay (camera theo dõi đã lưu vị trí) trước khi vào dù; lúc cầu đóng không được kéo camera
+    const J = await openApp(browser, srv.url);
+    await frames(J.page, 3);
+    await J.page.evaluate(() => {
+      const a = window.__app, n = a.exFlight.CONFIG_explore.nightShows;
+      n.swingSpeed = 600; a.songHan.ctrl.start(1); a.explore.start(); a.explore.nightShows.enabled = true;
+      window.__closed = false; a.songHan.ctrl.addEventListener('swingClosed', () => { window.__closed = true; });
+    });
+    await J.page.waitForFunction(() => window.__closed, { timeout: 120000 });
+    await frames(J.page, 3);
+    check('6g cầu quay trước khi vào dù: đóng xong vẫn ở glider', await J.page.evaluate(() => window.__app.cam.mode === 'glider'));
+    await J.page.close();
   }
 
   // Mục 7 — lịch 23:00 không chạy khi bay dù (bộ tự chạy tắt do ?test)
