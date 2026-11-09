@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { CONFIG } from '../config';
 import { scene } from '../core/renderer';
 import { rand, clamp } from '../common/math';
-import { patchWindows } from '../common/shaders';
+import { patchWindows, patchFarGlow } from '../common/shaders';
 
 /* ============================ Đô thị ============================ */
 export function buildCity() {
@@ -28,8 +28,9 @@ export function buildCity() {
   for (const b of items) { const key = `${Math.floor(b.x / cell)}_${Math.floor(b.z / cell)}`; if (!clusters.has(key)) clusters.set(key, []); clusters.get(key).push(b); }
   const geo = new THREE.BoxGeometry(1, 1, 1).translate(0, 0.5, 0);
   const nearMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.75, metalness: 0.05 });
-  patchWindows(nearMat);
+  patchWindows(nearMat, { perBuilding: true });
   const farMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.9 });
+  patchFarGlow(farMat);
   const m = new THREE.Matrix4(), q = new THREE.Quaternion(), v = new THREE.Vector3(), s = new THREE.Vector3(), col = new THREE.Color();
   for (const list of clusters.values()) {
     const cx = list.reduce((a, b) => a + b.x, 0) / list.length, cz = list.reduce((a, b) => a + b.z, 0) / list.length;

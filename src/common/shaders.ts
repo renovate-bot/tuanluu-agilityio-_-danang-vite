@@ -5,21 +5,48 @@ import { CONFIG } from '../config';
 type Mat = THREE.Material;
 
 /* Cửa sổ nhà cao tầng sinh bằng shader theo tọa độ thế giới (không kéo giãn khi đổi chiều cao) */
-export function patchWindows(mat: Mat) {
-  mat.customProgramCacheKey = () => 'windows';
+const f1 = (n: number) => n.toFixed(4);
+/* Đèn đêm theo từng tòa (perBuilding): vBId, vBSize là hằng trong một instance; không chia cho kích thước nên instance scale 0 vẫn an toàn */
+function cityNightGlsl() {
+  const N = CONFIG.cityNight;
+  return `{ vec2 cl; float wm = winMask(cl);
+          float h = bHash(cl + floor(vBPos.xz * 0.02) * 7.13);
+          float s1 = bHash(vBId + 3.7), s2 = bHash(vBId + 11.3), s3 = bHash(vBId + 29.1);
+          float tower = step(${f1(N.towerH)}, vBSize.y);
+          vec3 lit = s1 < 0.25 ? vec3(1.0, 0.55, 0.14) : s1 < 0.5 ? vec3(1.0, 0.46, 0.09) : s1 < 0.75 ? vec3(1.0, 0.38, 0.06) : vec3(1.0, 0.64, 0.22);
+          if (tower > 0.5 && s2 < ${f1(N.coolShare)}) lit = s3 < 0.5 ? vec3(0.04, 0.28, 1.0) : vec3(0.02, 0.72, 0.62);
+          float on = step(1.0 - mix(${f1(N.lowLit)}, ${f1(N.towerLit)}, tower), h);
+          totalEmissiveRadiance += wm * on * lit * uNight * mix(${f1(N.lowGain)}, ${f1(N.towerGain)}, tower);
+          if (tower > 0.5 && abs(vBNrm.y) < 0.6) {
+            float top = vBBase + vBSize.y, fromTop = top - vBPos.y;
+            float axis = abs(vBNrm.x) > 0.5 ? abs(vBPos.z - vBId.y) - vBSize.z * 0.5 : abs(vBPos.x - vBId.x) - vBSize.x * 0.5;
+            float band = step(fromTop, ${f1(N.ledBand)});
+            float edge = step(-${f1(N.ledWidth)}, axis) * step(fromTop, vBSize.y * ${f1(N.ledEdgeFrac)});
+            vec3 led = s3 < 0.25 ? vec3(0.70, 0.04, 1.0) : s3 < 0.5 ? vec3(1.0, 0.03, 0.42) : s3 < 0.75 ? vec3(0.04, 0.45, 1.0) : vec3(1.0, 0.55, 0.05);
+            totalEmissiveRadiance += max(band, edge) * led * uNight * ${f1(N.ledGain)};
+          } }`;
+}
+
+export function patchWindows(mat: Mat, opts: { perBuilding?: boolean } = {}) {
+  const per = !!opts.perBuilding;
+  mat.customProgramCacheKey = () => (per ? 'windows-city' : 'windows');
   mat.onBeforeCompile = (sh) => {
     sh.uniforms.uNight = shared.uNight;
     sh.vertexShader = sh.vertexShader
-      .replace('#include <common>', '#include <common>\nvarying vec3 vBPos; varying vec3 vBNrm;')
+      .replace('#include <common>', '#include <common>\nvarying vec3 vBPos; varying vec3 vBNrm;' + (per ? ' flat varying vec2 vBId; flat varying vec3 vBSize; flat varying float vBBase;' : ''))
       .replace('#include <fog_vertex>', `#include <fog_vertex>
         { vec4 bp = vec4(transformed, 1.0); vec3 bn = objectNormal;
         #ifdef USE_INSTANCING
           bp = instanceMatrix * bp; bn = mat3(instanceMatrix) * bn;
         #endif
-          vBPos = (modelMatrix * bp).xyz; vBNrm = normalize(mat3(modelMatrix) * bn); }`);
+          vBPos = (modelMatrix * bp).xyz; vBNrm = normalize(mat3(modelMatrix) * bn); }` + (per ? `
+        #ifdef USE_INSTANCING
+          { vec4 o = modelMatrix * instanceMatrix[3]; vBId = o.xz; vBBase = o.y;
+            vBSize = vec3(length(instanceMatrix[0].xyz), length(instanceMatrix[1].xyz), length(instanceMatrix[2].xyz)); }
+        #endif` : ''));
     sh.fragmentShader = sh.fragmentShader
       .replace('#include <common>', `#include <common>
-        varying vec3 vBPos; varying vec3 vBNrm; uniform float uNight;
+        varying vec3 vBPos; varying vec3 vBNrm; uniform float uNight;${per ? ' flat varying vec2 vBId; flat varying vec3 vBSize; flat varying float vBBase;' : ''}
         float bHash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
         float winMask(out vec2 cell){
           float side = 1.0 - step(0.6, abs(vBNrm.y));
@@ -32,10 +59,25 @@ export function patchWindows(mat: Mat) {
         { vec2 cl; float wm = winMask(cl);
           diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.20, 0.29, 0.36), wm * 0.82); }`)
       .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
-        { vec2 cl; float wm = winMask(cl);
+        ` + (per ? cityNightGlsl() : `{ vec2 cl; float wm = winMask(cl);
           float h = bHash(cl + floor(vBPos.xz * 0.02) * 7.13);
           vec3 lit = mix(vec3(1.0, 0.78, 0.46), vec3(0.75, 0.88, 1.0), step(0.8, h));
-          totalEmissiveRadiance += wm * step(0.42, h) * lit * uNight * 1.3; }`);
+          totalEmissiveRadiance += wm * step(0.42, h) * lit * uNight * 1.3; }`));
+  };
+}
+
+/* Ánh vàng nhẹ về đêm cho khối trơn ở xa (level far của LOD nhà): chỉ mặt bên, để đường chân trời không tối hẳn */
+export function patchFarGlow(mat: Mat) {
+  mat.customProgramCacheKey = () => 'far-glow';
+  mat.onBeforeCompile = (sh) => {
+    sh.uniforms.uNight = shared.uNight;
+    sh.vertexShader = sh.vertexShader
+      .replace('#include <common>', '#include <common>\nvarying float vFarNy;')
+      .replace('#include <fog_vertex>', '#include <fog_vertex>\n vFarNy = abs(objectNormal.y);');
+    sh.fragmentShader = sh.fragmentShader
+      .replace('#include <common>', '#include <common>\nuniform float uNight; varying float vFarNy;')
+      .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
+        totalEmissiveRadiance += vec3(1.0, 0.75, 0.42) * ${f1(CONFIG.cityNight.farGlow)} * uNight * (1.0 - step(0.6, vFarNy));`);
   };
 }
 

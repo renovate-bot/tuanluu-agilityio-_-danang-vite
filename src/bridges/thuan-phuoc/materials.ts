@@ -20,7 +20,7 @@ export function tpMaterials() {
     building: new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.75, metalness: 0.05 }),
     textures: [road] as THREE.Texture[]
   };
-  patchWindows(M.building);
+  patchWindows(M.building, { perBuilding: true });
   return M;
 }
 export type TpMaterials = ReturnType<typeof tpMaterials>;

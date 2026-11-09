@@ -9,7 +9,7 @@ import { renderer, scene, camera, controls } from './core/renderer';
 import { shared, windFx } from './core/shared';
 import { buildLights } from './core/lights';
 import { buildSky, shadowCenter } from './core/sky';
-import { buildWater, water } from './core/water';
+import { buildWater, water, reflectState } from './core/water';
 import { applyNight, stepNight, dayNight } from './core/dayNight';
 import { renderFrame, onResize, scheduleResize } from './core/postprocessing';
 import { perf } from './core/perf';
@@ -102,7 +102,7 @@ const TEST_THREE = { Vector3: THREE.Vector3, Quaternion: THREE.Quaternion, Matri
 const query = new URLSearchParams(location.search);
 if (query.has('test')) {
   perf.on = query.has('perf');
-  (window as unknown as { __app: unknown }).__app = { renderer, scene, camera, controls, cam, shared, songHan, hr: hanTunnel, sunWheel, riverfront, weather, hrDrive, swRide, windFx, THREE: TEST_THREE, dayNight, tours: TOURS, tour, narration, audio, perf, quality, ui: { ...ui, ui: compactState, openSheet, closeSheets, reveal }, explore, keys, exFlight: { exCreate, exStep, exInputFromKeys, exBuildGlider, exPlaceGlider, exChase, CONFIG_explore: CONFIG.explore } };
+  (window as unknown as { __app: unknown }).__app = { reflectState, renderer, scene, camera, controls, cam, shared, songHan, hr: hanTunnel, sunWheel, riverfront, weather, hrDrive, swRide, windFx, THREE: TEST_THREE, dayNight, tours: TOURS, tour, narration, audio, perf, quality, ui: { ...ui, ui: compactState, openSheet, closeSheets, reveal }, explore, keys, exFlight: { exCreate, exStep, exInputFromKeys, exBuildGlider, exPlaceGlider, exChase, CONFIG_explore: CONFIG.explore } };
 }
 
 /* ============================ Vòng lặp ============================ */
