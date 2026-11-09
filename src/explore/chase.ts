@@ -11,7 +11,7 @@ export function exChase(camera: THREE.PerspectiveCamera, target: THREE.Vector3, 
   const fx = Math.cos(s.yaw), fz = -Math.sin(s.yaw);
   _want.set(s.pos.x - fx * K.back, s.pos.y + K.up, s.pos.z - fz * K.back);
   if (snap) camera.position.copy(_want);
-  else camera.position.lerp(_want, 1 - Math.exp(-dt / K.lag));
+  else camera.position.lerp(_want, 1 - Math.exp(-dt / (K.lag * Math.min(1, K.lagSpeed / s.speed))));   // khoảng tụt ≈ tốc độ × trễ: bay nhanh giảm trễ để giữ khung hình
   target.set(s.pos.x + fx * K.look, s.pos.y, s.pos.z + fz * K.look);
   camera.lookAt(target);
 }

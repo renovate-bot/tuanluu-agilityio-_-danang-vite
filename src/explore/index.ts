@@ -9,18 +9,28 @@ import { exBuildGlider, exPlaceGlider } from './glider';
 import { exChase } from './chase';
 import { exShowChooser } from './chooser';
 
-const _inp: GliderInput = { turn: 0, climb: 0 };   // đầu vào tái dùng mỗi khung
+const _inp: GliderInput = { turn: 0, climb: 0, throttle: 0 };   // đầu vào tái dùng mỗi khung
 
 let glider: THREE.Group | null = null;
 let state: GliderState | null = null;
+let readout = '';   // chữ đang hiện ở #exSpeed: chỉ ghi DOM khi đổi
 
 const active = () => cam.mode === 'glider' && state !== null;
+
+/* Đồng hồ tốc độ (km/h) và độ cao (m): chỉ số và đơn vị nên không cần dịch */
+function exShowSpeed(): void {
+  const t = `${Math.round(state!.speed * 3.6)} km/h · ${Math.round(state!.pos.y)} m`;
+  if (t === readout) return;
+  readout = t;
+  const el = document.getElementById('exSpeed'); if (el) el.textContent = t;
+}
 
 /* Một bước: mô phỏng, đặt dù, đặt camera bám */
 function advance(dt: number, inp: GliderInput): void {
   exStep(state!, inp, dt);
   exPlaceGlider(glider!, state!);
   exChase(camera, controls.target, state!, dt);
+  exShowSpeed();
 }
 
 export const explore = {
@@ -34,6 +44,7 @@ export const explore = {
     cam.flight.then = null; cam.mode = 'glider'; controls.enabled = false;
     exPlaceGlider(glider, state);
     exChase(camera, controls.target, state, 0, true);
+    exShowSpeed();
     document.body.classList.add('explore');
   },
   update(dt: number): void {

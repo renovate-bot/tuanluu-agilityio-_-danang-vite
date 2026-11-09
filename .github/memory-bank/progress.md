@@ -36,7 +36,7 @@ _Cập nhật: 2026-11-09_
 Tất cả đã vào `main` (PR #1 hầm, PR #2 riverfront, PR #3 hướng dẫn AI agent, PR #6 thời tiết + kịch bản bão có thuyết minh), Tour 4 cầu (merge cục bộ `ad963d0`), PR #8 Vòng quay Mặt Trời (merge `257b905`), tối ưu độ mượt (merge `ecebdf8`), giao diện điện thoại (merge `fc53fdd`), PR #10 Buy me a coffee (merge `cbfda36`), PR #11 chuyển tài liệu sang `docs/superpowers/` (merge `66d7ebb`).
 
 ## Còn thiếu
-- Tự khám phá (dù lượn): 8 bản dịch của 12 khóa `ex*` chưa người bản ngữ duyệt; chưa đo FPS trên GPU/điện thoại thật; theo §3 của spec còn hoãn ô tô, xe máy, đi bộ, điện thoại/cảm ứng, tăng/giảm tốc, va chạm/hạ cánh, nhãn khi bay.
+- Tự khám phá (dù lượn): 8 bản dịch của 12 khóa `ex*` chưa người bản ngữ duyệt; chưa đo FPS trên GPU/điện thoại thật; theo §3 của spec còn hoãn ô tô, xe máy, đi bộ, điện thoại/cảm ứng, va chạm/hạ cánh, nhãn khi bay.
 - Giao diện điện thoại: đo trên điện thoại thật (FPS, safe-area, cảm giác chạm); người bản ngữ duyệt 7 bản dịch khóa mới; chip `.seg` cao 36 px (< 44 px khuyến nghị cho chạm, cần thử máy thật); câu hướng dẫn xuống cabin (`swRideHintTouch`) trỏ tới nút nằm trong sheet Góc nhìn.
 - Tự chọn preset theo tháng khi không có `?test` (12b-6, đã đồng ý nhưng chưa code; đổi mặc định hiển thị nên cần chạy lại bộ test).
 - Thời tiết: số draw call từng preset (`rain`, `storm`, …) chưa ghi vào `KET-QUA.md`; log GD8 chỉ ghi `now`. Cột "bản gốc" của `test:drawcalls` chưa đo lại trong bản này.

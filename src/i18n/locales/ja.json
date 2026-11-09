@@ -448,6 +448,6 @@
   "exGuidedDesc": "ツアー、視点、ナレーション",
   "exSoon": "近日公開",
   "exDesktopOnly": "パソコン専用",
-  "exHint": "W/S または ↑/↓ で上昇/下降 · A/D または ←/→ で旋回 · Esc で終了",
+  "exHint": "W/S または ↑/↓ で上昇/下降 · A/D または ←/→ で旋回 · Q/E で減速/加速 · Esc で終了",
   "exExit": "終了"
 }

@@ -6,12 +6,12 @@ import { CONFIG } from '../config';
 
 const C = CONFIG.explore;
 
-export interface GliderState { pos: THREE.Vector3; yaw: number; bank: number; ret: number }   // ret: chiều rẽ đang chốt khi lái về khung (0 = không)
-export interface GliderInput { turn: -1 | 0 | 1; climb: -1 | 0 | 1 }
+export interface GliderState { pos: THREE.Vector3; yaw: number; bank: number; ret: number; speed: number }   // ret: chiều rẽ đang chốt khi lái về khung (0 = không)
+export interface GliderInput { turn: -1 | 0 | 1; climb: -1 | 0 | 1; throttle?: -1 | 0 | 1 }   // throttle: E tăng tốc, Q giảm tốc; bỏ trống = giữ tốc độ
 
 /* Trạng thái ban đầu tại điểm cất cánh */
 export function exCreate(): GliderState {
-  return { pos: new THREE.Vector3(C.takeoff[0], C.takeoff[1], C.takeoff[2]), yaw: C.takeoffYaw, bank: 0, ret: 0 };
+  return { pos: new THREE.Vector3(C.takeoff[0], C.takeoff[1], C.takeoff[2]), yaw: C.takeoffYaw, bank: 0, ret: 0, speed: C.speed };
 }
 
 const wrapPi = (a: number) => Math.atan2(Math.sin(a), Math.cos(a));
@@ -39,21 +39,23 @@ function exTurnEff(s: GliderState, turn: number): number {
 
 /* Một bước mô phỏng: không cấp phát */
 export function exStep(s: GliderState, inp: GliderInput, dt: number): void {
+  s.speed = Math.min(C.speedMax, Math.max(C.speedMin, s.speed + (inp.throttle ?? 0) * C.speedAccel * dt));
   const turn = exTurnEff(s, inp.turn);
-  s.bank += (turn * C.bankMax - s.bank) * Math.min(1, C.bankRate * dt);
-  s.yaw += C.turnRate * (s.bank / C.bankMax) * dt;
-  s.pos.x += Math.cos(s.yaw) * C.speed * dt;
-  s.pos.z -= Math.sin(s.yaw) * C.speed * dt;
+  const sharpen = s.ret !== 0 ? Math.max(1, s.speed / C.returnTurnSpeed) : 1;   // đang tự lái về: bay nhanh vẫn giữ bán kính vòng về, không lao vào mép
+  s.bank += (turn * C.bankMax - s.bank) * Math.min(1, C.bankRate * sharpen * dt);
+  s.yaw += C.turnRate * sharpen * (s.bank / C.bankMax) * dt;
+  s.pos.x += Math.cos(s.yaw) * s.speed * dt;
+  s.pos.z -= Math.sin(s.yaw) * s.speed * dt;
   s.pos.y = Math.min(C.ceiling, Math.max(C.floor, s.pos.y + inp.climb * C.climbRate * dt));
   const b = C.bounds;   // kẹp cứng: không bao giờ vượt khung
   s.pos.x = Math.min(b.x1, Math.max(b.x0, s.pos.x));
   s.pos.z = Math.min(b.z1, Math.max(b.z0, s.pos.z));
 }
 
-/* Phím giữ → đầu vào lái: A/← trái, D/→ phải, W/↑ lên, S/↓ xuống; hai phím ngược nhau triệt tiêu */
-export function exInputFromKeys(keys: Set<string>, out: GliderInput = { turn: 0, climb: 0 }): GliderInput {   // out: đối tượng tái dùng cho đường khung hình (không cấp phát)
+/* Phím giữ → đầu vào lái: A/← trái, D/→ phải, W/↑ lên, S/↓ xuống, E tăng tốc, Q giảm tốc; hai phím ngược nhau triệt tiêu */
+export function exInputFromKeys(keys: Set<string>, out: GliderInput = { turn: 0, climb: 0, throttle: 0 }): GliderInput {   // out: đối tượng tái dùng cho đường khung hình (không cấp phát)
   const turn = (keys.has('a') || keys.has('arrowleft') ? 1 : 0) - (keys.has('d') || keys.has('arrowright') ? 1 : 0);
   const climb = (keys.has('w') || keys.has('arrowup') ? 1 : 0) - (keys.has('s') || keys.has('arrowdown') ? 1 : 0);
-  out.turn = turn as -1 | 0 | 1; out.climb = climb as -1 | 0 | 1;
+  out.turn = turn as -1 | 0 | 1; out.climb = climb as -1 | 0 | 1; out.throttle = ((keys.has('e') ? 1 : 0) - (keys.has('q') ? 1 : 0)) as -1 | 0 | 1;
   return out;
 }

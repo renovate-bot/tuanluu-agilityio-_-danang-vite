@@ -557,12 +557,15 @@ const uiBase = {
 /* ------------------------- Tự khám phá bằng dù lượn -------------------------
    Chế độ bay tự do (W/A/S/D), mô hình bay ở explore/flight.ts. Mọi số đều (ước lượng) */
 const exploreBase = {
-  speed: 25,           // m/s — tốc độ bay ngang không đổi (ước lượng; dù thật ≈ 10 m/s, chọn nhanh hơn để dễ chơi)
+  speed: 50,           // m/s — tốc độ ngang khi cất cánh (ước lượng)
+  speedMin: 15,        // m/s — tốc độ ngang nhỏ nhất, giữ Q (ước lượng)
+  speedMax: 100,       // m/s — tốc độ ngang lớn nhất, giữ E (ước lượng)
+  speedAccel: 30,      // m/s² — mức tăng/giảm tốc khi giữ Q/E (ước lượng)
   turnRate: 0.6,       // rad/s — tốc độ đổi hướng ở góc nghiêng tối đa (ước lượng)
   bankMax: 0.45,       // rad — góc nghiêng tối đa (ước lượng)
   bankRate: 2.5,       // 1/s — tốc độ tiến tới góc nghiêng đích (ước lượng)
-  climbRate: 6,        // m/s — tốc độ lên/xuống khi giữ W/S (ước lượng)
-  floor: 30,           // m — độ cao tối thiểu, y thế giới (ước lượng)
+  climbRate: 20,      // m/s — tốc độ lên/xuống khi giữ W/S (ước lượng)
+  floor: 6,            // m — độ cao tối thiểu, y thế giới; người treo thấp hơn gốc ~4 m nên vẫn trên mặt đất, đủ chui gầm cầu (ước lượng)
   ceiling: 800,        // m — độ cao tối đa, y thế giới (ước lượng)
   takeoff: [2600, 702, -4700] as [number, number, number],   // m — điểm cất cánh [x, y, z], đỉnh Sơn Trà phía Bắc (ước lượng)
   takeoffYaw: Math.atan2(-1800, -2600),   // rad — hướng ban đầu về phía Thuận Phước (0, −2900) (ước lượng)
@@ -571,7 +574,8 @@ const exploreBase = {
   returnEngage: 0.3,   // không đơn vị — trong dải sát mép, hướng bay · hướng vào dưới số này thì bỏ qua phím và lái về (ước lượng)
   returnRelease: 0.6,  // không đơn vị — hướng bay · hướng vào đạt số này thì trả phím cho người chơi; lớn hơn returnEngage để có trễ (ước lượng)
   returnShort: 150,    // m — gần mép hơn số này thì rẽ đường ngắn về trong, xa hơn thì giữ chiều đang rẽ của người chơi (ước lượng)
-  chase: { back: 18, up: 6, lag: 0.25, look: 30 },   // m phía sau, m phía trên, s trễ của camera bám đuôi, m nhìn trước (ước lượng)
+  returnTurnSpeed: 40, // m/s — khi đang tự lái về khung mà bay nhanh hơn số này thì rẽ gắt theo tỉ lệ, giữ bán kính vòng về (ước lượng)
+  chase: { back: 18, up: 6, lag: 0.25, lagSpeed: 25, look: 30 },   // m phía sau, m phía trên, s trễ của camera bám đuôi, m/s bay nhanh hơn số này thì giảm trễ để dù không tụt xa, m nhìn trước (ước lượng)
   glider: {
     span: 11,         // m sải cánh (ước lượng)
     lines: 7,         // m khoảng treo: người treo cách cánh xuống dưới bao nhiêu mét (ước lượng)

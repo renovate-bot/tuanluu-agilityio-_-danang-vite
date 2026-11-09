@@ -29,7 +29,7 @@ try {
       let ok = true, last = null;
       for (const [turn, climb] of [[1, 1], [-1, -1], [1, -1], [0, 0]]) {
         const s = exCreate(); last = null;
-        run(s, { turn, climb }, 30, (s) => { if (last) { const v = Math.hypot(s.pos.x - last.x, s.pos.z - last.z) / dt; if (v < 24.99 || v > 25.01) ok = false; } last = { x: s.pos.x, z: s.pos.z }; });
+        run(s, { turn, climb }, 30, (s) => { if (last) { const v = Math.hypot(s.pos.x - last.x, s.pos.z - last.z) / dt; if (Math.abs(v - C.speed) > 0.01) ok = false; } last = { x: s.pos.x, z: s.pos.z }; });
       }
       out.a = ok;
       // 1b rẽ trái / phải
@@ -52,7 +52,7 @@ try {
         return { clamped, flips };
       };
       // 1e bay thẳng 600 s, A 600 s, D 600 s từ điểm cất cánh: 0 bước kẹp
-      let e = 0; for (const turn of [0, 1, -1]) e += sim(exCreate(), { turn, climb: 0 }, 600).clamped;
+      let e = 0; for (const sp of [C.speedMin, C.speed, C.speedMax]) for (const turn of [0, 1, -1]) { const s = exCreate(); s.speed = sp; e += sim(s, { turn, climb: 0 }, 600).clamped; }
       out.e = e;
       // 1f xuất phát trong dải returnMargin, hướng ra ngoài: cách mép 150 và 300 m, 4 mép + góc (ra ngoài và dọc mép), không phím / giữ A / giữ D, 180 s
       const mx = (C.bounds.x0 + C.bounds.x1) / 2, mz = (C.bounds.z0 + C.bounds.z1) / 2, B = C.bounds;
@@ -60,8 +60,8 @@ try {
       for (const off of [150, 300]) {
         const starts = [[B.x1 - off, mz, 0], [B.x0 + off, mz, Math.PI], [mx, B.z0 + off, Math.PI / 2], [mx, B.z1 - off, -Math.PI / 2],
           [B.x1 - off, B.z0 + off, Math.PI / 4], [B.x1 - off, B.z0 + off, Math.PI / 2], [B.x0 + off, B.z1 - off, -3 * Math.PI / 4], [B.x0 + off, B.z1 - off, -Math.PI / 2]];
-        for (const [x, z, yaw] of starts) for (const turn of [0, 1, -1]) {
-          const s = exCreate(); s.pos.set(x, 300, z); s.yaw = yaw; s.bank = 0;
+        for (const sp of [C.speedMin, C.speed, C.speedMax]) for (const [x, z, yaw] of starts) for (const turn of [0, 1, -1]) {
+          const s = exCreate(); s.pos.set(x, 300, z); s.yaw = yaw; s.bank = 0; s.speed = sp;
           const r = sim(s, { turn, climb: 0 }, 180); fClamped += r.clamped; fMaxFlips = Math.max(fMaxFlips, r.flips); fCases++;
         }
       }
@@ -69,14 +69,19 @@ try {
       // 1g phím
       const k = (...a) => exInputFromKeys(new Set(a));
       out.g = [k('a').turn === 1, k('arrowright').turn === -1, k('a', 'd').turn === 0, k('w').climb === 1, k('s', 'arrowup').climb === 0, k().turn === 0 && k().climb === 0];
+      // 1i tăng/giảm tốc
+      s = exCreate(); run(s, { turn: 0, climb: 0, throttle: 1 }, 10); out.iMax = s.speed; const held = s.speed; run(s, { turn: 0, climb: 0, throttle: 0 }, 2); out.iHold = s.speed === held;
+      run(s, { turn: 0, climb: 0, throttle: -1 }, 10); out.iMin = s.speed;
+      out.iKeys = k('e').throttle === 1 && k('q').throttle === -1 && k('q', 'e').throttle === 0 && k('a').throttle === 0;
       // 1h
       s = exCreate();
       out.h = s.pos.x === C.takeoff[0] && s.pos.y === C.takeoff[1] && s.pos.z === C.takeoff[2] && s.yaw === C.takeoffYaw && s.bank === 0;
       return out;
     });
-    check('1a tốc độ ngang luôn 25 m/s', r.a);
+    check('1a không Q/E: tốc độ ngang giữ đúng C.speed', r.a);
+    check(`1i E lên tới ${r.iMax}, Q xuống tới ${r.iMin}, phím ${r.iKeys}`, r.iMax === 100 && r.iMin === 15 && r.iHold && r.iKeys === true);
     check(`1b A rẽ trái (+${r.bL.toFixed(2)}), D rẽ phải (${r.bR.toFixed(2)})`, r.bL > 0.5 && r.bR < -0.5);
-    check(`1c W lên tới 800, S xuống tới 30 (${r.cUp}, ${r.cDown})`, r.cUp === 800 && r.cDown === 30);
+    check(`1c W lên tới 800, S xuống tới 6 (${r.cUp}, ${r.cDown})`, r.cUp === 800 && r.cDown === 6);
     check(`1d thả phím tự cân bằng (bank ${r.dBank.toExponential(1)}, Δyaw ${r.dYaw.toExponential(1)})`, Math.abs(r.dBank) < 0.01 && Math.abs(r.dYaw) < 0.005);
     check(`1e bay thẳng / giữ A / giữ D 600 s: ${r.e} bước bị kẹp cứng (= 0)`, r.e === 0);
     check(`1f ${r.fCases} ca xuất phát trong dải sát mép (150/300 m, ra ngoài): ${r.f} bước bị kẹp (= 0), bank đổi dấu tối đa ${r.fFlips} lần trong 60 s cuối (≤ 2)`, r.f === 0 && r.fFlips <= 2);
@@ -258,7 +263,7 @@ try {
     await D.page.click('#chooser [data-pick="glider"]');
     await D.page.waitForFunction(() => window.__app.cam.mode === 'glider');
     await frames(D.page, 2);
-    const keep = ['langSelect', 'btnNight', 'qualitySel', 'exHint', 'btnExExit'];
+    const keep = ['langSelect', 'btnNight', 'qualitySel', 'exHint', 'exSpeed', 'btnExExit'];
     const hide = ['[data-bridge="dragon"]', '[data-bridge="hr"]', '[data-view="tour"]', '[data-view="allTour"]', '[data-view="walk"]', '#tourCaption', '#weatherSel', '#btnWxStorm', '#timeSlider', '#btnMusic', '.specs', 'h1'];
     const shown = [], leaked = [];
     for (const id of keep) if (!(await vis(D.page, '#' + id))) shown.push(id);
@@ -301,7 +306,7 @@ try {
     const miss = [];
     for (const c of langs) for (const k of exKeys) if (typeof L[c][k] !== 'string' || !L[c][k].trim()) miss.push(`${c}.${k}`);
     check(`4h ${exKeys.length} khóa ex* (${exKeys.join(',')}) đủ 9 ngôn ngữ (thiếu: ${miss.join(',') || '-'})`, exKeys.length >= 9 && miss.length === 0);
-    check('4h vi exSoon / exDesktopOnly / exHint đúng chữ', L.vi.exSoon === 'Sắp có' && L.vi.exDesktopOnly === 'Chỉ dùng trên máy tính' && L.vi.exHint === 'W/S hoặc ↑/↓ để lên/xuống · A/D hoặc ←/→ để rẽ · Esc để thoát');
+    check('4h vi exSoon / exDesktopOnly / exHint đúng chữ', L.vi.exSoon === 'Sắp có' && L.vi.exDesktopOnly === 'Chỉ dùng trên máy tính' && L.vi.exHint === 'W/S hoặc ↑/↓ để lên/xuống · A/D hoặc ←/→ để rẽ · Q/E để giảm/tăng tốc · Esc để thoát');
   }
   // Mục 5 — đo draw call và thời gian khung ở các tư thế bay (không fail, trừ phần dù ngày ≠ đêm)
   //   Tư thế gán trực tiếp state.pos/yaw; gốc nhóm dù nằm giữa cánh và người lái (originAt) nên pos là điểm giữa dù, không phải mũi người.
