@@ -98,6 +98,7 @@ test('leave khi flying: gửi leave, chuyển watching, không chọn xem chính
   lobby(t, 1, 2); s.leave();
   assert.deepEqual(t.sent.at(-1), { t: 'leave' });
   assert.equal(s.phase, 'watching'); assert.equal(s.mySlot, -1); assert.equal(s.watched, 1);
+  assert.equal(s.notice, 'released');   // rời máy: cùng thông báo với khi máy chủ thu hồi chỗ
 });
 
 test('sendPos ngoài flying không gửi; heartbeat chỉ khi flying', async () => {

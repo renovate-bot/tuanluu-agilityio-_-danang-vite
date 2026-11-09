@@ -121,6 +121,7 @@ export function setupExplore(ctrl: SwingController): void {
     if (e.ctrlKey || e.metaKey || e.altKey) return;   // phím tắt trình duyệt (Cmd+S...) không lái dù, tránh kẹt phím
     const t = e.target as HTMLElement | null;
     if (t && /^(SELECT|INPUT|TEXTAREA)$/.test(t.tagName)) return;   // phím trong ô chọn/nhập không lái dù
+    exMulti.activity();   // phím điều khiển (kể cả tự lặp) tính là còn đó
     const k = e.key.toLowerCase(); keys.add(k);
     if (k.startsWith('arrow')) e.preventDefault();
   });

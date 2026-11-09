@@ -464,5 +464,6 @@
   "exMpInviteFly": "Join in",
   "exMpLate": "Someone else just took the seat. You keep watching.",
   "exMpLost": "Connection to the shared sky was lost. You are now flying alone.",
-  "exMpReleased": "You were idle for too long, so your seat was given up. You are watching."
+  "exMpReleased": "You were idle for too long, so your seat was given up. You are watching.",
+  "exMpIdle": "Are you still there? {s} s"
 }

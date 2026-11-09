@@ -3,6 +3,7 @@
 //   Mục 2: ?test không có multi= thì không mở WebSocket nào.
 //   Mục 3 (Task 6): bước chọn slot + nhập tên trong màn chọn — số chỗ trực tiếp, tên, chống chèn HTML/RTL, nhớ tên, máy chủ tắt, đổi ngôn ngữ.
 //   Mục 4 (Task 7): chế độ xem (5 bot), lời mời vào chỗ trống, giành trước, người xem rời, ô tên không lái dù, Esc, mất máy chủ khi xem và khi bay.
+//   Mục 5 (Task 8): rời máy — đếm ngược, trả slot, camera giữ nguyên, lời mời còn dùng, phím giữ slot, nhịp sống không nhân đôi, đóng trang, tab ẩn + rAF dừng.
 //   Tự spawn `wrangler dev` ở cổng 8799 và luôn kill khi xong hoặc lỗi.
 //
 //   npm run build && npm run test:multi
@@ -316,6 +317,98 @@ try {
   const lost = await L.page.evaluate(() => ({ txt: document.getElementById('exMpLostNote').innerText, shown: document.getElementById('exMpLostNote').getClientRects().length > 0, flag: sessionStorage.getItem('exMpNotice') }));
   check(`Màn chọn hiện "${lost.txt}" một lần (cờ đã xóa: ${lost.flag})`, lost.shown && /Mất kết nối/.test(lost.txt) && lost.flag === null);
   await L.page.close();
+
+  // Mục 5 (Task 8) — rời máy. Dọn bot Mục 4 để phòng trống, một ws chỉ nghe sảnh để đếm số người bay
+  live.splice(0).forEach((b) => b.close());
+  await sleep(2500);
+  const obs = { n: -1 }; const ows = new WebSocket(`ws://${HOST}/sky`, { headers: { Origin: 'http://127.0.0.1' } });
+  ows.onmessage = (e) => { const m = JSON.parse(e.data); if (m.t === 'lobby') obs.n = m.flyers.length; };
+  const lobbyIs = async (n, ms) => { for (let t0 = Date.now(); Date.now() - t0 < ms; await sleep(100)) if (obs.n === n) return true; return obs.n === n; };
+  check('Phòng trống trước Mục 5 (ws quan sát thấy 0 người bay)', await lobbyIs(0, 8000));
+  const URLI = srv.url + '?multi=' + encodeURIComponent(`ws://${HOST}/sky`);
+  const idleVis = (pg) => pg.evaluate(() => document.getElementById('exMpIdle').getClientRects().length > 0);
+
+  // 5a-5c: không phím -> đếm ngược -> chuyển xem; camera đứng yên; lời mời dùng được; vào bay lại không bị hỏi ngay
+  const I = await openApp(browser, URLI + '&idleMs=7000&idleWarnMs=4000');
+  await I.page.evaluate(() => {   // gắn máy đo TRƯỚC khi bay (khung đầu SwiftShader có thể chậm hơn cả thời gian rời máy): chữ đếm ngược, tin hb, vị trí camera cuối khi còn bay
+    const A = window.__app; window.__hb = 0; window.__camLast = null; window.__idleTexts = [];
+    const el = document.getElementById('exMpIdle');
+    new MutationObserver(() => { if (!el.hidden && el.textContent) window.__idleTexts.push(el.textContent); }).observe(el, { childList: true, characterData: true, subtree: true, attributes: true });
+    const wrap = setInterval(() => { const t = A.multi.session && A.multi.session.t; if (!t) return; clearInterval(wrap); const send = t.send.bind(t); t.send = (m) => { if (m.t === 'hb') window.__hb++; send(m); }; }, 20);
+    const rec = () => { const s = A.multi.session; if (s && s.phase === 'flying') window.__camLast = A.camera.position.toArray(); requestAnimationFrame(rec); }; rec();
+    A.multi.fly('Idle');
+  });
+  await I.page.waitForFunction(() => window.__app.explore.active() && window.__app.multi.session.phase === 'flying', null, { timeout: 60000 });
+  await I.page.keyboard.press('a');   // đặt lại đồng hồ rời máy sau khung đầu chậm (SwiftShader ~0,5 s/khung); từ đây không phím nào nữa
+  check('Bay một mình: ws quan sát thấy 1 người bay', await lobbyIs(1, 5000));
+  await I.page.waitForFunction(() => window.__app.multi.session.phase === 'watching', null, { timeout: 20000 }).catch(() => {});
+  const warnTxts = await I.page.evaluate(() => window.__idleTexts);
+  check(`Không phím: hiện đếm ngược ("${warnTxts[0]}" ... "${warnTxts.at(-1)}", ${warnTxts.length} lần đổi chữ, có số giây giảm dần)`, warnTxts.length >= 2 && warnTxts.every((x) => /^Bạn còn đó không\? \d+ giây$/.test(x)) && Number(warnTxts[0].match(/\d+/)[0]) > Number(warnTxts.at(-1).match(/\d+/)[0]));
+  await frames(I.page, 10);
+  const rel = await I.page.evaluate(() => { const A = window.__app, s = A.multi.session, c = A.camera.position.toArray(), l = window.__camLast; return { phase: s.phase, watching: A.explore.watching, st: A.explore.state, glider: A.explore.glider && A.explore.glider.visible, keys: A.keys.size, notice: document.getElementById('exMpNotice').innerText, noticeVis: document.getElementById('exMpNotice').getClientRects().length > 0, idle: document.getElementById('exMpIdle').getClientRects().length > 0, inv: document.getElementById('exMpInvite').getClientRects().length > 0, sn: s.notice, dist: l ? Math.hypot(c[0] - l[0], c[1] - l[1], c[2] - l[2]) : -1, body: document.body.classList.contains('ex-watching') }; });
+  check(`Hết giờ: sang chế độ xem, thông báo "${rel.notice}", đếm ngược ẩn, camera lệch ${rel.dist.toFixed(2)} m so với lúc còn bay, không dù riêng`, rel.phase === 'watching' && rel.watching && rel.st === null && !rel.glider && rel.sn === 'released' && rel.noticeVis && /đứng yên/.test(rel.notice) && !rel.idle && rel.body && rel.dist >= 0 && rel.dist < 2);
+  check('Lobby máy chủ giảm một người (1 -> 0)', await lobbyIs(0, 4000));
+  check('Lời mời hiện sau khi nhường chỗ', rel.inv);
+  const hbWatch = await I.page.evaluate(async () => { const a = window.__hb; await new Promise((r) => setTimeout(r, 3500)); return window.__hb - a; });
+  check(`Đang xem: không còn nhịp sống (${hbWatch} hb trong 3,5 s)`, hbWatch === 0);
+  await I.page.click('#exMpInviteFly');
+  await I.page.waitForFunction(() => window.__app.explore.active() && window.__app.multi.session.phase === 'flying', null, { timeout: 30000 }).catch(() => {});
+  const t0 = Date.now();
+  const re = await I.page.evaluate(() => ({ phase: window.__app.multi.session.phase, active: window.__app.explore.active(), idle: document.getElementById('exMpIdle').getClientRects().length > 0, ex: document.body.classList.contains('ex-watching') }));
+  check('Bấm lời mời sau khi nhường chỗ: bay lại được, chưa bị hỏi "Bạn còn đó không?" ngay', re.phase === 'flying' && re.active && !re.idle && !re.ex && await lobbyIs(1, 4000));
+
+  // 5d: bấm phím lúc đếm ngược giữ slot; 5e: nhịp sống không nhân đôi sau khi vào bay lại
+  await I.page.waitForFunction(() => document.getElementById('exMpIdle').getClientRects().length > 0, null, { timeout: 8000 }).catch(() => {});
+  const shown2 = await idleVis(I.page);
+  await I.page.keyboard.press('a');
+  await frames(I.page, 3);
+  const hidAfterKey = !(await idleVis(I.page));
+  const hb0 = await I.page.evaluate(() => window.__hb);
+  let still = true;
+  for (let i = 0; i < 24; i++) { await I.page.keyboard.press(i % 2 ? 'w' : 'ArrowLeft'); await sleep(400); if (obs.n !== 1) still = false; }
+  const live2 = await I.page.evaluate(() => ({ phase: window.__app.multi.session.phase, hb: window.__hb }));
+  const hbN = live2.hb - hb0;
+  check(`Bấm phím lúc đếm ngược: đếm ngược ẩn, giữ slot qua ${((Date.now() - t0) / 1000).toFixed(0)} s (quá hạn 3 s nhiều lần), lobby vẫn 1 người`, shown2 && hidAfterKey && live2.phase === 'flying' && still);
+  check(`Vào bay lại từ lời mời: nhịp sống không nhân đôi (${hbN} hb trong ~9,6 s, chu kỳ 3 s => 2 đến 4)`, hbN >= 2 && hbN <= 4);
+  check('Lỗi console của trang rời máy = 0', I.errors.length === 0);
+  if (I.errors.length) console.log(I.errors.join('\n'));
+  await I.page.close();
+  await lobbyIs(0, 6000);
+
+  // 5f: đóng trang đang bay: bot thấy lobby giảm trong 3 s
+  const C = await openApp(browser, URLI);
+  await C.page.evaluate(() => window.__app.multi.fly('Closer'));
+  await C.page.waitForFunction(() => window.__app.explore.active() && window.__app.multi.session.phase === 'flying', null, { timeout: 60000 });
+  const sawOne = await lobbyIs(1, 5000);
+  await C.page.close();
+  check('Đóng trang đang bay: ws quan sát thấy lobby giảm về 0 trong 3 s', sawOne && await lobbyIs(0, 3000));
+
+  // 5g: tab ẩn + rAF dừng 23 s (lâu hơn slotTimeoutMs 10 s + một chu kỳ quét 10 s): chỉ nhịp sống giữ slot; quay lại không lỗi
+  const H = await openApp(browser, URLI);
+  await H.page.evaluate(() => window.__app.multi.fly('Hidden'));
+  await H.page.waitForFunction(() => window.__app.explore.active() && window.__app.multi.session.phase === 'flying', null, { timeout: 60000 });
+  await lobbyIs(1, 5000);
+  await H.page.evaluate(() => {
+    const raf = window.requestAnimationFrame.bind(window); window.__raf = raf; window.__held = [];
+    window.requestAnimationFrame = (cb) => { window.__held.push(cb); return 0; };
+    Object.defineProperty(document, 'hidden', { configurable: true, get: () => true });
+    Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => 'hidden' });
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+  await sleep(23000);
+  const keptHidden = obs.n === 1;
+  const phaseHidden = await H.page.evaluate(() => window.__app.multi.session.phase);
+  await H.page.evaluate(() => {
+    delete document.hidden; delete document.visibilityState;
+    document.dispatchEvent(new Event('visibilitychange'));
+    window.requestAnimationFrame = window.__raf; const h = window.__held.splice(0); h.forEach((cb) => window.__raf(cb));
+  });
+  await frames(H.page, 20);
+  const back = await H.page.evaluate(() => ({ phase: window.__app.multi.session.phase, active: window.__app.explore.active() }));
+  check(`Tab ẩn và rAF dừng 23 s: slot còn (lobby ${obs.n}, phase ${phaseHidden}); quay lại vẫn bay, console không lỗi`, keptHidden && phaseHidden === 'flying' && back.phase === 'flying' && back.active && H.errors.length === 0);
+  if (H.errors.length) console.log(H.errors.join('\n'));
+  await H.page.close();
+  try { ows.close(); } catch { /* bỏ qua */ }
 
   live.splice(0).forEach((b) => b.close());
 } catch (e) {

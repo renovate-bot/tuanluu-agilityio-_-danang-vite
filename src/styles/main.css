@@ -280,6 +280,8 @@ body.explore #exMpRoster:not([hidden]){display:flex;flex-direction:column;gap:3p
 body.explore #exMpNotice:not([hidden]){display:block;position:fixed;left:50%;transform:translateX(-50%);top:calc(100px + env(safe-area-inset-top,0px));padding:8px 14px;font-size:12px;color:var(--text);z-index:5;}
 /* Chế độ xem (hết chỗ hoặc vừa nhường chỗ): không có dù của mình nên ẩn dòng hướng dẫn lái và đồng hồ; hiện "Đang xem" và lời mời */
 body.ex-watching #exHint,body.ex-watching #exSpeed{display:none;}
+#exMpIdle{display:none;}
+body.explore #exMpIdle:not([hidden]){display:block;position:fixed;left:50%;transform:translateX(-50%);top:calc(150px + env(safe-area-inset-top,0px));padding:8px 14px;font-size:13px;color:var(--gold);max-width:calc(100vw - 32px);box-sizing:border-box;text-align:center;pointer-events:none;z-index:6;}
 #exMpWatch,#exMpInvite{display:none;}
 body.ex-watching #exMpWatch:not([hidden]){display:block;position:fixed;left:50%;transform:translateX(-50%);top:calc(14px + env(safe-area-inset-top,0px));padding:8px 14px;font-size:13px;color:var(--text);max-width:calc(100vw - 32px);box-sizing:border-box;text-align:center;pointer-events:none;z-index:5;}
 body.ex-watching #exMpInvite:not([hidden]){display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center;position:fixed;left:50%;transform:translateX(-50%);bottom:calc(14px + env(safe-area-inset-bottom,0px));padding:10px 14px;font-size:13px;color:var(--text);max-width:calc(100vw - 32px);box-sizing:border-box;z-index:6;}

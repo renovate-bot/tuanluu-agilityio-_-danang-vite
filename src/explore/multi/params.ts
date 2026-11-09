@@ -12,6 +12,7 @@ export const multiParams = {
   connectTimeoutMs: 4000, // ms chờ kết nối WebSocket trước khi coi là lỗi (ước lượng)
   idleMs: 60000,         // ms không chạm phím thì hiện hỏi "Bạn còn đó không?" (ước lượng)
   idleWarnMs: 15000,     // ms đếm ngược sau khi hỏi, hết thì trả slot (ước lượng)
+  idleTickMs: 500,       // ms giữa hai lần kiểm tra rời máy (setInterval, không dùng rAF để tab ẩn vẫn đếm) (ước lượng)
   maxConns: 200,         // số kết nối đồng thời tối đa của phòng (ước lượng)
   maxMsgBytes: 256,      // byte tối đa của một tin nhận từ khách (ước lượng)
   interpSends: 2.5,      // độ trễ nội suy, tính theo số chu kỳ gửi (ước lượng)

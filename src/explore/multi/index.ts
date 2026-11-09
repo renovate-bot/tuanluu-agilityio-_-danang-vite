@@ -8,12 +8,59 @@ import { exConnect } from './client';
 import { MultiSession } from './session';
 import { exRemotes } from './remote';
 import { exLabelsUpdate, exLabelsClear } from './labels';
+import { ExIdle } from './idle';
 import type { GliderState } from '../flight';
 
 const M = CONFIG.explore.multi;
 let session: MultiSession | null = null;
 let sentAt = -1e9;
 let rosterKey = '';
+let idle: ExIdle | null = null;
+let idleTimer = 0, beatTimer = 0;   // setInterval kiểm tra rời máy + nhịp sống; chỉ chạy khi đang bay
+let idleShown = '';                 // chữ đang hiện ở #exMpIdle ('' = ẩn): chỉ ghi DOM khi đổi
+
+/* ===== Rời máy: đếm bằng setInterval (tab ẩn vẫn đếm), hết hạn thì trả slot và sang chế độ xem ===== */
+/* ?idleMs / ?idleWarnMs chỉ đọc khi có ?test (để test rút ngắn) */
+function idleParams(): [number, number] {
+  const q = new URLSearchParams(location.search);
+  if (!q.has('test')) return [M.idleMs, M.idleWarnMs];
+  const n = (k: string, d: number) => { const v = Number(q.get(k)); return q.has(k) && v > 0 ? v : d; };
+  return [n('idleMs', M.idleMs), n('idleWarnMs', M.idleWarnMs)];
+}
+
+function idleShow(text: string): void {
+  const el = document.getElementById('exMpIdle');
+  if (!el || text === idleShown) return;
+  /* Lần đầu hiện thì đọc to một lần; các giây sau chỉ đổi chữ, không đọc lại */
+  el.setAttribute('aria-live', idleShown === '' ? 'polite' : 'off');
+  idleShown = text;
+  el.textContent = text;
+  el.hidden = text === '';
+}
+
+function idleTick(): void {
+  if (!session || !idle || session.phase !== 'flying') return;
+  const now = performance.now();
+  const st = idle.tick(now);
+  if (st === 'ok') idleShow('');
+  else if (st === 'warn') idleShow(t('exMpIdle', { s: idle.remaining(now) }));
+  else { idleShow(''); session.leave(); }   // leave → onChange → idleStop
+}
+
+function idleStart(): void {
+  if (idleTimer || !session) return;   // đã chạy: không mở hai đồng hồ
+  const [a, b] = idleParams();
+  idle = new ExIdle(a, b); idle.reset(performance.now());
+  idleShown = '';
+  idleTimer = window.setInterval(idleTick, M.idleTickMs);
+  beatTimer = window.setInterval(() => session?.heartbeat(), M.heartbeatMs);
+}
+
+function idleStop(): void {
+  clearInterval(idleTimer); clearInterval(beatTimer);
+  idleTimer = beatTimer = 0; idle = null;
+  idleShow('');
+}
 
 /* Danh sách người bay ở góc màn hình: đầu "Đang bay n/5", mỗi người một dòng có chấm màu theo slot; dùng textContent */
 function renderRoster(): void {
@@ -57,6 +104,7 @@ export const exMulti = {
       exRemotes.sync(s.flyers, s.mySlot);
       if (s.phase === 'solo') exLabelsClear();
       renderRoster();
+      if (s.phase === 'flying') idleStart(); else idleStop();
       exMulti.onChange();
       if (!ready) { ready = true; onReady(); }
     };
@@ -74,6 +122,13 @@ export const exMulti = {
       const p = state.pos, r = (v: number) => Math.round(v * 10) / 10, a = (v: number) => Math.round(v * 1000) / 1000;
       session.sendPos(r(p.x), r(p.y), r(p.z), a(state.yaw), a(state.bank));
     }
+  },
+
+  /* Người bay vừa bấm phím điều khiển: đếm lại thời gian rời máy */
+  activity(): void {
+    if (!idle) return;
+    idle.activity(performance.now());
+    idleShow('');
   },
 
   /* Trạng thái dù đang xem (khi hết chỗ, Task 6); null nếu không xem ai */

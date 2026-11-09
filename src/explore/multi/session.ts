@@ -39,11 +39,11 @@ export class MultiSession {
     this.t?.send({ t: 'join', name });
   }
 
-  // Rời chỗ bay (do idle): trả slot, chuyển sang xem
+  // Rời chỗ bay (do rời máy): trả slot, chuyển sang xem, báo 'released' như khi máy chủ thu hồi chỗ
   leave(): void {
     if (this.phase !== 'flying') return;
     this.t?.send({ t: 'leave' });
-    this.toWatching();
+    this.notice = 'released'; this.toWatching();
     this.onChange();
   }
 
