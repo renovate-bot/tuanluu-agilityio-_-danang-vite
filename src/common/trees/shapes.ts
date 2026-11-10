@@ -18,6 +18,9 @@ const T = CONFIG.trees;
 type RGB = [number, number, number];
 const V = (x: number, y: number, z: number) => new THREE.Vector3(x, y, z);
 
+/* Hướng xoay cây (rad, quanh Y) theo chỉ số instance + hạt riêng (G4: cây cùng loại không như bản sao) — không gọi rand() chung */
+export const trYaw = (i: number, seed: number) => rng(seed * 7919 + i)() * Math.PI * 2;
+
 /* Gói mảng thành BufferGeometry không index */
 function trGeo(p: number[], n: number[], uv: number[], c: number[]): THREE.BufferGeometry {
   const g = new THREE.BufferGeometry();

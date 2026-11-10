@@ -6,8 +6,9 @@ import { windAt } from './impact';
 import type { WeatherParams } from './state';
 
 /* ===== [weather] Gió (mục 4.5): 0 draw call, chỉ uniform + vài hệ số vô hướng =====
-   - Cây: vá MAT.leaf, MAT.palm — dịch tán theo hướng gió trong vertex shader, tỉ lệ độ cao điểm trên mặt đất, pha theo vị trí instance.
-     Thân (MAT.trunk) và bóng đổ không lắc (depth material mặc định) — chấp nhận.
+   - Cây: vá MAT.leaf, MAT.palm VÀ MAT.trunk (D-028) — dịch đỉnh theo hướng gió trong vertex shader, tỉ lệ độ cao điểm trên mặt đất, pha theo vị trí instance.
+     Thân + cành vá cùng công thức để tán dừa (đặt đúng đỉnh thân, dịch tới 0,06 m mỗi m cao ⇒ ≈ 0,7 m ở ngọn 12 m) không rời thân, cành bóng mát không chọc ra khỏi tán:
+     điểm cùng độ cao dịch như nhau nên cả cây nghiêng cùng nhau. Bóng đổ không lắc (depth material mặc định) — chấp nhận.
    - Dây: option `sway` của bridgePatch (common/shaders.ts) đọc uSwayTp/Ttl/Sh; biên độ tính ở đây: TP và SH tăng theo v², TTL theo đường cong mưa–gió.
    - Thuyền, lửa/nước Cầu Rồng, râu rồng, tốc độ sóng: hệ số trong windFx (core/shared.ts), mặc định trung tính.
    Gió = 0 (preset `now`): mọi uniform/hệ số về ĐÚNG giá trị trung tính, nhánh shader không chạy. */
@@ -37,10 +38,11 @@ function patchTree(mat: THREE.MeshStandardMaterial, key: string) {
   mat.needsUpdate = true;
 }
 
-/* Vá shader tán cây (gọi trong buildWeather, trước khung hình đầu). */
+/* Vá shader cây: tán và thân (gọi trong buildWeather, trước khung hình đầu). */
 export function buildWind() {
   patchTree(MAT.leaf, 'tree-leaf-wind');
   patchTree(MAT.palm, 'tree-palm-wind');
+  patchTree(MAT.trunk, 'tree-trunk-wind');   // thân + cành nghiêng cùng tán (xem đầu file)
 }
 
 /* Mỗi khung: c = thời tiết hiện tại, v = gió tức thời ở 10 m (m/s), on = weather đang bật (false → biên độ dây = 0). */

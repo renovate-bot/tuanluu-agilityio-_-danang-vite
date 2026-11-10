@@ -5,6 +5,7 @@ import { MAT } from '../core/materials';
 import { rand } from '../common/math';
 import { shadowed } from '../common/geometry';
 import { deckY } from '../bridges/dragon/profile';
+import { trShadeTrunkGeo, trShadeCrownGeo, trPalmTrunkGeo, trPalmCrownGeo, trYaw } from '../common/trees/shapes';
 
 /* ============================ Cây xanh & đèn đường ============================ */
 export function buildTrees() {
@@ -24,24 +25,43 @@ export function buildTrees() {
     const s = i % 2 ? 1 : -1; round.push([s * (345 + rand() * 120), (rand() < 0.5 ? -1 : 1) * (32 + rand() * 120)]);
   }
   const m = new THREE.Matrix4(), q = new THREE.Quaternion(), v = new THREE.Vector3(), s = new THREE.Vector3(), col = new THREE.Color();
-  const trunkGeo = new THREE.CylinderGeometry(0.22, 0.35, 1, 6).translate(0, 0.5, 0);
-  const t1 = new THREE.InstancedMesh(trunkGeo, MAT.trunk, round.length);
-  const c1 = new THREE.InstancedMesh(new THREE.SphereGeometry(1, 10, 8), MAT.leaf, round.length);
+  const T = CONFIG.trees, wk = T.palm.trunkWidth, bendX = T.palm.bend * wk;
+  // Cây bóng mát (G1): thân + cành chuẩn hóa (đầu cành cao nhất = tâm tán), tán cụm lá giữ đúng tâm / tỉ lệ quả cầu cũ (fallen.ts, promenade.ts, dọn cây đọc ma trận tán)
+  const t1 = new THREE.InstancedMesh(trShadeTrunkGeo(), MAT.trunk, round.length);
+  const c1 = new THREE.InstancedMesh(trShadeCrownGeo(), MAT.leaf, round.length);
   round.forEach(([x, z], i) => {
     const h = 3 + rand() * 2.5, r = 2.4 + rand() * 1.8;
-    m.compose(v.set(x, CONFIG.landY, z), q, s.set(1, h, 1)); t1.setMatrixAt(i, m);
+    q.setFromAxisAngle(THREE.Object3D.DEFAULT_UP, trYaw(i, T.shade.seed + 2));
+    m.compose(v.set(x, CONFIG.landY, z), q, s.set(r, h + r * 0.6, r)); t1.setMatrixAt(i, m);
     m.compose(v.set(x, CONFIG.landY + h + r * 0.6, z), q, s.set(r, r * 0.85, r)); c1.setMatrixAt(i, m);
     col.setHSL(0.27 + rand() * 0.06, 0.45, 0.35 + rand() * 0.12); c1.setColorAt(i, col);
   });
-  const t2 = new THREE.InstancedMesh(trunkGeo, MAT.trunk, palms.length);
-  const c2 = new THREE.InstancedMesh(new THREE.ConeGeometry(1, 1, 9, 1, true), MAT.palm, palms.length);
+  // Cây dừa (G2): thân cong lệch bend theo +X cục bộ ⇒ tán đặt ở đỉnh thân sau khi xoay: (x, landY + h, z) + Ry(yaw)·(bend·trunkWidth, 0, 0)
+  const t2 = new THREE.InstancedMesh(trPalmTrunkGeo(), MAT.trunk, palms.length);
+  const c2 = new THREE.InstancedMesh(trPalmCrownGeo(), MAT.palm, palms.length);
   palms.forEach(([x, z], i) => {
-    const h = 8 + rand() * 4;
-    m.compose(v.set(x, CONFIG.landY, z), q, s.set(0.8, h, 0.8)); t2.setMatrixAt(i, m);
-    m.compose(v.set(x, CONFIG.landY + h + 0.3, z), q, s.set(3.8, 1.6, 3.8)); c2.setMatrixAt(i, m);
+    const h = 8 + rand() * 4, yaw = trYaw(i, T.palm.seed + 2);
+    q.setFromAxisAngle(THREE.Object3D.DEFAULT_UP, yaw);
+    m.compose(v.set(x, CONFIG.landY, z), q, s.set(wk, h, wk)); t2.setMatrixAt(i, m);
+    m.compose(v.set(x + bendX * Math.cos(yaw), CONFIG.landY + h, z - bendX * Math.sin(yaw)), q, s.setScalar(T.palm.crownScale * h)); c2.setMatrixAt(i, m);
   });
+  t1.name = 'trees-shade-trunk'; c1.name = 'trees-shade-crown'; t2.name = 'trees-palm-trunk'; c2.name = 'trees-palm-crown';
   scene.add(shadowed(t1, true, false), shadowed(c1, true, false), shadowed(t2, true, false), shadowed(c2, true, false));
 }
+
+/* API test (gắn vào __app.trees khi ?test): 6 lưới cây theo tên, vị trí [x, z] từng instance */
+const TR_NAMES = ['trees-shade-trunk', 'trees-shade-crown', 'trees-palm-trunk', 'trees-palm-crown', 'tp-trees-trunk', 'tp-trees-crown'];
+const trMesh = (name: string) => scene.getObjectByName(name) as THREE.InstancedMesh | undefined;
+export const treesTest = {
+  maxTris: CONFIG.trees.maxTris,
+  meshes: () => TR_NAMES.map(trMesh).filter((o): o is THREE.InstancedMesh => !!o && o.isInstancedMesh).map((o) => ({ name: o.name, count: o.count, tris: (o.geometry.index ? o.geometry.index.count : o.geometry.getAttribute('position').count) / 3 })),
+  positions(name: string): number[] {
+    const o = trMesh(name), out: number[] = [], m = new THREE.Matrix4();
+    if (!o) return out;
+    for (let i = 0; i < o.count; i++) { o.getMatrixAt(i, m); out.push(Math.round(m.elements[12] * 1000) / 1000, Math.round(m.elements[14] * 1000) / 1000); }
+    return out;
+  }
+};
 export function buildStreetLamps() {
   const pos: [number, number, number, number][] = [];
   for (let x = -320; x <= 320; x += 32) for (const s of [-1, 1]) pos.push([x, deckY(x) + 0.25, s * 17.0, 8]);

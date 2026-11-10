@@ -122,7 +122,7 @@ test('cây dừa tĩnh cao h, đứng trên y = 0, hai mặt', () => { /* bbox.m
 
 **Vật liệu (`src/core/materials.ts`):** `MAT.trunk`: `color` trắng + `vertexColors: true` (màu vỏ nằm trong hình học). `MAT.leaf`: thêm `vertexColors: true`, `map` = `trLeafTexture()`. `MAT.palm`: `color` trắng, `vertexColors: true`, `map` = `trFrondTexture()`, `alphaTest: 0.4`, giữ `DoubleSide`. Sau khi đổi, `grep -rn "MAT\.trunk\|MAT\.leaf\|MAT\.palm" src` và bảo đảm **mọi** lưới dùng ba vật liệu này có thuộc tính `color` (thiếu thì ra màu đen).
 
-- [ ] **Bước 1: Viết `tests/trees-check.mjs` trước, chạy trên code CHƯA sửa để lấy mốc.** Mẫu: `tests/traffic-check.mjs` (dùng `serveDir`, `launch`, `openApp`, `frames`, `setWx`). Tạm thêm `treesTest` tối thiểu (chỉ `positions` đọc từ 4 lưới cũ theo vật liệu) để in ra mốc, rồi chép vào hằng số trong test:
+- [x] **Bước 1: Viết `tests/trees-check.mjs` trước, chạy trên code CHƯA sửa để lấy mốc.** Mẫu: `tests/traffic-check.mjs` (dùng `serveDir`, `launch`, `openApp`, `frames`, `setWx`). Tạm thêm `treesTest` tối thiểu (chỉ `positions` đọc từ 4 lưới cũ theo vật liệu) để in ra mốc, rồi chép vào hằng số trong test:
   - `MAIN_TREE_POS`: số instance và tổng kiểm (ví dụ tổng `x·31 + z` làm tròn) của vị trí `[x, z]` từng loại cây khu phố và cây Thuận Phước; `MAIN_BOAT_SPEEDS` chép từ `tests/traffic-check.mjs`.
   - Các kiểm tra:
     1. `meshCount`: đúng 6 lưới tên ở trên, không còn `SphereGeometry` / `ConeGeometry` nào dùng `MAT.leaf` / `MAT.palm`.
@@ -135,12 +135,12 @@ test('cây dừa tĩnh cao h, đứng trên y = 0, hai mặt', () => { /* bbox.m
     8. `windAttached`: preset Bão, chờ gió ổn định; không lỗi shader; `swayNow().treeLean > 0`.
     9. Không lỗi console.
     10. Ảnh (bỏ bằng `--no-shots`) vào `tests/screens/trees-*.png`: cây bóng mát và dừa gần 20 m trên bờ Bạch Đằng (ngày), toàn cảnh mặc định (ngày), dải đi bộ Bạch Đằng (đêm, thấy dây đèn), kè Thuận Phước, bờ sông khi Bão.
-- [ ] **Bước 2:** `npm run build && npm run test:trees -- --no-shots` trên code chưa sửa: `posKept`, `randKept`, `pairs`, `fallenRestore`, `clearedStayZero` ĐẠT; `meshCount` LỖI. Chép mốc vào test.
-- [ ] **Bước 3:** Sửa `materials.ts`, `trees.ts`, `site.ts` theo bảng trên; hoàn thiện `treesTest`.
-- [ ] **Bước 4:** Gió: thân và cành không lắc trong khi tán dịch tới 0,06 m mỗi mét cao. Nếu ảnh Bão cho thấy tán rời cành, vá thêm `MAT.trunk` bằng `patchTree(MAT.trunk, 'tree-trunk-wind')` trong `wind.ts` (cùng công thức nên thân, cành, tán nghiêng cùng nhau). Ghi lựa chọn vào comment đầu `wind.ts`.
-- [ ] **Bước 5:** `npm run build && npm run test:trees` → mọi kiểm tra ĐẠT. **Mở và nhìn** từng ảnh `tests/screens/trees-*.png`: cây ra dáng theo G1, G2; dây đèn đêm bám tán; không có cây đen, không có mảng vuông trong suốt sai. Chỉnh hình / màu cho tới khi đạt.
-- [ ] **Bước 6:** `npm run test:trees:unit`, `npm run typecheck` → ĐẠT.
-- [ ] **Bước 7 (cổng hiệu năng, một lần):** `npm run test:perf -- --strict`. ĐẠT thì ghi số vào mục "Kết quả" cuối file này. LỖI: giảm số cụm lá / tàu lá một lần, chạy lại; vẫn LỖI thì ghi vào "Cần người dùng quyết" kèm số đo và đi tiếp.
+- [x] **Bước 2:** `npm run build && npm run test:trees -- --no-shots` trên code chưa sửa: `posKept`, `randKept`, `pairs`, `fallenRestore`, `clearedStayZero` ĐẠT; `meshCount` LỖI. Chép mốc vào test.
+- [x] **Bước 3:** Sửa `materials.ts`, `trees.ts`, `site.ts` theo bảng trên; hoàn thiện `treesTest`.
+- [x] **Bước 4:** Gió: thân và cành không lắc trong khi tán dịch tới 0,06 m mỗi mét cao. Nếu ảnh Bão cho thấy tán rời cành, vá thêm `MAT.trunk` bằng `patchTree(MAT.trunk, 'tree-trunk-wind')` trong `wind.ts` (cùng công thức nên thân, cành, tán nghiêng cùng nhau). Ghi lựa chọn vào comment đầu `wind.ts`.
+- [x] **Bước 5:** `npm run build && npm run test:trees` → mọi kiểm tra ĐẠT. **Mở và nhìn** từng ảnh `tests/screens/trees-*.png`: cây ra dáng theo G1, G2; dây đèn đêm bám tán; không có cây đen, không có mảng vuông trong suốt sai. Chỉnh hình / màu cho tới khi đạt.
+- [x] **Bước 6:** `npm run test:trees:unit`, `npm run typecheck` → ĐẠT.
+- [x] **Bước 7 (cổng hiệu năng, một lần):** `npm run test:perf -- --strict`. ĐẠT thì ghi số vào mục "Kết quả" cuối file này. LỖI: giảm số cụm lá / tàu lá một lần, chạy lại; vẫn LỖI thì ghi vào "Cần người dùng quyết" kèm số đo và đi tiếp.
 - [ ] **Bước 8:** Commit `feat(trees): cây bóng mát và cây dừa thay quả cầu và nón ở khu phố, Thuận Phước`.
 
 ---
@@ -260,10 +260,18 @@ test('cây dừa tĩnh cao h, đứng trên y = 0, hai mặt', () => { /* bbox.m
 
 _(điền khi làm)_
 
+### Task 2 (2026-11-11)
+- Mốc đo trên code chưa sửa (`8c56cdd`, `test:trees -- --no-shots`): `meshCount` LỖI (quả cầu / nón), các mục khác ĐẠT. Mốc: cây bóng mát khu phố 890, dừa 246, Thuận Phước 128; 3 cặp thân–tán; tán đã dọn 26 / 2 / 0.
+- `npm run test:trees` (có ảnh): **Tất cả ĐẠT** — 6 lưới; tam giác mỗi cây: thân bóng mát 150, tán 640, thân dừa 120, tán dừa 396; vị trí khớp mốc; 7 tốc độ tàu trùng `main`; cây đổ dựng lại trùng ma trận; bão `treeLean` 0,03 m/m; không lỗi console.
+- `npm run test:trees:unit` 8/8, `npm run typecheck` ĐẠT.
+- Gió: vá thêm `MAT.trunk` (`tree-trunk-wind`) để tán dừa không rời đỉnh thân (ghi ở đầu `wind.ts`).
+- `npm run test:perf -- --strict` (một lần, 2026-11-11, ~90 phút trên SwiftShader): **perf-check: đạt** — mọi thao tác +0 program, render dài nhất ≤ 77 ms (ngưỡng 150). Khung đầu 26 646 ms, 172 program. Render trung bình (ms) overview 24,7 · head 26,0 · hrOverview 21,9 · swOverview 13,7 · tpBay 20,2; draw call 268 / 288 / 252 / 150 / 262. So với lần đo 2026-11-09 (trước D-026, D-027, cây mới; không cùng mốc): render 14,8 / 14,0 / 13,0 / 8,2 / 13,3, khung đầu 9 206 ms. Thời gian so với `main` hiện tại: **chưa đo**.
+
 ## Cần người dùng quyết
 
 _(điền khi làm; chép sang `activeContext.md` ở Task 6)_
 
 - So thời gian khung với `main` (mong muốn lệch ≤ 15 %) và `test:drawcalls` chưa chạy theo yêu cầu; có chạy bù không.
+- (Task 2) `test:perf --strict` đạt, nhưng thời gian render trung bình trên SwiftShader cao hơn khoảng 1,6–1,9 lần so với lần đo 2026-11-09 (mốc đó trước cả D-026, D-027), khung đầu 26,6 s so với 9,2 s. Tổng tam giác cây khoảng 0,93 triệu (cũ ≈ 0,17 triệu), vẽ ở các lượt cảnh, bóng và phản chiếu. Nếu GPU thật thấy chậm: giảm cụm lá (`CONFIG.trees.shade.blobs`) / tàu lá (`palm.fronds`), hoặc bỏ cây khỏi lượt phản chiếu.
 - Mức chi tiết cây sau khi giản lược (≤ 850 và ≤ 570 tam giác mỗi cây) thấp hơn bản dựng thử đã duyệt; xem demo rồi quyết có cần tăng (đổi lấy độ mượt) không.
 - Cầu Rồng 70 người, ngày đêm như nhau; có muốn đông hơn về đêm / cuối tuần không.

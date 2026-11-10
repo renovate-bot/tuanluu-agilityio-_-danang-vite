@@ -22,7 +22,8 @@ export function trLeafTexture(): THREE.CanvasTexture {
 
 /* Tàu lá dừa: nền trong suốt (vật liệu dùng alphaTest), sống lá giữa + lá chét răng lược hai bên.
    Nét 5,2 px trên bước 8,5 px để còn thấy khi mipmap. u ngang tàu, v dọc tàu (tàu chỉ dùng v ≥ 0,1).
-   Ô đặc trắng ở góc uv [0, 0,06]² (góc dưới trái canvas vì flipY) cho búi ngọn và quả: màu lấy hết từ color đỉnh. */
+   Dải đặc trắng v ∈ [0, 0,09] suốt bề ngang (đáy canvas vì flipY; tàu lá chỉ dùng v ≥ 0,1) cho búi ngọn và quả (uv 0,015): màu lấy hết từ color đỉnh.
+   Dải rộng cả bề ngang + kẹp mép (ClampToEdge mặc định) để các mức mipmap xa vẫn đặc, búi ngọn không bị alphaTest cắt mất. */
 export function trFrondTexture(): THREE.CanvasTexture {
   const W = 128, H = 512, c = document.createElement('canvas'); c.width = W; c.height = H; const g = c.getContext('2d')!, r = rng(5);
   g.clearRect(0, 0, W, H); g.lineCap = 'round';
@@ -31,8 +32,8 @@ export function trFrondTexture(): THREE.CanvasTexture {
     g.beginPath(); g.moveTo(W / 2, y); g.lineTo(W / 2 + s * (56 + r() * 6), y - 20 - r() * 6); g.stroke();
   }
   g.strokeStyle = '#e8efc0'; g.lineWidth = 5; g.beginPath(); g.moveTo(W / 2, H); g.lineTo(W / 2, 0); g.stroke();
-  const sq = Math.ceil(0.06 * W), sqH = Math.ceil(0.06 * H);
-  g.fillStyle = '#ffffff'; g.fillRect(0, H - sqH, sq, sqH);   // ô đặc: u ∈ [0, 0,06], v ∈ [0, 0,06]
+  const sqH = Math.floor(0.09 * H);
+  g.fillStyle = '#ffffff'; g.fillRect(0, H - sqH, W, sqH);   // dải đặc: u ∈ [0, 1], v ∈ [0, 0,09]
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8;
   return t;
 }
