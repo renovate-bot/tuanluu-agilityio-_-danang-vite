@@ -120,7 +120,8 @@ function vhCar(k: Kit) {
   k.loft([{ x: -2.0, w: 0.6, y0: 0.8, ym: 0.86, y1: 0.9, t: 0.7 }, { x: -0.78, w: 0.73, y0: 0.78, ym: 1.02, y1: 1.14, t: 0.66 }], null, Role.Paint);   // nắp máy sau
   k.box(0.95, 0.05, 0.98, -0.32, 1.145, 0, null, Role.Paint);                                                   // mái
   for (const x of [1.38, -1.4]) for (const z of [0.9, -0.9]) k.wheel(0.34, 0.3, x, z);
-  for (const z of [0.69, -0.69]) k.box(0.2, 0.05, 0.2, 2.02, 0.43, z, C.headDay, Role.Head, -0.18);         // đèn pha ở chóp chắn bùn
+  // đèn pha: cụm dẹt dài trên chóp chắn bùn (nghiêng theo dốc nắp capô, nhìn rõ từ trên cầu) + dải ngắn trên mặt mũi xe (nhìn từ phía trước); đủ lớn để ban đêm còn thấy ở trung cảnh ~80 m
+  for (const z of [0.58, -0.58]) { k.box(0.36, 0.05, 0.3, 1.98, 0.45, z, C.headDay, Role.Head, -0.24); k.box(0.05, 0.07, 0.3, 2.265, 0.28, z * 0.78, C.headDay, Role.Head); }
   k.box(0.06, 0.07, 1.5, -2.26, 0.72, 0, C.tailDay, Role.Tail);                                                 // dải đèn hậu
   k.box(0.12, 0.2, 1.5, -2.22, 0.45, 0, C.dark);                                                                // khuếch tán sau
   k.box(0.3, 0.05, 1.7, 2.12, 0.16, 0, C.dark);                                                                 // cánh gió trước
@@ -145,7 +146,7 @@ function vhBus(k: Kit) {
     k.side(s, 1.09, [[-2.9, 1.43], [2.275, 1.43], [2.275, 2.39], [-2.9, 2.39]], C.busWindow);                   // dải cửa sổ tối = khung
     for (let i = 0; i < 4; i++) { const x0 = -2.84 + i * 1.29; k.side(s, 1.105, [[x0, 1.5], [x0 + 1.19, 1.5], [x0 + 1.19, 2.32], [x0, 2.32]], C.busPane); }   // 4 ô kính trong khung (đọc ra là cửa sổ, không còn một mảng đen)
     k.side(s, 1.09, [[2.32, 1.5], [2.7, 1.5], [2.7, 1.9], [2.32, 2.4]], C.glass);                               // kính cửa lái, mép trên theo dốc kính lái
-    k.box(0.06, 0.2, 0.36, 3.5, 0.8, s * 0.62, C.headDay, Role.Head);                                           // đèn pha
+    k.box(0.06, 0.26, 0.46, 3.5, 0.74, s * 0.56, C.headDay, Role.Head);                                         // đèn pha (rộng, cao hơn để ban đêm thấy ở trung cảnh)
     k.box(0.05, 0.7, 0.14, -3.51, 1.5, s * 0.86, C.tailDay, Role.Tail);                                         // đèn hậu đứng
   }
   k.end(-3.51, [[-0.75, 1.6], [0.75, 1.6], [0.75, 2.4], [-0.75, 2.4]], C.glass);                                // kính sau
@@ -165,7 +166,7 @@ function vhBike(k: Kit) {
   k.box(0.42, 0.07, 0.15, 0.6, 0.52, 0, null, Role.Paint, -0.1);                                                // chắn bùn trước
   k.box(0.06, 0.5, 0.06, 0.54, 0.5, 0, C.dark, Role.Fixed, 0.2);                                                // phuộc
   k.box(0.12, 0.1, 0.3, 0.4, 1.02, 0, null, Role.Paint); k.box(0.05, 0.05, 0.7, 0.36, 1.03, 0, C.dark);        // đầu xe + ghi đông
-  k.box(0.05, 0.09, 0.14, 0.47, 1.0, 0, C.headDay, Role.Head);                                                  // đèn pha
+  k.box(0.06, 0.18, 0.26, 0.48, 0.98, 0, C.headDay, Role.Head);                                               // đèn pha (một đèn, to hơn để ban đêm thấy ở trung cảnh)
   k.box(0.72, 0.09, 0.3, -0.42, 0.78, 0, C.seat);                                                               // yên
   k.box(0.05, 0.08, 0.14, -0.92, 0.6, 0, C.tailDay, Role.Tail);                                                 // đèn hậu
   // người lái

@@ -19,6 +19,6 @@ test('carColors ≥ 8, shirtColors ≥ 6, bikeColors = 5 màu cũ', () => {
   assert.deepEqual(V.bikeColors, [0xc0272d, 0x1f2a44, 0xe9e9e6, 0x2f7d4f, 0x2a2a2a]);
 });
 
-test('đèn giữ đúng giá trị MAT.headLamp / MAT.tailLamp và ngưỡng đêm 0,3', () => {
-  assert.deepEqual(CONFIG.vehicles.lamp, { head: [2.2, 2.1, 1.8], tail: [2.0, 0.1, 0.05], nightOn: 0.3 });
+test('đèn hậu giữ đúng MAT.tailLamp, đèn pha sáng hơn MAT.headLamp cũ (mặt đèn nhỏ hơn, sau review), ngưỡng đêm 0,3', () => {
+  assert.deepEqual(CONFIG.vehicles.lamp, { head: [2.8, 2.7, 2.3], tail: [2.0, 0.1, 0.05], nightOn: 0.3 });
 });

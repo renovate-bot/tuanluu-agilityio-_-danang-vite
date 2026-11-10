@@ -668,7 +668,8 @@ const boatsBase = {
    Siêu xe xấp xỉ McLaren 720S (hãng công bố khoảng 4,54 × 1,93 × 1,20 m); agent chưa kiểm lại được nguồn nên vẫn ghi (ước lượng). */
 export type VehicleTypeId = 'car' | 'bus' | 'bike';
 const vehiclesBase = {
-  // kích thước bao từng loại: len = dài (X), w = rộng (Z), h = cao (Y), đều theo m
+  // kích thước bao từng loại: len = dài (X), w = rộng (Z), h = cao (Y), đều theo m — chỉ là kích thước đích để unit test (tests/traffic-unit/) so với hình dựng;
+  // tọa độ thật của từng bộ phận nằm trong src/common/vehicles/shapes.ts, đổi len / w / h ở đây KHÔNG co giãn xe (muốn đổi cỡ xe phải sửa shapes.ts)
   types: {
     car: { len: 4.5, w: 1.95, h: 1.2 },    // m — siêu xe thấp, bẹt (ước lượng, xấp xỉ McLaren 720S)
     bike: { len: 1.8, w: 0.7, h: 1.6 },    // m — xe tay ga + người lái đội mũ, h tính tới đỉnh mũ (ước lượng)
@@ -685,7 +686,7 @@ const vehiclesBase = {
     headDay: 0xf2efe6, tailDay: 0xc01818                                 // đèn pha / đèn hậu khi tắt (ban ngày)
   },
   lamp: {
-    head: [2.2, 2.1, 1.8] as [number, number, number],   // màu RGB tuyến tính > 1 của đèn pha về đêm (giữ đúng MAT.headLamp)
+    head: [2.8, 2.7, 2.3] as [number, number, number],   // màu RGB tuyến tính > 1 của đèn pha về đêm (MAT.headLamp cũ 2,2/2,1/1,8; tăng ~27 % vì mặt đèn mới nhỏ hơn tấm đèn hộp cũ, sau review)
     tail: [2.0, 0.1, 0.05] as [number, number, number],  // màu RGB tuyến tính > 1 của đèn hậu về đêm (giữ đúng MAT.tailLamp)
     nightOn: 0.3                                         // mức đêm shared.uNight (0..1) từ đó bật đèn (giữ ngưỡng hiện tại)
   },

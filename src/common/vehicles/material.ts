@@ -31,7 +31,7 @@ vLamp = abs( aRole - ${f(Role.Head)} ) < 0.5 ? 1.0 : ( abs( aRole - ${f(Role.Tai
 
 const uniforms = {
   uNight: shared.uNight,
-  uHead: { value: new THREE.Color().setRGB(...V.lamp.head) },   // màu tuyến tính > 1 (giữ đúng MAT.headLamp cũ)
+  uHead: { value: new THREE.Color().setRGB(...V.lamp.head) },   // màu tuyến tính > 1 (sáng hơn MAT.headLamp cũ, xem config)
   uTail: { value: new THREE.Color().setRGB(...V.lamp.tail) }    // màu tuyến tính > 1 (giữ đúng MAT.tailLamp cũ)
 };
 

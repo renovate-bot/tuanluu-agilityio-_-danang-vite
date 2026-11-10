@@ -6,7 +6,9 @@ Khung test mặc định 480×270 khớp `(max-height: 500px)` nên cả bộ te
 
 ## Xe cộ thực tế hơn (2026-11-10, nhánh `feature/xe-co-thuc-te`, D-027)
 
-Các hệ xe (khu phố, Cầu Rồng, Thuận Phước, Trần Thị Lý, Cầu sông Hàn, Bạch Đằng) mỗi hệ một `InstancedMesh` (thay 4 khối hộp mỗi hệ). **Chưa đo** draw call (`test:drawcalls`), `test:perf --strict`, so hiệu năng với `main` (spec: thời gian traffic/render lệch ≤ 15 %) và FPS GPU thật, theo yêu cầu người dùng duyệt trên demo. Số đỉnh hình học gộp (cho mỗi instance): siêu xe 628, buýt 496, xe tay ga 636, **gộp 1 760** (≤ `CONFIG.vehicles.maxVerts` 2 000).
+Năm hệ xe, mỗi hệ một `InstancedMesh` (thay 4 khối hộp mỗi hệ): `traffic-city` 536 xe (Cầu Rồng, 2 làn trong mỗi chiều của Trần Thị Lý, đường Bạch Đằng và Trần Hưng Đạo), `ttl-traffic` 60 (làn ngoài Trần Thị Lý), `tp-traffic` 100, `sh-traffic` 52, `hr-traffic` 348 (Hầm vượt sông Hàn). **Chưa đo** draw call (`test:drawcalls`), `test:perf --strict`, so hiệu năng với `main` (spec: thời gian traffic/render lệch ≤ 15 %) và FPS GPU thật, theo yêu cầu người dùng duyệt trên demo. Số đỉnh hình học gộp (cho mỗi instance): siêu xe 676, buýt 496, xe tay ga 636, **gộp 1 808** (≤ `CONFIG.vehicles.maxVerts` 2 000; trước sửa sau review: siêu xe 628, gộp 1 760).
+
+Sửa sau review cuối: `traffic-city` chuyển sang layer 1 nên không còn vẽ vào phản chiếu mặt nước (vẫn vẽ ở camera chính, vẫn đổ bóng); đèn pha phóng to ở cả ba loại và `lamp.head` tăng 2,2/2,1/1,8 → 2,8/2,7/2,3 để ban đêm còn thấy ở trung cảnh (spec G5).
 
 | Lệnh | Kết quả |
 |---|---|
@@ -14,9 +16,10 @@ Các hệ xe (khu phố, Cầu Rồng, Thuận Phước, Trần Thị Lý, Cầu
 | `test:traffic:unit` | 11/11 đạt |
 | `test:boats:unit` | 17/17 đạt |
 | `test:traffic` (bản cuối `616141a`) | 17/17 ĐẠT: tên 5 hệ xe, vật liệu `vehicleFleet`, không còn khối hộp cũ; số xe 536 / 52 / 348 khớp; chuỗi `rand()` giữ nguyên (7 tốc độ tàu trùng `main`: 4.834, 3.462, 3.368, 4.562, 4.303, 3.223, 4.648); depth patch; đèn bật theo `uNight`; cutaway 4 mặt cắt; xe chạy; tắt làn 104 xe scale 0 rồi bật lại; bão dọn 200 xe Cầu Rồng, Bạch Đằng vẫn chạy 124/124; không lỗi console |
+| `test:traffic:unit`, `test:traffic` (sửa sau review: layer 1, đèn pha to hơn) | 11/11 đạt; 17/17 ĐẠT (cùng các mục trên); ảnh đêm trung cảnh ~80 m thấy chấm đèn pha trắng ở mũi xe, ban ngày đèn là cụm nhỏ màu sáng |
 | `test:drawcalls`, `test:perf --strict`, `test:tour`, `test:voice`, `test:tunnel`, `test:riverfront`, `test:weather`, `test:sunwheel`, `test:mobile`, `test:explore`, `test:citynight` (mốc ngày sẽ đổi vì xe đổi dáng), `test:boats`, `test:multi*` | **chưa chạy** (theo yêu cầu người dùng) |
 
-Chưa kiểm trong trình duyệt: hàng xe xếp trước barie Cầu sông Hàn (chỉ có unit test buýt dài ≤ 7,5 m); vị trí nhà/cây so với `main` (bằng chứng gián tiếp là tốc độ tàu).
+Chưa kiểm trong trình duyệt: hàng xe xếp trước barie Cầu sông Hàn (chỉ có unit test buýt dài ≤ 7,5 m); xe trong hầm (`hr-traffic`) vẫn chạy khi bão; vị trí nhà/cây so với `main` (bằng chứng gián tiếp là tốc độ tàu).
 
 ## Tàu thuyền sông Hàn (2026-11-10, nhánh `feature/tau-thuyen-song-han`, D-026)
 

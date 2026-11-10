@@ -46,6 +46,9 @@ export function buildTraffic() {
     addLane(PATHS.ttl, 4.625, dir, 22, 13, { bike: 0.2, bus: 0.05 }); addLane(PATHS.ttl, 8.375, dir, 30, 9, { bike: 0.8, bus: 0 });
   }
   cityFleet = vhCreateFleet(vehicles.length, scene, 'traffic-city');
+  // lớp 1 (như life của các cầu): bỏ khỏi lượt phản chiếu mặt nước (camera gương của Water chỉ thấy lớp 0) để 536 xe × 1 760 đỉnh không chạy vertex shader thêm một lượt;
+  // camera chính (renderer.ts) và bóng đổ (lights.ts: sun.shadow.camera, WebGLShadowMap lọc theo lớp của camera chính) vẫn bật lớp 1 nên xe vẫn vẽ và vẫn đổ bóng
+  cityFleet.mesh.layers.set(1);
   vehicles.forEach((v, i) => vhSetInfo(cityFleet, i, v.type, v.color));
 }
 const _p = new THREE.Vector3();
