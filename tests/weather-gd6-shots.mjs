@@ -3,7 +3,7 @@
 //   npm run build && node tests/weather-gd6-shots.mjs
 import { fileURLToPath } from 'node:url';
 import fs from 'node:fs';
-import { serveDir, launch, openApp, frames, pickView } from './lib.mjs';
+import { serveDir, launch, openApp, frames, pickView, tap, pick } from './lib.mjs';
 import { setWx } from './weather-lib.mjs';
 
 const OUT = fileURLToPath(new URL('./screens/weather-gd6/', import.meta.url));
@@ -46,7 +46,7 @@ try {
   await setNight(0); await pickView(page, 'dragon', 'overview');
 
   // 3) Thẻ "Ảnh hưởng tới cầu": now / summer / rain 60% + gió 12 / storm
-  await page.click('#btnWxImpact'); await frames(page, 2);
+  await tap(page, '#btnWxImpact'); await frames(page, 2);
   const card = () => page.evaluate(() => document.getElementById('wxImpact').innerText);
   for (const [name, k] of [['now', 1], ['summer', 1], ['rain', 0.6], ['storm', 1]]) {
     await setWx(page, name, k);
@@ -58,7 +58,7 @@ try {
 
   // 4) Đổi qua 9 ngôn ngữ: không còn phần tử data-i18n hiện nguyên khoá, thẻ không chứa {tham_số} / khoá trần; ảnh ar (RTL) và ru
   for (const l of LOCALES) {
-    await page.selectOption('#langSelect', l); await page.waitForTimeout(700);
+    await pick(page, '#langSelect', l); await page.waitForTimeout(700);
     const r = await page.evaluate(() => {
       const raw = [...document.querySelectorAll('[data-i18n]')].filter((e) => e.textContent === e.dataset.i18n && e.dataset.i18n.length > 2).map((e) => e.dataset.i18n);
       const t = document.getElementById('wxImpact').innerText;
@@ -70,7 +70,7 @@ try {
     if (['ar', 'ru', 'ja'].includes(l)) await page.screenshot({ path: `${OUT}impact-storm-${l}.png` });
     console.log(l, 'dir', r.dir, 'khoá trần', r.raw.length);
   }
-  await page.selectOption('#langSelect', 'vi');
+  await pick(page, '#langSelect', 'vi');
 
   // 5) Tour Cầu sông Hàn khi bão: caption có ghi chú hoãn quay
   await setWx(page, 'storm');

@@ -34,6 +34,13 @@ const topAtCenter = (page, sel) => page.evaluate((sel) => {
   const b = el.getBoundingClientRect(), t = document.elementFromPoint(b.left + b.width / 2, b.top + b.height / 2);
   return !!t && (t === el || el.contains(t));
 }, sel);
+/* Mục 5: Tour đang chạy + tờ Cài đặt mở; act(page) là cú bấm cảnh / Esc. Trả [tờ đóng?, Tour còn chạy?] sau act */
+const startTour = async (page) => {
+  await page.evaluate(() => document.querySelector('[data-view="tour"]').click());
+  await page.waitForFunction(() => document.body.classList.contains('touring'));
+  await page.evaluate(() => window.__app.ui.openSheet('settings')); await frames(page, 1);
+};
+const sheetTour = (page) => page.evaluate(() => [window.__app.ui.ui.sheet === 'none' && !/sheet-/.test(document.body.className), document.body.classList.contains('touring')]);
 const srv = await serveDir(fileURLToPath(new URL('../dist/', import.meta.url)));
 const browser = await launch();
 const allErrors = [];
@@ -200,6 +207,11 @@ try {
     }
   }
   await pick(P.page, '#langSelect', 'vi');
+  // Mục 5 (điện thoại): chạm cảnh khi có tờ mở chỉ đóng tờ, Tour vẫn chạy
+  await startTour(P.page);
+  await P.page.touchscreen.tap(195, 250); await frames(P.page, 1);
+  check('điện thoại: Tour + tờ mở, chạm cảnh chỉ đóng tờ', JSON.stringify(await sheetTour(P.page)) === '[true,true]');
+  await P.page.keyboard.press('Escape');
   allErrors.push(...P.errors); await P.page.close();
 
   // cửa sổ máy tính hẹp (chuột): gọn nhưng giữ nút Đi bộ + chữ chuột
@@ -221,14 +233,85 @@ try {
   const D = await openApp(browser, srv.url, { width: 1280, height: 800 });
   check('máy tính 1280×800: không compact', await D.page.evaluate(() => !document.body.classList.contains('compact')));
   await D.page.evaluate(() => window.__app.ui.donate.set('https://me.momo.vn/bbk9x'));
+  // Mục 5 (D-025): mặc định hai bảng thu thành nút ⚙ / ☰ ở hai góc trên
+  check('máy tính: mặc định đóng', await D.page.evaluate(() => window.__app.ui.ui.sheet === 'none'));
+  check('máy tính: đóng — chỉ ⚙ và ☰ hiện', await visibleAll(D.page, ['#btnSettings', '#btnViewsSheet'])
+    && await hiddenAll(D.page, ['.brand h1', '.brand-top', '#brandBody', '.views .seg', '.views .tour-all', '.views .view-list:not([hidden])']));
+  const [cb] = await rects(D.page, ['.brand']), [cv] = await rects(D.page, ['.views']);
+  check('máy tính: đóng — hai nút nhỏ ở hai góc trên', !!cb && !!cv && Math.abs(cb.left - 14) < 1 && Math.abs(cb.top - 14) < 1 && cb.width <= 64 && cb.height <= 64
+    && Math.abs(cv.right - (1280 - 14)) < 1 && Math.abs(cv.top - 14) < 1 && cv.height <= 64 && cv.width <= 200);
+  await D.page.evaluate(() => window.__app.ui.openSheet('settings')); await frames(D.page, 1);
+  check('máy tính: mở Cài đặt — đủ mục, ⚙ sáng', await visibleAll(D.page, ['.brand-top', '#btnNight', '.weather-row', '#qualitySel', '#btnViewsSheet'])
+    && await hiddenAll(D.page, ['.views .seg']) && await D.page.evaluate(() => document.getElementById('btnSettings').getAttribute('aria-expanded') === 'true'));
   check('máy tính: donate nằm trong .brand', await D.page.evaluate(() => { const a = document.getElementById('donateLink').getBoundingClientRect(), b = document.querySelector('.brand').getBoundingClientRect(); return a.height > 0 && a.top >= b.top && a.bottom <= b.bottom + 1 && a.left >= b.left - 1 && a.right <= b.right + 1; }));
-  // máy tính không đổi
-  const b = await rects(D.page, ['.brand']);
-  check('máy tính: .brand neo trái 14 px, .views rộng 228 px', b.length === 1 && Math.abs(b[0].left - 14) < 1
-    && await D.page.evaluate(() => getComputedStyle(document.querySelector('.views')).width === '228px'));
   check('máy tính: vẫn blur', await D.page.evaluate(() => /blur/.test(getComputedStyle(document.querySelector('.brand')).backdropFilter)));
-  check('máy tính: không có nút sheet', await hiddenAll(D.page, ['#btnSettings', '#btnViewsSheet', '.sheet-close']));
+  await D.page.evaluate(() => window.__app.ui.openSheet('views')); await frames(D.page, 1);
+  const [ov] = await rects(D.page, ['.views']);
+  check('máy tính: mở Góc nhìn — đủ mục, rộng 228 px, nằm trong màn hình', await visibleAll(D.page, ['.views .seg', '.views .tour-all'])
+    && await D.page.evaluate(() => getComputedStyle(document.querySelector('.views')).width === '228px') && !!ov && ov.bottom <= 800);
   allErrors.push(...D.errors); await D.page.close();
+
+  // Mục 5 — RTL: hai nút đổi bên, bảng mở nằm trọn trong màn hình
+  const A = await openApp(browser, srv.url, { width: 1440, height: 780 });
+  A.page.setDefaultTimeout(180000);
+  await pick(A.page, '#langSelect', 'ar'); await A.page.evaluate(() => window.__app.ui.closeSheets()); await frames(A.page, 2);
+  const [as, av] = [(await rects(A.page, ['#btnSettings']))[0], (await rects(A.page, ['#btnViewsSheet']))[0]];
+  check('ar: ⚙ bên phải, ☰ bên trái', !!as && !!av && as.right > 1440 - 80 && av.left < 80);
+  let inside = true;
+  for (const sh of ['settings', 'views']) {
+    await A.page.evaluate((sh) => window.__app.ui.openSheet(sh), sh); await frames(A.page, 1);
+    const [p] = await rects(A.page, [sh === 'settings' ? '.brand' : '.views']);
+    inside = inside && !!p && p.left >= 0 && p.top >= 0 && p.right <= 1440 && p.bottom <= 780;
+  }
+  check('ar: bảng mở nằm trọn trong màn hình', inside);
+  allErrors.push(...A.errors); await A.page.close();
+
+  // Mục 5 — thu gọn trên máy tính (D-025): hành vi dùng chung
+  const E = await openApp(browser, srv.url, { width: 1440, height: 780 });
+  E.page.setDefaultTimeout(180000);
+  // bảng đóng khi focus còn bên trong: focus về nút mở bảng (không kẹt trên ô chọn đã ẩn)
+  await E.page.evaluate(() => { window.__app.ui.openSheet('settings'); document.getElementById('qualitySel').focus(); }); await frames(E.page, 1);
+  await E.page.keyboard.press('Escape'); await frames(E.page, 1);
+  check('máy tính: Esc đóng Cài đặt, focus về ⚙', await E.page.evaluate(() => document.activeElement?.id === 'btnSettings'));
+  await E.page.evaluate(() => { window.__app.ui.openSheet('views'); document.querySelector('[data-bridge="tp"]').focus(); }); await frames(E.page, 1);
+  await E.page.mouse.click(720, 400); await frames(E.page, 1);
+  check('máy tính: bấm cảnh đóng Góc nhìn, focus về ☰', await E.page.evaluate(() => document.activeElement?.id === 'btnViewsSheet'));
+  await E.page.evaluate(() => window.__app.ui.reveal(document.querySelector('[data-bridge="hr"]')));
+  check('máy tính: reveal mở tờ Góc nhìn cho chip cầu', await E.page.evaluate(() => window.__app.ui.ui.sheet === 'views'));
+  await E.page.evaluate(() => window.__app.ui.closeSheets());
+  await startTour(E.page);
+  await E.page.mouse.click(720, 400); await frames(E.page, 1);
+  check('máy tính: Tour + tờ mở, bấm cảnh chỉ đóng tờ', JSON.stringify(await sheetTour(E.page)) === '[true,true]');
+  await E.page.mouse.click(720, 400); await frames(E.page, 1);
+  check('máy tính: không có tờ, bấm cảnh thoát Tour như cũ', (await sheetTour(E.page))[1] === false);
+  await startTour(E.page);
+  await E.page.keyboard.press('Escape'); await frames(E.page, 1);
+  check('máy tính: Tour + tờ mở, Esc chỉ đóng tờ', JSON.stringify(await sheetTour(E.page)) === '[true,true]');
+  await E.page.keyboard.press('Escape'); await frames(E.page, 1);
+  check('máy tính: Esc lần hai thoát Tour', (await sheetTour(E.page))[1] === false);
+  await E.page.evaluate(() => document.querySelector('[data-view="swRide"]').click()); await waitFlight(E.page);
+  await E.page.evaluate(() => window.__app.ui.openSheet('settings')); await frames(E.page, 1);
+  await E.page.keyboard.press('Escape'); await frames(E.page, 1);
+  check('máy tính: cabin + tờ mở, Esc chỉ đóng tờ', await E.page.evaluate(() => window.__app.ui.ui.sheet === 'none' && window.__app.cam.mode === 'swRide'));
+  await E.page.keyboard.press('Escape'); await frames(E.page, 1);
+  check('máy tính: Esc lần hai xuống cabin', await E.page.evaluate(() => window.__app.cam.mode !== 'swRide'));
+  await E.page.evaluate(() => window.__app.ui.openSheet('settings'));
+  await E.page.setViewportSize({ width: 700, height: 700 }); await frames(E.page, 2);
+  const s1 = await E.page.evaluate(() => window.__app.ui.ui.sheet === 'none' && !/sheet-/.test(document.body.className));
+  await E.page.evaluate(() => window.__app.ui.openSheet('views'));
+  await E.page.setViewportSize({ width: 1440, height: 780 }); await frames(E.page, 2);
+  check('qua ngưỡng: tờ đóng cả hai chiều', s1 && await E.page.evaluate(() => window.__app.ui.ui.sheet === 'none' && !/sheet-/.test(document.body.className)));
+  allErrors.push(...E.errors); await E.page.close();
+  const G = await openApp(browser, srv.url + '?explore=glider', { width: 1440, height: 780 });
+  G.page.setDefaultTimeout(180000);
+  await G.page.evaluate(() => window.__app.ui.openSheet('settings')); await frames(G.page, 1);
+  await G.page.keyboard.press('Escape'); await frames(G.page, 1);
+  check('dù lượn: tờ mở, Esc chỉ đóng tờ', await G.page.evaluate(() => window.__app.ui.ui.sheet === 'none' && window.__app.explore.active()));
+  allErrors.push(...G.errors); await G.page.close();
+
+  // Mục 5 — swRideHint chỉ nhắc Esc (nút cabin nằm trong bảng thu gọn, D-025)
+  const RIDE = { vi: 'Kéo chuột để nhìn quanh · Esc để xuống cabin', en: 'Drag to look around · Esc to step off', ko: '드래그하여 둘러보기 · Esc로 내리기', ja: 'ドラッグで見回す · Esc で降ります', zh: '拖动鼠标环顾四周 · 按 Esc 下车', th: 'ลากเมาส์เพื่อมองรอบตัว · กด Esc เพื่อลง', ar: 'اسحب للنظر حولك · اضغط Esc للنزول', hi: 'चारों ओर देखने के लिए खींचें · उतरने के लिए Esc दबाएँ', ru: 'Перетаскивайте мышь, чтобы осмотреться · Esc — выйти из кабины' };
+  check('swRideHint không nhắc nút', Object.entries(RIDE).every(([l, v]) => JSON.parse(fs.readFileSync(new URL(`../src/i18n/locales/${l}.json`, import.meta.url), 'utf8')).swRideHint === v));
 
   check('console sạch', allErrors.length === 0);
   if (allErrors.length) console.log(allErrors.join('\n'));
