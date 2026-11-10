@@ -274,7 +274,7 @@ body.explore #btnExExit{display:block;inset-inline-end:calc(14px + env(safe-area
 body.explore #exMpLabels{display:block;position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:5;}
 .ex-mp-label{position:absolute;left:0;top:0;padding:2px 7px;font:500 11px/1.2 var(--font-body);color:var(--text);background:rgba(10,18,30,.72);border-radius:4px;white-space:nowrap;will-change:transform;direction:ltr;}
 .ex-mp-label[hidden]{display:none;}
-body.explore #exMpRoster:not([hidden]){display:flex;flex-direction:column;gap:3px;position:fixed;inset-inline-start:calc(14px + env(safe-area-inset-left,0px));top:calc(56px + env(safe-area-inset-top,0px));padding:8px 12px;font-size:12px;color:var(--text);pointer-events:none;z-index:5;}
+body.explore #exMpRoster:not([hidden]){display:flex;flex-direction:column;gap:3px;position:fixed;inset-inline-end:calc(14px + env(safe-area-inset-right,0px));bottom:calc(14px + env(safe-area-inset-bottom,0px));padding:8px 12px;font-size:12px;color:var(--text);pointer-events:none;z-index:5;}
 .ex-mp-head{font-weight:600;margin-bottom:2px;}
 .ex-mp-row{display:flex;align-items:center;gap:6px;}
 .ex-mp-row.me{font-weight:600;}

@@ -71,6 +71,7 @@ Không kế thừa `BridgeBase`: module `index.ts` giữ một đối tượng `
 - Đối tượng chỉ có khi chế độ bật (dù) thì thêm vào scene lúc vào chế độ, không thêm lúc dựng cảnh: các góc nhìn cũ không đổi draw call.
 - Thoát chế độ bằng tải lại trang bỏ tham số URL, để không phải viết code khôi phục trạng thái dùng chung.
 - Gốc nhóm mô hình đặt ở tâm hình học cần bám (giữa cánh và người), không phải mép.
+- Bố cục `body.explore` trên máy tính: góc trên đầu dòng là `.brand` (ngôn ngữ, nút Đêm, Chất lượng hình; cao ≈ 175 px ở 1280×720), giữa trên là `#exHint`, góc trên cuối dòng là `#btnExExit`, giữa dưới là `#exSpeed`, góc dưới cuối dòng là danh sách người bay `#exMpRoster`. Phần tử mới không đặt theo số `top` cố định cạnh `.brand` (từng đè lên nhau). `.stats` chỉ hiện ở góc dưới cuối dòng khi URL có `?test`, nên lúc test sẽ chồng lên `#exMpRoster`.
 
 ## Mẫu ngày/đêm và hiệu ứng
 - Đọc `shared.uNight` (0 → 1) trong shader hoặc `update()`; không tự giữ trạng thái ngày/đêm riêng.

@@ -1,9 +1,9 @@
 # Active Context
 
-_Cập nhật: 2026-11-10 · Nhánh đang làm: `feature/du-luon-nhieu-nguoi` · Nhánh chính: `main`_
+_Cập nhật: 2026-11-10 · Nhánh đang làm: `feature/du-luon-roster-goc-phai` · Nhánh chính: `main`_
 
 ## Trạng thái
-- Dù lượn nhiều người (D-024, `feature/du-luon-nhieu-nguoi`, chưa merge): 5 slot, sảnh nhập tên ≤ 9 ký tự, thấy nhau khi bay (màu cánh theo slot, tên dưới dù, danh sách góc), người thứ 6 xem bám một người bay + lời mời khi có chỗ, rời máy 60 s + đếm ngược 15 s thì trả slot. Máy chủ: Cloudflare Worker `danang-sky` (`server/multi/`), khách ở `src/explore/multi/`. Đủ bộ test đạt tại `9d7b1fb` (`tests/KET-QUA.md`).
+- Dù lượn nhiều người (D-024, đã merge PR #15): 5 slot, sảnh nhập tên ≤ 9 ký tự, thấy nhau khi bay (màu cánh theo slot, tên dưới dù, danh sách "Đang bay n/5" ở góc dưới bên phải, chuyển từ góc trên bên trái vì đè lên bảng Cài đặt; `feature/du-luon-roster-goc-phai`), người thứ 6 xem bám một người bay + lời mời khi có chỗ, rời máy 60 s + đếm ngược 15 s thì trả slot. Máy chủ: Cloudflare Worker `danang-sky` (`server/multi/`), khách ở `src/explore/multi/`. Đủ bộ test đạt tại `9d7b1fb` (`tests/KET-QUA.md`).
 - Chế độ tự khám phá bằng dù lượn (D-020) đã merge vào `main` (merge cục bộ): chỉnh tốc độ Q/E, sàn 7 m để bay sát cầu, cánh cờ đỏ sao vàng, người treo; kết quả ở `tests/KET-QUA.md`.
 - `main` đã có đủ: Hầm vượt sông Hàn (PR #1), hai bờ sông + tối ưu draw call + thuyết minh tiếng Nga (PR #2), bộ hướng dẫn AI agent + memory bank (PR #3), thời tiết GĐ1–GĐ8 + kịch bản bão có thuyết minh (PR #6), Tour 4 cầu (D-015), Vòng quay Mặt Trời GĐ0–GĐ8 (PR #8, merge `257b905`), tối ưu độ mượt (D-018, merge `ecebdf8`), giao diện điện thoại (D-019, merge `fc53fdd`), Buy me a coffee (D-021, PR #10, merge `cbfda36`), đèn đêm đa sắc trên tòa nhà + vệt phản chiếu trên sông (D-023, PR #13), dù lượn ban đêm: cầu sông Hàn tự xoay + Cầu Rồng tự phun (D-022).
 - `prompts/` đã chuyển sang `docs/superpowers/` (spec + plan cho từng tính năng; PR #11, merge `66d7ebb`). Lịch sử từng giai đoạn (đã làm, số đo, lần chấm LỖI, hạn chế) nằm trong `docs/superpowers/plans/`; thiết kế như đã xây nằm trong `docs/superpowers/specs/`.
