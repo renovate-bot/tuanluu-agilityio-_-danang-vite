@@ -138,16 +138,18 @@ function vhBus(k: Kit) {
   const band = (r: [number, number], m: [number, number], f: [number, number]): [number, number][][] => [
     [[-3.3, r[1]], [-1.175, m[1]], [-1.175, m[0]], [-3.3, r[0]]], [[-1.175, m[1]], [2.3, f[1]], [2.3, f[0]], [-1.175, m[0]]]
   ];
+  // các tấm áp hông cách nhau 1,5 cm: đủ xa để không z-fighting tới ~350 m (camera near 0,5 m, độ sâu 24 bit), từ phía trước không thấy độ dày
   for (const s of [1, -1]) {
     for (const q of band([2.23, 1.53], [1.49, 0.99], [1.32, 0.74])) k.side(s, 1.06, q, C.busStripeEdge);         // viền trắng (rộng hơn)
-    for (const q of band([2.12, 1.64], [1.39, 1.09], [1.22, 0.84])) k.side(s, 1.068, q, C.busStripe);            // dải xanh
-    k.side(s, 1.076, [[-2.9, 1.43], [2.275, 1.43], [2.275, 2.39], [-2.9, 2.39]], C.busWindow);                  // dải cửa sổ tối
-    k.side(s, 1.076, [[2.32, 1.5], [2.7, 1.5], [2.7, 1.9], [2.32, 2.4]], C.glass);                              // kính cửa lái, mép trên theo dốc kính lái
+    for (const q of band([2.12, 1.64], [1.39, 1.09], [1.22, 0.84])) k.side(s, 1.075, q, C.busStripe);            // dải xanh
+    k.side(s, 1.09, [[-2.9, 1.43], [2.275, 1.43], [2.275, 2.39], [-2.9, 2.39]], C.busWindow);                   // dải cửa sổ tối = khung
+    for (let i = 0; i < 4; i++) { const x0 = -2.84 + i * 1.29; k.side(s, 1.105, [[x0, 1.5], [x0 + 1.19, 1.5], [x0 + 1.19, 2.32], [x0, 2.32]], C.busPane); }   // 4 ô kính trong khung (đọc ra là cửa sổ, không còn một mảng đen)
+    k.side(s, 1.09, [[2.32, 1.5], [2.7, 1.5], [2.7, 1.9], [2.32, 2.4]], C.glass);                               // kính cửa lái, mép trên theo dốc kính lái
     k.box(0.06, 0.2, 0.36, 3.5, 0.8, s * 0.62, C.headDay, Role.Head);                                           // đèn pha
     k.box(0.05, 0.7, 0.14, -3.51, 1.5, s * 0.86, C.tailDay, Role.Tail);                                         // đèn hậu đứng
   }
   k.end(-3.51, [[-0.75, 1.6], [0.75, 1.6], [0.75, 2.4], [-0.75, 2.4]], C.glass);                                // kính sau
-  k.box(1.6, 0.16, 1.3, -1.0, 2.76, 0, C.busAc);                                                                // điều hòa nóc
+  k.box(1.6, 0.1, 1.3, -1.0, 2.73, 0, C.busAc);                                                                 // điều hòa nóc (đỉnh 2,78 m, chân lún 2 cm vào nóc 2,7 m)
   for (const x of [2.3, -1.9]) for (const z of [0.93, -0.93]) k.wheel(0.4, 0.3, x, z);
 }
 

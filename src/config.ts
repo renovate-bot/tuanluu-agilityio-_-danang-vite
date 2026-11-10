@@ -681,7 +681,7 @@ const vehiclesBase = {
     glass: 0x10161d, tyre: 0x15171a, dark: 0x1b1d21,                     // kính sẫm, lốp, chi tiết đen (cánh gió, phuộc, ghi đông)
     seat: 0x7a5a45, skin: 0xd9a582, trouser: 0x2b3140,                   // yên nâu, da mặt, quần sẫm người lái
     busBody: 0xf2c11c, busStripe: 0x2f9be0, busStripeEdge: 0xffffff,    // buýt: thân vàng, dải chéo xanh, viền dải trắng
-    busWindow: 0x0e1318, busAc: 0xf4f4f1,                                // buýt: dải cửa sổ tối, cục điều hòa trên nóc
+    busWindow: 0x0e1318, busPane: 0x2b3d50, busAc: 0xf4f4f1,             // buýt: dải cửa sổ tối (làm khung), ô kính xanh xám trong khung, cục điều hòa trên nóc
     headDay: 0xf2efe6, tailDay: 0xc01818                                 // đèn pha / đèn hậu khi tắt (ban ngày)
   },
   lamp: {
