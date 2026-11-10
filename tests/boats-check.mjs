@@ -70,6 +70,67 @@ try {
     await page.screenshot({ path: `${SCREENS}boats-day-${name}.png` });
   }
 
+  /* ---------- crowdDay ---------- */
+  const crowdState = () => page.evaluate(() => {
+    const a = window.__app, T = a.THREE, f = a.boats.fleets().find((x) => x.mesh.name === 'boats-river').mesh, M = new T.Matrix4(), P = new T.Vector3(), Q = new T.Quaternion(), S = new T.Vector3();
+    return a.boats.crowd.map((c, k) => { f.getMatrixAt(a.boats.crowdFirst + k, M); M.decompose(P, Q, S); return { alpha: a.boats.crowdAlpha()[k], scale: S.x, x: P.x, z: P.z, sx: c.x, sz: c.z, ex: a.boats.inExclusion(P.x, P.z, c.len / 2) }; });
+  });
+  let cs = await crowdState();
+  check(cs.length === 15 && cs.every((c) => c.alpha === 0 && c.scale === 0), `crowdDay: ban ngày 15 tàu tụ tập đều ẩn (${cs.filter((c) => c.scale > 0).length} đang hiện)`);
+
+  /* ---------- crowdNight ---------- */
+  await setNight(1); await frames(page, 2); cs = await crowdState();
+  const drift = await page.evaluate(() => window.__app.boats.drift);
+  check(cs.length === 15 && cs.every((c) => c.alpha === 1 && c.scale > 1), `crowdNight: ban đêm đủ 15 tàu hiện (${cs.filter((c) => c.alpha === 1).length})`);
+  check(cs.length === 15 && cs.every((c) => Math.hypot(c.x - c.sx, c.z - c.sz) <= drift + 1), 'crowdNight: tàu ở quanh chỗ đậu (≤ drift + 1 m)');
+  check(cs.length === 15 && cs.every((c) => !c.ex), 'crowdNight: không tàu nào trong vùng cấm');
+
+  /* ---------- crowdRamp ---------- */
+  await setNight(0);
+  const ramp = await page.evaluate(() => new Promise((ok) => {
+    const a = window.__app; a.dayNight.target = 1; let n = 0, mixed = false;
+    const f = () => { const al = a.boats.crowdAlpha(); if (al.some((x) => x > 0) && al.some((x) => x === 0)) mixed = true; (++n >= 400 || a.dayNight.night === 1 ? ok({ mixed, n }) : requestAnimationFrame(f)); };
+    requestAnimationFrame(f);
+  }));
+  check(ramp.mixed, `crowdRamp: lúc trời tối dần có tàu đã hiện và tàu chưa hiện (${ramp.n} khung)`);
+
+  /* ---------- crowdStorm ---------- */
+  await setNight(1);
+  await setWx(page, 'storm');
+  await page.waitForFunction(() => window.__app.weather.fx().boatAway >= 1, null, { timeout: 600000 }); await frames(page, 2);
+  const stormA = await page.evaluate(() => window.__app.boats.crowdAlpha());
+  check(stormA.length === 15 && stormA.every((x) => x === 0), `crowdStorm: bão thì mọi tàu tụ tập về bến (${stormA.filter((x) => x > 0).length} còn)`);
+  await setWx(page, 'now');
+  await page.waitForFunction(() => window.__app.weather.fx().boatAway <= 0, null, { timeout: 600000 }); await frames(page, 2);
+  const backA = await page.evaluate(() => window.__app.boats.crowdAlpha());
+  check(backA.length === 15 && backA.every((x) => x === 1), `crowdStorm: hết bão thì 15 tàu trở lại (${backA.filter((x) => x === 1).length})`);
+
+  /* ---------- noFlicker ---------- */
+  const fs = await page.evaluate(() => window.__app.boats.fleets()[0].mesh.material.userData.fs ?? '');
+  check(fs.includes('uNight') && !/uTime|time/i.test(fs.replace(/uNight/g, '')), 'noFlicker: đèn tàu chỉ phụ thuộc uNight, không theo thời gian');
+
+  /* ---------- ledBright + nightShots ---------- */
+  await page.evaluate(() => { const a = window.__app; a.camera.position.set(0, 60, 420); a.controls.target.set(0, 0, -100); a.controls.update(); });
+  await frames(page, 4);
+  const b64 = (await page.screenshot(NO_SHOTS ? {} : { path: `${SCREENS}boats-night-dragon.png` })).toString('base64');
+  await page.evaluate(() => { window.__app.boats.fleets().find((x) => x.mesh.name === 'boats-river').mesh.visible = false; }); await frames(page, 2);
+  const off64 = (await page.screenshot()).toString('base64');
+  await page.evaluate(() => { window.__app.boats.fleets().find((x) => x.mesh.name === 'boats-river').mesh.visible = true; }); await frames(page, 2);
+  // chỉ tính điểm ảnh do tàu đóng góp (ảnh có tàu − ảnh ẩn đội tàu chung), để đèn thành phố không làm test đạt hộ
+  const led = await page.evaluate(async ([b64, off64]) => {
+    const load = async (b) => { const bm = await createImageBitmap(await (await fetch(`data:image/png;base64,${b}`)).blob()); const c = new OffscreenCanvas(bm.width, bm.height), g = c.getContext('2d'); g.drawImage(bm, 0, 0); return g.getImageData(0, 0, bm.width, bm.height); };
+    const d = await load(b64), o = await load(off64), W = d.width, H = d.height, y0 = Math.floor(H * 0.3), hues = [0, 0, 0, 0, 0, 0];
+    let streak = 0;
+    for (let x = 0; x < W; x++) { let run = 0; for (let y = y0; y < H; y++) { const i = (y * W + x) * 4, R = d.data[i], G = d.data[i + 1], B = d.data[i + 2], mx = Math.max(R, G, B), mn = Math.min(R, G, B);
+      const boat = Math.abs(R - o.data[i]) + Math.abs(G - o.data[i + 1]) + Math.abs(B - o.data[i + 2]) > 90 && mx > 150;
+      if (boat) { run++; streak = Math.max(streak, run); } else run = 0;
+      if (boat && mx - mn > 60) { let h = 0; if (mx === R) h = ((G - B) / (mx - mn) + 6) % 6; else if (mx === G) h = (B - R) / (mx - mn) + 2; else h = (R - G) / (mx - mn) + 4; hues[Math.floor(h) % 6]++; } } }
+    return { hues, streak };
+  }, [b64, off64]);
+  check(led.hues.filter((n) => n >= 20).length >= 3, `ledBright: vùng sông có đèn ≥ 3 nhóm màu (${led.hues.join('/')})`);
+  check(led.streak >= 20, `ledBright: có vệt sáng dọc ≥ 20 px trên sông (${led.streak})`);
+  if (!NO_SHOTS) { await aimAt([0, 0, -1080], [60, 55, 330]); await page.screenshot({ path: `${SCREENS}boats-night-songhan.png` }); }
+
   check(errors.length === 0, `không lỗi console (${errors.join(' | ')})`);
 } finally {
   await browser.close(); srv.close();

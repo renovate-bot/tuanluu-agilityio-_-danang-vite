@@ -2,10 +2,11 @@ import * as THREE from 'three';
 import { CONFIG } from '../config';
 import { scene } from '../core/renderer';
 import { MAT } from '../core/materials';
-import { windFx, weatherFx, vanished } from '../core/shared';
+import { windFx, weatherFx, vanished, shared } from '../core/shared';
 import { rand } from '../common/math';
 import type { BoatTypeId } from '../config';
 import { btCreateFleet, btSetInfo, btSetBoat, btHideBoat, btCommit, btFleets, type BoatFleet } from './boats/fleet';
+import { btCrowdSlots, btCrowdAlpha, btInExclusion } from './boats/crowd';
 import { TYPES, CAR_COLORS, BIKE_COLORS, placePart, _e, _q, type VehicleType } from '../common/traffic';
 import { deckY } from '../bridges/dragon/profile';
 import { ttlRoadY } from '../bridges/tran-thi-ly/profile';
@@ -98,8 +99,21 @@ export function buildBoats() {
     const speed = 3 + rand() * 2, r = rand(), type: BoatTypeId = i % 2 ? 'B' : 'A', [lo, hi] = CONFIG.boats.types[type].len;
     boats.push({ x: lanesX[i % 4], z: -2200 + i * 650, dir: lanesX[i % 4] > 0 ? 1 : -1, speed, len: lo + r * (hi - lo), type });
   }
-  fleet = btCreateFleet(RIVER_CROWD_FIRST + 15, ['A', 'B', 'C'], scene, 'boats-river');
+  fleet = btCreateFleet(RIVER_CROWD_FIRST + crowd.length, ['A', 'B', 'C'], scene, 'boats-river');
   boats.forEach((b, i) => btSetInfo(fleet, i, { type: b.type, variant: i % 3, led: (i * 2) % CONFIG.boats.led.colors.length, name: i % CONFIG.boats.names.length }));
+  crowd.forEach((c, k) => btSetInfo(fleet, RIVER_CROWD_FIRST + k, c));
+}
+/* Tàu tụ tập ban đêm quanh Cầu Rồng / Cầu sông Hàn (spec G5, G6): đậu, trôi tròn chậm, mũi lắc nhẹ; hiện so le theo mức đêm, về bến khi bão */
+const crowd = btCrowdSlots(), crowdA: number[] = crowd.map(() => 0);
+export function btStepCrowd(f: BoatFleet, first: number, t: number) {
+  const C = CONFIG.boats.crowd, w = (Math.PI * 2) / C.driftPeriod;
+  crowd.forEach((c, k) => {
+    const a = crowdA[k] = btCrowdAlpha(k, crowd.length, shared.uNight.value, weatherFx.boatAway);
+    if (a <= 0) { btHideBoat(f, first + k); return; }
+    const ph = t * w + c.phase, i = first + k;
+    bq.setFromEuler(_e.set(Math.sin(t * 0.7 + k) * 0.012 * windFx.boatRock, c.yaw + C.yawSwing * Math.sin(ph * 0.7), Math.sin(t * 0.9 + k * 2) * 0.018 * windFx.boatRock, 'YXZ'));
+    btSetBoat(f, i, bBase.set(c.x + C.drift * Math.cos(ph), 0, c.z + C.drift * Math.sin(ph)), bq, c.len * a);   // hiện dần: lớn dần từ tâm
+  });
 }
 const bq = new THREE.Quaternion(), bBase = new THREE.Vector3();
 export function updateBoats(dt: number, t: number) {
@@ -110,7 +124,8 @@ export function updateBoats(dt: number, t: number) {
     bq.setFromEuler(_e.set(Math.sin(t * 0.9 + i) * 0.015 * windFx.boatRock, b.dir > 0 ? 0 : Math.PI, Math.sin(t * 1.1 + i * 2) * 0.02 * windFx.boatRock, 'YXZ'));   // mũi theo hướng chạy; tròng trành tăng theo gió (mặc định ×1)
     btSetBoat(fleet, i, bBase.set(b.x, 0, b.z), bq, b.len);
   });
+  btStepCrowd(fleet, RIVER_CROWD_FIRST, t);
   btCommit(fleet);
 }
 /* Cho test (__app.boats) */
-export const boatsTest = { fleets: () => btFleets, running: () => boats, types: CONFIG.boats.types, crowd: [] as unknown[], crowdAlpha: (): number[] => [] };
+export const boatsTest = { fleets: () => btFleets, running: () => boats, types: CONFIG.boats.types, crowd, crowdFirst: RIVER_CROWD_FIRST, crowdAlpha: () => crowdA, inExclusion: btInExclusion, drift: CONFIG.boats.crowd.drift };
