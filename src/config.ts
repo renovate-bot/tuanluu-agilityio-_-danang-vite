@@ -611,10 +611,55 @@ const exploreBase = {
   }
 };
 
+/* ------------------------- Tàu thuyền sông Hàn ------------------------- */
+/* docs/superpowers/specs/2026-11-10-tau-thuyen-song-han-design.md — mọi số là ước lượng (không có số liệu công bố cho từng tàu) */
+export type BoatTypeId = 'A' | 'B' | 'C' | 'D' | 'E';
+const boatsBase = {
+  // kiểu tàu: len = khoảng dài [min, max] m, w = bề rộng / chiều dài, floors = số tầng boong
+  types: {
+    A: { len: [24, 28], w: 0.30, floors: 2 },   // du thuyền hai thân hiện đại, mũi cong, trắng sọc đỏ (ước lượng)
+    B: { len: [20, 24], w: 0.30, floors: 2 },   // tàu gỗ du lịch kiểu cũ, thân hộp, mái che boong trên (ước lượng)
+    C: { len: [30, 35], w: 0.26, floors: 3 },   // du thuyền lớn 3 tầng, boong thượng có đèn lồng (ước lượng)
+    D: { len: [12, 46], w: 0.24, floors: 1 },   // tàu cá / tàu hàng nhỏ, cabin lái ở đuôi (ước lượng)
+    E: { len: [28, 32], w: 0.23, floors: 1 }    // tàu buồm cao chờ mở luồng Cầu sông Hàn (ước lượng)
+  } as Record<BoatTypeId, { len: [number, number]; w: number; floors: number }>,
+  crowd: {
+    seed: 20131029,                                 // hạt giống rng riêng cho tàu tụ tập (không đụng rand())
+    groups: [
+      { name: 'dragon' as const, n: 8, zMin: -280, zMax: 280 },        // m — quanh Cầu Rồng z = 0 (ước lượng)
+      { name: 'songHan' as const, n: 7, zMin: -1360, zMax: -800 }      // m — quanh Cầu sông Hàn z = −1080 (ước lượng)
+    ],
+    minGap: 30,                                     // m — khoảng cách tâm tối thiểu giữa hai tàu tụ tập (ước lượng)
+    drift: 3,                                       // m — bán kính trôi tròn quanh chỗ đậu (ước lượng)
+    driftPeriod: 90,                                // s — một vòng trôi (ước lượng)
+    yawSwing: 0.12,                                 // rad — mũi tàu lắc qua lại quanh hướng đậu (ước lượng)
+    yawSpread: 0.6,                                 // rad — độ lệch hướng mũi so với dọc sông, ± (ước lượng, theo ảnh tham chiếu)
+    nightOn: [0.35, 0.85] as [number, number],      // mức đêm (0..1): bắt đầu hiện → hiện đủ 15 tàu (ước lượng)
+    rampFrac: 0.3                                   // phần khoảng nightOn mỗi tàu dùng để hiện dần, 0..1 (ước lượng)
+  },
+  exclusion: {
+    tunnelZ: -1700, tunnelHalf: 30,                 // m — hành lang Hầm |z + 1700| < 30 (bất biến dự án)
+    bridgeZ: [0, -1080], bridgeHalf: 25,            // m — không đậu dưới mặt Cầu Rồng / Cầu sông Hàn (ước lượng)
+    swingZ: -1080, swingHalfZ: 200, swingHalfX: 75, // m — vòng quay nhịp 61,35 m + luồng tàu Cầu sông Hàn (ước lượng)
+    lanes: [-100, -48, -22, 22, 31, 41, 48, 82],    // m — x các làn tàu đang chạy (traffic.ts + tàu theo cầu)
+    laneHalf: 12,                                   // m — nửa bề rộng luồng chừa cho tàu chạy (ước lượng)
+    bankX: 262, bankMargin: 20                      // m — mép kè và khoảng cách an toàn tới kè (ước lượng)
+  },
+  variants: 3,                                      // số biến thể màu sọc thân (đỏ, xanh dương, cam)
+  led: {
+    colors: [0xb040ff, 0x30ff70, 0x2f8bff, 0xff4fa8, 0xffd23a],   // LED viền: tím, xanh lá, xanh dương, hồng, vàng (theo ảnh tham chiếu)
+    gain: 2.2                                       // cường độ phát sáng LED về đêm, hệ số (ước lượng)
+  },
+  windowColor: 0xffc070,                            // màu cửa sổ cabin về đêm (vàng ấm, khớp MAT.boatCabin cũ)
+  windowGain: 1.4,                                  // cường độ cửa sổ về đêm, hệ số (bằng emissiveIntensity cũ)
+  names: ['SÔNG HÀN 01', 'NGỌC BIỂN', 'HOA SEN', 'BẠCH ĐẰNG STAR', 'TRĂNG RẰM', 'HẢI ÂU', 'SƠN TRÀ', 'MỸ KHÊ']   // tên hư cấu trên biển tên
+};
+
 export const CONFIG = {
   ...base,
   perf: perfBase,
   cityNight: cityNightBase,
+  boats: boatsBase,
   ui: uiBase,
   mainTotal: sum(base.mainSpans),
   thuanPhuoc: deriveTp(thuanPhuocBase),
