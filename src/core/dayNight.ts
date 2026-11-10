@@ -6,7 +6,6 @@ import { sun, hemi, moon, bridgeLights } from './lights';
 import { setSun, stars, clouds } from './sky';
 import { water } from './water';
 import { lerp, clamp } from '../common/math';
-import { vHead, vTail } from '../environment/traffic';
 
 /* ============================ Ngày / đêm ============================ */
 /* night: giá trị hiện tại (0 ngày → 1 đêm), target: giá trị người xem chọn; night tiến dần về target */
@@ -34,7 +33,6 @@ export function applyNight(m: number, time: number) {
   MAT.bulb.color.copy(C_BULB_DAY).lerp(C_BULB_NIGHT, m);
   MAT.pupil.emissiveIntensity = m * 2.5;
   MAT.eye.emissiveIntensity = 0.05 + m * 0.4;
-  vHead.visible = vTail.visible = m > 0.3;
   // Đèn dọc cầu nhấp nháy nhẹ theo sin(time)
   bridgeLights.forEach((l) => { l.intensity = l.userData.base * m * (0.82 + 0.18 * Math.sin(time * 2.2 + l.userData.phase)); });
 }

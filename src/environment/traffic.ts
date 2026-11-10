@@ -1,13 +1,14 @@
 import * as THREE from 'three';
 import { CONFIG } from '../config';
 import { scene } from '../core/renderer';
-import { MAT } from '../core/materials';
 import { windFx, weatherFx, vanished, shared } from '../core/shared';
 import { rand } from '../common/math';
 import type { BoatTypeId } from '../config';
 import { btCreateFleet, btSetInfo, btSetBoat, btHideBoat, btCommit, btFleets, type BoatFleet } from './boats/fleet';
 import { btCrowdSlots, btCrowdTarget, btCrowdLevel, btCrowdShown, btInExclusion } from './boats/crowd';
-import { TYPES, CAR_COLORS, BIKE_COLORS, placePart, _e, _q, type VehicleType } from '../common/traffic';
+import { _e, _q, type VehicleType } from '../common/traffic';
+import { vhCreateFleet, vhSetInfo, vhSetVehicle, vhHide, vhCommit, vhFleets, type VehicleFleet } from '../common/vehicles/fleet';
+import { vhMaterial } from '../common/vehicles/material';
 import { deckY } from '../bridges/dragon/profile';
 import { ttlRoadY } from '../bridges/tran-thi-ly/profile';
 
@@ -22,15 +23,16 @@ export const PATHS: Record<'axis' | 'ttl' | 'bachDang' | 'tranHungDao', Path> = 
   tranHungDao: { axis: 'z', min: -2200, max: 2400, fixed: 299 }
 };
 const vehicles: CityVehicle[] = [];
-export let vBody: THREE.InstancedMesh, vCabin: THREE.InstancedMesh, vHead: THREE.InstancedMesh, vTail: THREE.InstancedMesh;
+export let cityFleet: VehicleFleet;   // 1 InstancedMesh 'traffic-city' cho mọi xe khu phố
 
 export function buildTraffic() {
+  const V = CONFIG.vehicles, colors = V.carColors;
   const addLane = (path: Path, lane: number, dir: number, count: number, speed: number, mix: { bike: number; bus: number }) => {
     const range = path.max - path.min;
     for (let k = 0; k < count; k++) {
       const r = rand(); const type: VehicleType = r < mix.bike ? 'bike' : r < mix.bike + mix.bus ? 'bus' : 'car';
       vehicles.push({ path, lane, dir, type, s: path.min + (k + rand() * 0.5) * range / count, speed,
-        color: type === 'bike' ? BIKE_COLORS[k % BIKE_COLORS.length] : type === 'bus' ? 0xe8b923 : CAR_COLORS[Math.floor(rand() * CAR_COLORS.length)] });
+        color: type === 'bike' ? V.bikeColors[k % V.bikeColors.length] : type === 'bus' ? V.palette.busBody : colors[Math.floor(rand() * colors.length)] });
     }
   };
   const lanes = [4.875, 8.625, 12.375];
@@ -43,29 +45,18 @@ export function buildTraffic() {
     }
     addLane(PATHS.ttl, 4.625, dir, 22, 13, { bike: 0.2, bus: 0.05 }); addLane(PATHS.ttl, 8.375, dir, 30, 9, { bike: 0.8, bus: 0 });
   }
-  const n = vehicles.length, box = new THREE.BoxGeometry(1, 1, 1);
-  vBody = new THREE.InstancedMesh(box, MAT.vehicle, n);
-  vCabin = new THREE.InstancedMesh(box, MAT.glass, n);
-  vHead = new THREE.InstancedMesh(box, MAT.headLamp, n);
-  vTail = new THREE.InstancedMesh(box, MAT.tailLamp, n);
-  const col = new THREE.Color();
-  vehicles.forEach((v, i) => { col.setHex(v.color); vBody.setColorAt(i, col); });
-  for (const mm of [vBody, vCabin, vHead, vTail]) { mm.frustumCulled = false; mm.instanceMatrix.setUsage(THREE.DynamicDrawUsage); scene.add(mm); }
-  vBody.castShadow = true;
+  cityFleet = vhCreateFleet(vehicles.length, scene, 'traffic-city');
+  vehicles.forEach((v, i) => vhSetInfo(cityFleet, i, v.type, v.color));
 }
-const HIDDEN_M = new THREE.Matrix4().makeScale(0, 0, 0);
 const _p = new THREE.Vector3();
-const hideAt = (i: number, lamps: boolean) => { vBody.setMatrixAt(i, HIDDEN_M); vCabin.setMatrixAt(i, HIDDEN_M); if (lamps) { vHead.setMatrixAt(i, HIDDEN_M); vTail.setMatrixAt(i, HIDDEN_M); } };
-/* Không cấp phát mỗi khung (D-018). Đèn pha/hậu chỉ hiện khi đêm > 0,3 (applyNight đặt visible trước hàm này): khi ẩn không ghi ma trận đèn;
-   vị trí xe (v.s) vẫn cộng dồn như cũ nên khung đèn hiện lại thì ma trận được ghi đúng chỗ ngay trong khung đó */
+/* Không cấp phát mỗi khung (D-018). Đèn pha/hậu bật trong shader theo uNight (common/vehicles/material.ts) */
 export function updateTraffic(dt: number) {
-  const lamps = vHead.visible;
   for (let i = 0; i < vehicles.length; i++) {
-    const v = vehicles[i], P = v.path, range = P.max - P.min, T = TYPES[v.type];
-    if (P.hidden) { hideAt(i, lamps); continue; } // làn tắt bằng nút bật/tắt
+    const v = vehicles[i], P = v.path, range = P.max - P.min;
+    if (P.hidden) { vhHide(cityFleet, i); continue; } // làn tắt bằng nút bật/tắt
     v.s += v.dir * v.speed * dt;
     if (v.s > P.max) v.s -= range; if (v.s < P.min) v.s += range;
-    if ((P === PATHS.axis || P === PATHS.ttl) && vanished(i, weatherFx.clear)) { hideAt(i, lamps); continue; }   // đóng cầu (bão): dọn dần xe trên Cầu Rồng, Trần Thị Lý
+    if ((P === PATHS.axis || P === PATHS.ttl) && vanished(i, weatherFx.clear)) { vhHide(cityFleet, i); continue; }   // đóng cầu (bão): dọn dần xe trên Cầu Rồng, Trần Thị Lý
     let yaw: number, pitch = 0;
     if (P.axis === 'x') {
       const y = P.profile(v.s), slope = (P.profile(v.s + 1) - P.profile(v.s - 1)) / 2;
@@ -74,15 +65,12 @@ export function updateTraffic(dt: number) {
       _p.set(P.fixed - v.dir * v.lane, CONFIG.roadY + 0.03, v.s); yaw = v.dir > 0 ? -Math.PI / 2 : Math.PI / 2;
     }
     _q.setFromEuler(_e.set(0, yaw, pitch, 'YZX'));
-    placePart(vBody, i, _p, _q, 0, 0.3 + T.h / 2, T.len, T.h, T.w);
-    placePart(vCabin, i, _p, _q, T.co * T.len, 0.3 + T.h + T.ch / 2, T.cl, T.ch, T.cw);
-    if (!lamps) continue;
-    placePart(vHead, i, _p, _q, T.len / 2 + 0.04, 0.3 + T.h * 0.6, 0.1, 0.22, T.w * 0.8);
-    placePart(vTail, i, _p, _q, -T.len / 2 - 0.04, 0.3 + T.h * 0.6, 0.1, 0.22, T.w * 0.8);
+    vhSetVehicle(cityFleet, i, _p, _q);
   }
-  vBody.instanceMatrix.needsUpdate = vCabin.instanceMatrix.needsUpdate = true;
-  if (lamps) vHead.instanceMatrix.needsUpdate = vTail.instanceMatrix.needsUpdate = true;
+  vhCommit(cityFleet);
 }
+/* Cho test (__app.traffic) */
+export const trafficTest = { fleets: () => vhFleets, city: () => vehicles, paths: PATHS, material: vhMaterial, types: CONFIG.vehicles.types };
 
 /* Vùng cấm thuyền quanh công trường dìm đốt hầm (Hầm vượt sông Hàn, z ≈ −1700): chỉ có hiệu lực khi on */
 export const boatKeepOut = { on: false, z0: -1760, z1: -1640 };

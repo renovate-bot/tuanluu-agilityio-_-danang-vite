@@ -11,7 +11,7 @@ import type { SongHanBridge } from './SongHanBridge';
 
 /* [life] xe dừng trước barie, người đi bộ, thuyền du lịch, tàu buồm cao chờ mở luồng */
 export function shBuildLife(bridge: SongHanBridge) {
-  bridge.traffic = createTraffic(bridge, { seed: 2000, x0: -1500, x1: 1480, busColor: 0x2f7fc1,
+  bridge.traffic = createTraffic(bridge, { seed: 2000, x0: -1500, x1: 1480, name: 'sh-traffic',
     lanes: [{ off: SH.lane, n: 26, speed: 11, bike: 0.6, bus: 0.04 }] });
   // thuyền du lịch nối lộ trình Cầu Rồng – Cầu sông Hàn – Cầu Thuận Phước (giữa các làn thuyền chung)
   bridge.boats = createBoats(bridge, [

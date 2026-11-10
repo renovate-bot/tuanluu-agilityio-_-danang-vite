@@ -8,7 +8,7 @@ import type { TranThiLyBridge } from './TranThiLyBridge';
 /* [life] xe (6 làn: 2 làn trong dùng hệ xe chung của khu phố, làn ngoài ở đây), thuyền du lịch, người đi bộ */
 export function ttlBuildLife(bridge: TranThiLyBridge) {
   // 2 làn trong mỗi chiều dùng hệ xe chung của scene (PATHS.ttl); làn ngoài (nhiều xe máy) ở đây
-  bridge.traffic = createTraffic(bridge, { seed: 731, x0: -1900, x1: 1480, busColor: 0xe8b923,
+  bridge.traffic = createTraffic(bridge, { seed: 731, x0: -1900, x1: 1480, name: 'ttl-traffic',
     lanes: [{ off: TTL.laneOffsets[2], n: 30, speed: 9, bike: 0.85, bus: 0 }] });
   // thuyền du lịch sông Hàn: chạy giữa Cầu Rồng và Trần Thị Lý, qua dưới hai cầu
   bridge.boats = createBoats(bridge, [
