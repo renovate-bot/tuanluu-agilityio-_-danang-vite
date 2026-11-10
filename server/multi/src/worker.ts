@@ -11,14 +11,22 @@ function originKey(o: string): string | null {
   try { const u = new URL(o); return u.protocol + '//' + u.hostname; } catch { return null; }
 }
 
+// Mục cho phép có '*' (vd. bản xem trước PR của Netlify): '*' chỉ khớp một đoạn chữ thường/số, không có '.' hay '-'
+function originAllowed(key: string, pattern: string): boolean {
+  const p = originKey(pattern.replace(/\*/g, 'x'));
+  if (!p) return false;
+  if (!pattern.includes('*')) return p === key;
+  const re = new RegExp('^' + pattern.trim().split('*').map(s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('[a-z0-9]+') + '$');
+  return re.test(key);
+}
+
 export default {
   async fetch(req: Request, env: Env): Promise<Response> {
     const url = new URL(req.url);
     if (url.pathname !== '/sky') return new Response('Not found', { status: 404 });
     if (req.headers.get('Upgrade') !== 'websocket') return new Response('Expected WebSocket', { status: 426 });
     const key = originKey(req.headers.get('Origin') || '');
-    const allowed = env.ALLOWED_ORIGINS.split(',').map(s => originKey(s.trim()));
-    if (!key || !allowed.includes(key)) return new Response('Forbidden', { status: 403 });
+    if (!key || !env.ALLOWED_ORIGINS.split(',').some(s => originAllowed(key, s.trim()))) return new Response('Forbidden', { status: 403 });
     return env.SKY.get(env.SKY.idFromName('sky')).fetch(req);
   }
 };

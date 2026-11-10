@@ -63,6 +63,10 @@ try {
   ok(await upgradeStatus('https://evil.example') === 403, 'Origin lạ -> 403');
   ok(await upgradeStatus(null) === 403, 'không có Origin -> 403');
   ok(await upgradeStatus('http://localhost:5173') === 101, 'Origin http://localhost:5173 -> 101');
+  ok(await upgradeStatus('https://deploy-preview-15--danangbridges.netlify.app') === 101, 'bản xem trước PR của site -> 101');
+  ok(await upgradeStatus('https://deploy-preview-15--evil.netlify.app') === 403, 'bản xem trước của site khác -> 403');
+  ok(await upgradeStatus('https://deploy-preview-x.y--danangbridges.netlify.app') === 403, 'dấu * không khớp dấu chấm -> 403');
+  ok(await upgradeStatus('https://evil.com/deploy-preview-1--danangbridges.netlify.app') === 403, 'đường dẫn giả tên site -> 403');
   cs.forEach(c => { try { c.ws.close(); } catch {} });
 } catch (e) {
   ok(false, 'ngoại lệ: ' + e.message + '\n' + log.slice(-1500));

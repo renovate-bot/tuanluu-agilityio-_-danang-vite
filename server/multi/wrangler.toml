@@ -14,5 +14,5 @@ tag = "v1"
 new_sqlite_classes = ["SkyObject"]
 
 [vars]
-# So khớp scheme + hostname, bỏ cổng
-ALLOWED_ORIGINS = "https://danangbridges.netlify.app,http://localhost,http://127.0.0.1"
+# So khớp scheme + hostname, bỏ cổng; '*' khớp một đoạn chữ/số (bản xem trước PR của Netlify: deploy-preview-<số>--danangbridges)
+ALLOWED_ORIGINS = "https://danangbridges.netlify.app,https://deploy-preview-*--danangbridges.netlify.app,http://localhost,http://127.0.0.1"
