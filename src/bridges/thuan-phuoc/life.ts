@@ -13,8 +13,8 @@ export function tpBuildTraffic(bridge: ThuanPhuocBridge) {
 export function tpBuildBoats(bridge: ThuanPhuocBridge) {
   // tàu cá, tàu du lịch và một tàu hàng nhỏ đi qua nhịp chính (tĩnh không 27 m)
   bridge.boats = createBoats(bridge, [
-    { x: -70, z: 600, dir: -1, speed: 4.2, len: 22, w: 6.5, h: 2.6, cab: 2.6 },
-    { x: 30, z: -500, dir: 1, speed: 3.4, len: 18, w: 6, h: 2.4, cab: 2.4 },
-    { x: 110, z: 200, dir: -1, speed: 2.6, len: 46, w: 10, h: 4.2, cab: 7.5 }
-  ]);
+    { x: -70, z: 600, dir: -1, speed: 4.2, len: 22, w: 6.5, h: 2.6, cab: 2.6, type: 'D' },
+    { x: 30, z: -500, dir: 1, speed: 3.4, len: 18, w: 6, h: 2.4, cab: 2.4, type: 'B' },
+    { x: 110, z: 200, dir: -1, speed: 2.6, len: 46, w: 10, h: 4.2, cab: 7.5, type: 'D' }
+  ], 'tp-boats');
 }

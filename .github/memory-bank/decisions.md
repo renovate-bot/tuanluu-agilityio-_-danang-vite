@@ -119,3 +119,8 @@ Quyết định:
 - Khi có bảng mở, bấm khung 3D hoặc Esc **chỉ đóng bảng** (cả điện thoại): listener pha capture trên `window` chặn `exitTour`, OrbitControls, Esc thoát Tour / xuống cabin / thoát bay. Lăn chuột giữ như cũ.
 - `.specs`, `.stats` giữ như cũ.
 Hệ quả: test bấm nút trong hai bảng phải qua `tap` / `pick` (`tests/lib.mjs`, `reveal` chạy cả máy tính). `swRideHint` chỉ nhắc Esc. Khi bảng Góc nhìn mở hết chiều cao, ô `.stats` che phần đáy (có từ trước).
+
+## D-026: Mọi tàu vẽ bằng một InstancedMesh cho mỗi đội tàu, hình học gộp nhiều kiểu, chọn kiểu theo instance — 2026-11-10 — Chấp nhận
+Bối cảnh: thay khối hộp bằng du thuyền nhiều kiểu và thêm 15 tàu tụ tập ban đêm mà không tăng draw call ở góc cũ. Mỗi kiểu một mesh thì 3 kiểu × (cảnh + phản chiếu + bóng) vượt 3 khối hộp cũ. [spec](../../docs/superpowers/specs/2026-11-10-tau-thuyen-song-han-design.md)
+Quyết định: `src/environment/boats/`. Hình học các kiểu gộp vào một geometry, mỗi đỉnh mang `aPart` (kiểu), mỗi instance mang `aBoat` (kiểu, biến thể sọc, màu LED, tên); vertex shader thu đỉnh khác kiểu về gốc (tam giác suy biến). Một vật liệu dùng chung `btFleetMaterial` (khóa `boatFleet`), đèn đêm theo `aGlow` × `uNight`; bóng dùng `btDepthMaterial` cùng bản vá. Biển tên trong atlas canvas, tên hư cấu. Tàu tụ tập nằm trong đội tàu chung `boats-river` (layer 0, có phản chiếu và vệt D-023), vị trí từ `rng(CONFIG.boats.crowd.seed)`; tàu chạy chung giữ 14 lời gọi `rand()`, `len` đổi sang khoảng dài của kiểu.
+Hệ quả: draw call giảm 10–20 ở mọi góc (`tests/KET-QUA.md`). Mỗi instance tốn đỉnh của mọi kiểu trong đội (đội chung A+B+C ≈ 9 900 đỉnh × 22). Thêm kiểu mới vào đội nào thì đỉnh mọi tàu trong đội đó tăng theo. `MAT.hull` / `boatCabin` / `boatRoof` đã xóa.

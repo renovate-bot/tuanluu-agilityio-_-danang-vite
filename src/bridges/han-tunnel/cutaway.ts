@@ -6,6 +6,7 @@ import { water } from '../../core/water';
 import { CONFIG } from '../../config';
 import { HR, HR_HOLES, hrRoadY, hrBedY, hrTrenchY } from './profile';
 import type { HrMaterials } from './materials';
+import { btFleetMaterial } from '../../environment/boats/material';
 
 /* [cutaway] Hai chế độ xem dưới lòng đất:
    • Mặt cắt địa chất (section): bóc dải đất phía Bắc mặt cắt dọc tim ống Nam, hiện tấm địa chất, nước trong suốt.
@@ -95,7 +96,7 @@ export class Cutaway {
     this.patchWater();
     // vật liệu bị bóc: đất, đường, cây, đèn, nhà (vật liệu riêng của buildCity) và hầm
     const set = new Set<THREE.Material>([MAT.land, MAT.sand, MAT.paver, MAT.stone, MAT.grass, MAT.road, MAT.road2, MAT.trunk, MAT.leaf, MAT.palm, MAT.lampPole, MAT.bulb,
-      MAT.vehicle, MAT.glass, MAT.headLamp, MAT.tailLamp, MAT.hull, MAT.boatCabin, MAT.boatRoof,
+      MAT.vehicle, MAT.glass, MAT.headLamp, MAT.tailLamp, btFleetMaterial,
       M.concrete, M.bore, M.roadIn, M.roadOut, M.louver, M.brick, M.wave, M.bed, M.rubble, M.steel, M.lampThr, M.lampIn, M.lampCorr, M.fan, M.sos, M.extinguisher, M.door, M.exit, M.laneGreen, M.guide, M.equip, M.grate, M.basket]);
     scene.traverse((o) => { const i = o as THREE.InstancedMesh; if (i.isInstancedMesh && i.parent && (i.parent as THREE.LOD).isLOD) set.add(i.material as THREE.Material); });
     this.mats = [...set];
