@@ -53,6 +53,7 @@ Không kế thừa `BridgeBase`: module `index.ts` giữ một đối tượng `
 - `BridgeBase.finalize()` gộp bê tông + thép thành 2 mesh; `details` (LOD) ẩn khi xa hơn `lodDistance`; `farHide` ẩn khi rất xa.
 - Chi tiết nhỏ, xe, người: layer 1 → không vẽ trong lượt phản chiếu mặt nước.
 - Vật lặp lại → `InstancedMesh`. Ẩn instance = ma trận scale 0 (không xóa, để giữ chỉ số).
+- Nhiều kiểu cùng loại (tàu D-026, xe D-027) → một `InstancedMesh` mỗi hệ, hình học gộp có `aPart`, instance có `aType`, vertex shader thu đỉnh khác kiểu về gốc; mẫu: `src/environment/boats/`, `src/common/vehicles/`. Hình học gộp dùng chung buffer: không sửa tại chỗ, không `dispose()` geometry của một hệ.
 - Vật liệu dùng chung ở `core/materials.ts` (`MAT`); `dispose()` không giải phóng vật liệu dùng chung.
 - **Không đổi program key khi đang chạy (D-018).** Những thứ làm three biên dịch lại MỌI vật liệu liên quan: `castShadow` của đèn, số đèn, `clippingPlanes`/`clipIntersection`, `defines`, `needsUpdate`, render target khác (canvas ↔ composer). Bật/tắt bằng uniform, hằng số mặt phẳng (mặt cắt Hầm đẩy plane ra 1e7), xoá shadow map (`stepShadows`), đổi sampler (phản chiếu tắt). Đo bằng `npm run test:perf -- --strict`: mỗi thao tác phải +0 program.
 - **Biên dịch trước** ở `core/prewarm.ts` (chạy sau `setupUI`, trước `animate()`): `compileAsync` hai biến thể + upload texture + vẽ thật một lần với mọi object hiện, `frustumCulled = false`, mọi level LOD, InstancedMesh rỗng có 1 instance. Object/vật liệu mới tạo SAU prewarm (lúc chạy) sẽ biên dịch lười → tạo sẵn lúc dựng và ẩn.

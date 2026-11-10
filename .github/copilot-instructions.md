@@ -54,6 +54,8 @@ npm run test:mobile    # giao diện điện thoại — chạy khi đổi index
 npm run test:citynight # đèn đêm tòa nhà + vệt trên sông; cần `-- --baseline` trên bản chưa sửa để có mốc chuẩn
 npm run test:boats:unit # tàu thuyền: vị trí tàu tụ tập, vùng cấm, hình học từng kiểu (nhanh, không trình duyệt)
 npm run test:boats     # tàu thuyền: đội tàu, chuỗi rand() giữ nguyên, tàu tụ tập ngày/đêm/bão, LED trên sông; đọc dist/
+npm run test:traffic:unit # xe cộ: kích thước, hướng mặt, thông số từng loại xe (nhanh, không trình duyệt)
+npm run test:traffic   # xe cộ: một lệnh vẽ mỗi hệ, chuỗi rand() giữ nguyên, đèn theo đêm, bão dọn xe, tắt làn; đọc dist/
 npm run test:multi:unit   # dù lượn nhiều người: logic phòng, tên, nội suy, idle (nhanh, không trình duyệt)
 npm run test:multi:worker # Worker qua wrangler dev: kiểm Origin
 npm run test:multi        # dù lượn nhiều người: trình duyệt + bot qua wrangler dev cục bộ; đọc dist/

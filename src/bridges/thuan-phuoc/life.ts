@@ -5,7 +5,7 @@ import type { ThuanPhuocBridge } from './ThuanPhuocBridge';
 
 /* [life] xe cộ & tàu thuyền (hệ dùng chung trong common/) */
 export function tpBuildTraffic(bridge: ThuanPhuocBridge) {
-  bridge.traffic = createTraffic(bridge, { seed: 405, x0: -1500, x1: 1480, busColor: 0x2f7fc1, lanes: [
+  bridge.traffic = createTraffic(bridge, { seed: 405, x0: -1500, x1: 1480, name: 'tp-traffic', lanes: [
     { off: TP.median / 2 + TP.laneWidth * 0.5, n: 20, speed: 16 },               // làn trong
     { off: TP.median / 2 + TP.laneWidth * 1.5, n: 30, speed: 11, bike: 0.6 }     // làn ngoài, nhiều xe máy
   ] });

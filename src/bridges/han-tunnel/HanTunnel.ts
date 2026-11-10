@@ -48,7 +48,7 @@ export class HanTunnel extends BridgeBase<HrMaterials> {
     this.group.add(this.riverbed.group); this.noReflect.push(this.riverbed.group);
     hrBuildOutdoor(this);
     this.buildSim();
-    this.traffic = createTraffic(this, { seed: 3100, x0: -1500, x1: 1480, busColor: 0xe0a21b, lanes: [
+    this.traffic = createTraffic(this, { seed: 3100, x0: -1500, x1: 1480, name: 'hr-traffic', lanes: [
       { off: HR.laneOffsets[0], n: 34, speed: HR.carSpeed, bike: 0.03, bus: 0.12 },
       { off: HR.laneOffsets[1], n: 30, speed: HR.carSpeed, bike: 0.06, bus: 0.12 },
       { off: HR.laneOffsets[2], n: 110, speed: HR.bikeSpeed, bike: 0.94, bus: 0 }   // làn phải: xe máy

@@ -662,6 +662,39 @@ const boatsBase = {
   names: ['SÔNG HÀN 01', 'NGỌC BIỂN', 'HOA SEN', 'BẠCH ĐẰNG STAR', 'TRĂNG RẰM', 'HẢI ÂU', 'SƠN TRÀ', 'MỸ KHÊ']   // tên hư cấu trên biển tên
 };
 
+/* ------------------------- Xe cộ ------------------------- */
+/* docs/superpowers/specs/2026-11-10-xe-co-thuc-te-design.md — siêu xe, xe tay ga có người lái, buýt nhỏ vàng (không logo, không biển số thật).
+   Hình dáng: src/common/vehicles/shapes.ts (mũi xe về +X, rộng theo Z, mặt đường y = 0, mét).
+   Siêu xe xấp xỉ McLaren 720S (hãng công bố khoảng 4,54 × 1,93 × 1,20 m); agent chưa kiểm lại được nguồn nên vẫn ghi (ước lượng). */
+export type VehicleTypeId = 'car' | 'bus' | 'bike';
+const vehiclesBase = {
+  // kích thước bao từng loại: len = dài (X), w = rộng (Z), h = cao (Y), đều theo m — chỉ là kích thước đích để unit test (tests/traffic-unit/) so với hình dựng;
+  // tọa độ thật của từng bộ phận nằm trong src/common/vehicles/shapes.ts, đổi len / w / h ở đây KHÔNG co giãn xe (muốn đổi cỡ xe phải sửa shapes.ts)
+  types: {
+    car: { len: 4.5, w: 1.95, h: 1.2 },    // m — siêu xe thấp, bẹt (ước lượng, xấp xỉ McLaren 720S)
+    bike: { len: 1.8, w: 0.7, h: 1.6 },    // m — xe tay ga + người lái đội mũ, h tính tới đỉnh mũ (ước lượng)
+    bus: { len: 7.0, w: 2.1, h: 2.7 }      // m — buýt nhỏ ~29 chỗ, vừa khoảng xếp hàng 7,5 m của Cầu sông Hàn (ước lượng)
+  } as Record<VehicleTypeId, { len: number; w: number; h: number }>,
+  carColors: [0xf47b16, 0xf2c40f, 0xc8161d, 0xf4f4f2, 0x1f5fbf, 0x2e9e4f, 0x3a3d42, 0x16181c],   // màu thân siêu xe: cam, vàng, đỏ, trắng, xanh dương, xanh lá, xám đậm, đen (ước lượng theo ảnh tham chiếu)
+  bikeColors: [0xc0272d, 0x1f2a44, 0xe9e9e6, 0x2f7d4f, 0x2a2a2a],                               // màu thân xe tay ga: đỏ, xanh đen, trắng, xanh lá, đen (giữ 5 màu BIKE_COLORS cũ)
+  shirtColors: [0x2f7fc1, 0xf0f0f0, 0x333a44, 0xd23a2a, 0xe8b923, 0x3f8f5a],                     // màu áo người lái: xanh dương, trắng, xám, đỏ, vàng, xanh lá; mũ lấy hoán vị kênh .brg (ước lượng)
+  palette: {                                        // màu cố định theo đỉnh (hex), ban ngày (ước lượng theo bản dựng thử)
+    glass: 0x10161d, tyre: 0x15171a, dark: 0x1b1d21,                     // kính sẫm, lốp, chi tiết đen (cánh gió, phuộc, ghi đông)
+    seat: 0x7a5a45, skin: 0xd9a582, trouser: 0x2b3140,                   // yên nâu, da mặt, quần sẫm người lái
+    busBody: 0xf2c11c, busStripe: 0x2f9be0, busStripeEdge: 0xffffff,    // buýt: thân vàng, dải chéo xanh, viền dải trắng
+    busWindow: 0x0e1318, busPane: 0x2b3d50, busAc: 0xf4f4f1,             // buýt: dải cửa sổ tối (làm khung), ô kính xanh xám trong khung, cục điều hòa trên nóc
+    headDay: 0xf2efe6, tailDay: 0xc01818                                 // đèn pha / đèn hậu khi tắt (ban ngày)
+  },
+  lamp: {
+    head: [2.8, 2.7, 2.3] as [number, number, number],   // màu RGB tuyến tính > 1 của đèn pha về đêm (MAT.headLamp cũ 2,2/2,1/1,8; tăng ~27 % vì mặt đèn mới nhỏ hơn tấm đèn hộp cũ, sau review)
+    tail: [2.0, 0.1, 0.05] as [number, number, number],  // màu RGB tuyến tính > 1 của đèn hậu về đêm (giữ đúng MAT.tailLamp)
+    nightOn: 0.3                                         // mức đêm shared.uNight (0..1) từ đó bật đèn (giữ ngưỡng hiện tại)
+  },
+  roughness: 0.4,                                   // độ nhám vật liệu xe, hệ số 0..1 (ước lượng, giữa sơn bóng và nhựa)
+  metalness: 0.2,                                   // độ kim loại vật liệu xe, hệ số 0..1 (ước lượng)
+  maxVerts: 2000                                    // đỉnh — trần tổng số đỉnh hình học gộp 3 loại xe
+};
+
 export const CONFIG = {
   ...base,
   perf: perfBase,
@@ -677,7 +710,8 @@ export const CONFIG = {
   riverfront: riverfrontBase,
   weather: weatherBase,
   tourAll: tourAllBase,
-  explore: { ...exploreBase, multi: multiParams }
+  explore: { ...exploreBase, multi: multiParams },
+  vehicles: vehiclesBase
 };
 export type SongHanConfig = typeof CONFIG.songHan;
 export type HanTunnelConfig = typeof CONFIG.hanTunnel;
