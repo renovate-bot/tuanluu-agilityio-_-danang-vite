@@ -1,5 +1,5 @@
 import { CONFIG, type BoatTypeId } from '../../config';
-import { rng, clamp, smooth } from '../../common/math';
+import { rng, clamp } from '../../common/math';
 
 /* =====================================================================
    TÀU TỤ TẬP BAN ĐÊM — logic thuần (không three, chạy được trong unit test)
@@ -43,13 +43,16 @@ export function btCrowdSlots(cfg = B.crowd): CrowdSlot[] {
   return out;
 }
 
-/* Mức hiện của tàu thứ i (0..1): mỗi tàu hiện dần trong một khúc riêng của khoảng nightOn (so le như vanished()),
-   rồi về bến theo boatAway (bão) cũng so le. Không giảm khi night tăng. */
-export function btCrowdAlpha(i: number, n: number, night: number, boatAway: number): number {
-  const C = B.crowd, [n0, n1] = C.nightOn, w = C.rampFrac;
-  const h = (i * 0.6180339887) % 1, start = h * (1 - w);
-  const t = clamp((night - n0) / (n1 - n0), 0, 1);
-  const on = smooth(clamp((t - start) / w, 0, 1));
-  const away = smooth(clamp((boatAway - start) / w, 0, 1));
-  return on * (1 - away);
+/* Hiện / về bến (spec G6): một mức chung 0..1 tiến về mục tiêu với tốc độ giới hạn (1 / spreadSec mỗi giây),
+   tàu k hiện khi mức vượt ngưỡng riêng (so le như vanished()) — tàu hiện đủ kích thước, lần lượt trong ≥ spreadSec */
+export function btCrowdTarget(night: number, boatAway: number): number {
+  const [n0, n1] = B.crowd.nightOn;
+  return clamp((night - n0) / (n1 - n0), 0, 1) * (1 - boatAway);
+}
+export function btCrowdLevel(level: number, target: number, dt: number): number {
+  const step = dt / B.crowd.spreadSec;
+  return target > level ? Math.min(target, level + step) : Math.max(target, level - step);
+}
+export function btCrowdShown(k: number, level: number): boolean {
+  return level > 0.02 + ((k * 0.6180339887) % 1) * 0.96;
 }

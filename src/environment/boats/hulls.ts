@@ -13,11 +13,8 @@ export const BOAT_TYPES: BoatTypeId[] = ['A', 'B', 'C', 'D', 'E'];
 export const ATLAS_ROWS = CONFIG.boats.names.length + 1;   // atlas biển tên: mỗi tên một hàng + hàng cuối trắng
 const WHITE_V = 1 - 0.5 / ATLAS_ROWS;                      // v giữa hàng trắng
 
-const C = {
-  white: 0xf4f1ea, stripe: 0xc23b2a, glass: 0x2a3a46, roof: 0xe9e6df, rail: 0xd8d8d8, led: 0xc8c8c8, fender: 0x1e1e1e,
-  wood: 0x8a5a3a, darkWood: 0x5a3a26, blueHull: 0x2f6f8f, flag: 0xda251d, star: 0xffe600, sail: 0xf0e8d8, mast: 0x6a6a6a, plate: 0xffffff
-};
-const LANTERN = [0xff3b3b, 0xffd23a, 0x3bd16f, 0x3b8bff, 0xff7a2f];
+const C = CONFIG.boats.palette;   // màu ban ngày (config.ts)
+const LANTERN = C.lanterns;
 
 /* Một bộ phận: bỏ index, gán màu, glow, uv (ô trắng trừ biển tên) */
 function part(g: THREE.BufferGeometry, color: number, glow: Glow): THREE.BufferGeometry {
@@ -98,7 +95,7 @@ class Kit {
   }
   /* Đèn mạn: đỏ bên trái (+X khi mũi về +Z), xanh bên phải */
   nav(hw: number, y: number, z: number) {
-    this.box(0.25, 0.25, 0.25, hw + 0.1, y, z, 0xaa2222, Glow.NavRed); this.box(0.25, 0.25, 0.25, -hw - 0.1, y, z, 0x22aa44, Glow.NavGreen);
+    this.box(0.25, 0.25, 0.25, hw + 0.1, y, z, C.navRed, Glow.NavRed); this.box(0.25, 0.25, 0.25, -hw - 0.1, y, z, C.navGreen, Glow.NavGreen);
   }
   /* Gộp + chuẩn hóa dài 1 theo Z, tâm Z = 0, giữ y = 0 là mặt nước */
   build(): THREE.BufferGeometry {
@@ -114,17 +111,17 @@ class Kit {
 function typeA(k: Kit) {
   for (const s of [-1, 1]) k.prism(k.hullPlan(1.1, -13, 13, 6).map(([x, z]) => [x + s * 2.8, z] as [number, number]), -0.6, 1.4, C.white);
   k.box(7.8, 0.4, 24, 0, 1.6, -0.5, C.white);
-  k.box(0.06, 0.35, 22, -3.92, 1.3, -1, C.stripe, Glow.Stripe); k.box(0.06, 0.35, 22, 3.92, 1.3, -1, C.stripe, Glow.Stripe);
+  k.box(0.06, 0.35, 22, -3.92, 1.3, -1, C.stripes[0], Glow.Stripe); k.box(0.06, 0.35, 22, 3.92, 1.3, -1, C.stripes[0], Glow.Stripe);
   k.prism(k.cabinPlan(3.5, -11, 9, 2.5), 1.8, 4.2, C.white); k.windows(3.5, -10, 6.5, 2.4, 1.3);
   k.prism(k.cabinPlan(3.2, -9.5, 5, 2.2), 4.2, 6.4, C.white); k.windows(3.2, -8.5, 2.8, 4.8, 1.1);
-  for (const s of [-1, 1]) k.box(0.07, 0.6, 9, s * 3.55, 3.4, 1.5, C.stripe, Glow.Stripe, -0.28);   // sọc chéo trên mạn tầng 1
+  for (const s of [-1, 1]) k.box(0.07, 0.6, 9, s * 3.55, 3.4, 1.5, C.stripes[0], Glow.Stripe, -0.28);   // sọc chéo trên mạn tầng 1
   k.box(7.2, 0.3, 17.5, 0, 6.55, -2.5, C.roof); k.railing(3.6, -11, -9.5, 4.2, 0.9);
   k.ledLoop(3.9, -12.5, 11.5, 1.85); k.ledLoop(3.55, -11, 9, 4.2); k.ledLoop(3.6, -11.25, 6.25, 6.72);
   k.plate(3.2, -3, 5.9, 6, 0.7); k.nav(3.3, 5.6, 4.5); k.fenders(3.9, -9, 8, 1.0, 4); k.flag(0, 6.7, -10.5); k.flag(0, 1.8, 11.5, 0.7);
 }
 /* B — tàu gỗ du lịch kiểu cũ: thân hộp mũi nhọn, tầng 1 kín, tầng 2 mở có cột + mái che, cabin lái, biển tên lớn trên nóc (22 m) */
 function typeB(k: Kit) {
-  k.prism(k.hullPlan(3.3, -11, 11, 4), -0.6, 1.6, C.white); k.box(0.06, 0.45, 18, -3.32, 1.0, -2, C.stripe, Glow.Stripe); k.box(0.06, 0.45, 18, 3.32, 1.0, -2, C.stripe, Glow.Stripe);
+  k.prism(k.hullPlan(3.3, -11, 11, 4), -0.6, 1.6, C.white); k.box(0.06, 0.45, 18, -3.32, 1.0, -2, C.stripes[0], Glow.Stripe); k.box(0.06, 0.45, 18, 3.32, 1.0, -2, C.stripes[0], Glow.Stripe);
   k.box(6.2, 2.4, 17.5, 0, 2.8, -1.25, C.white); k.windows(3.1, -9.5, 6.5, 2.3, 1.2);
   k.box(6.4, 0.2, 18, 0, 4.1, -1, C.wood); k.railing(3.2, -10, 8, 4.2, 1.0);
   for (const z of [-9.8, -5, 0, 4.8]) for (const s of [-1, 1]) k.box(0.15, 2.2, 0.15, s * 3.05, 5.3, z, C.darkWood);
@@ -135,7 +132,7 @@ function typeB(k: Kit) {
 }
 /* C — du thuyền lớn 3 tầng: tầng 3 phía sau mở, lan can, mái che phía trước, dây đèn lồng (33 m) */
 function typeC(k: Kit) {
-  k.prism(k.hullPlan(4.3, -16.5, 16.5, 6), -0.8, 1.8, C.white); k.box(0.06, 0.4, 26, -4.32, 1.2, -2, C.stripe, Glow.Stripe); k.box(0.06, 0.4, 26, 4.32, 1.2, -2, C.stripe, Glow.Stripe);
+  k.prism(k.hullPlan(4.3, -16.5, 16.5, 6), -0.8, 1.8, C.white); k.box(0.06, 0.4, 26, -4.32, 1.2, -2, C.stripes[0], Glow.Stripe); k.box(0.06, 0.4, 26, 4.32, 1.2, -2, C.stripes[0], Glow.Stripe);
   k.prism(k.cabinPlan(4.1, -15, 12, 3), 1.8, 4.3, C.white); k.windows(4.1, -14, 9, 2.4, 1.3);
   k.prism(k.cabinPlan(3.9, -14, 10, 3), 4.3, 6.8, C.white); k.windows(3.9, -13, 7, 4.9, 1.3);
   k.box(7.8, 0.2, 24, 0, 6.9, -2, C.wood); k.prism(k.cabinPlan(3.4, -2, 6, 2), 7.0, 9.0, C.white); k.windows(3.4, -1.5, 4, 7.5, 1.0);
@@ -146,9 +143,9 @@ function typeC(k: Kit) {
 }
 /* D — tàu cá / hàng nhỏ: thân xanh, boong hàng phía trước, cabin lái ở đuôi, cột ngắn (22 m) */
 function typeD(k: Kit) {
-  k.prism(k.hullPlan(2.65, -11, 11, 5), -0.6, 1.6, C.blueHull); k.box(0.06, 0.3, 17, -2.66, 1.45, -1.5, C.stripe, Glow.Stripe); k.box(0.06, 0.3, 17, 2.66, 1.45, -1.5, C.stripe, Glow.Stripe);
+  k.prism(k.hullPlan(2.65, -11, 11, 5), -0.6, 1.6, C.blueHull); k.box(0.06, 0.3, 17, -2.66, 1.45, -1.5, C.stripes[0], Glow.Stripe); k.box(0.06, 0.3, 17, 2.66, 1.45, -1.5, C.stripes[0], Glow.Stripe);
   k.box(5.0, 0.6, 9, 0, 1.9, 2, C.wood); k.box(4.2, 3.0, 5.5, 0, 3.1, -7, C.white); k.windows(2.1, -9.5, -4.3, 3.3, 0.9);
-  k.box(4.6, 0.2, 6, 0, 4.7, -7, C.stripe, Glow.Stripe); k.box(0.12, 4.5, 0.12, 0, 6.9, -6, C.mast); k.box(0.12, 3, 0.12, 0, 3.3, 6, C.mast);
+  k.box(4.6, 0.2, 6, 0, 4.7, -7, C.stripes[0], Glow.Stripe); k.box(0.12, 4.5, 0.12, 0, 6.9, -6, C.mast); k.box(0.12, 3, 0.12, 0, 3.3, 6, C.mast);
   k.nav(2.2, 4.3, -4.5); k.flag(0, 4.8, -9.5, 0.7);
 }
 /* E — tàu buồm cao: thân gỗ sẫm, nhà boong, cột buồm cao hơn tĩnh không, buồm tam giác hai mặt (30 m) */

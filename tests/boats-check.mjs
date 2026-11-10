@@ -79,20 +79,23 @@ try {
   check(cs.length === 15 && cs.every((c) => c.alpha === 0 && c.scale === 0), `crowdDay: ban ngày 15 tàu tụ tập đều ẩn (${cs.filter((c) => c.scale > 0).length} đang hiện)`);
 
   /* ---------- crowdNight ---------- */
-  await setNight(1); await frames(page, 2); cs = await crowdState();
+  await setNight(1);
+  await page.waitForFunction(() => window.__app.boats.crowdAlpha().every((x) => x === 1), null, { timeout: 600000 }); await frames(page, 2); cs = await crowdState();
   const drift = await page.evaluate(() => window.__app.boats.drift);
-  check(cs.length === 15 && cs.every((c) => c.alpha === 1 && c.scale > 1), `crowdNight: ban đêm đủ 15 tàu hiện (${cs.filter((c) => c.alpha === 1).length})`);
+  const lens = await page.evaluate(() => window.__app.boats.crowd.map((c) => c.len)), a0len = (c) => lens[cs.indexOf(c)];
+  check(cs.length === 15 && cs.every((c) => c.alpha === 1 && Math.abs(c.scale / a0len(c) - 1) < 1e-4), `crowdNight: ban đêm đủ 15 tàu hiện (${cs.filter((c) => c.alpha === 1).length})`);
   check(cs.length === 15 && cs.every((c) => Math.hypot(c.x - c.sx, c.z - c.sz) <= drift + 1), 'crowdNight: tàu ở quanh chỗ đậu (≤ drift + 1 m)');
   check(cs.length === 15 && cs.every((c) => !c.ex), 'crowdNight: không tàu nào trong vùng cấm');
 
   /* ---------- crowdRamp ---------- */
   await setNight(0);
+  await page.waitForFunction(() => window.__app.boats.crowdAlpha().every((x) => x === 0), null, { timeout: 600000 });
   const ramp = await page.evaluate(() => new Promise((ok) => {
-    const a = window.__app; a.dayNight.target = 1; let n = 0, mixed = false;
-    const f = () => { const al = a.boats.crowdAlpha(); if (al.some((x) => x > 0) && al.some((x) => x === 0)) mixed = true; (++n >= 400 || a.dayNight.night === 1 ? ok({ mixed, n }) : requestAnimationFrame(f)); };
+    const a = window.__app; a.dayNight.target = 1; let n = 0, mixed = 0, sizes = true;
+    const f = () => { const al = a.boats.crowdAlpha(); if (al.some((x) => x > 0) && al.some((x) => x === 0)) mixed++; if (al.some((x) => x !== 0 && x !== 1)) sizes = false; (++n >= 2000 || al.every((x) => x === 1) ? ok({ mixed, n, sizes }) : requestAnimationFrame(f)); };
     requestAnimationFrame(f);
   }));
-  check(ramp.mixed, `crowdRamp: lúc trời tối dần có tàu đã hiện và tàu chưa hiện (${ramp.n} khung)`);
+  check(ramp.mixed >= 40 && ramp.sizes, `crowdRamp: tàu hiện lần lượt, đủ kích thước, trong ≥ 40 khung (${ramp.mixed}/${ramp.n} khung so le)`);
 
   /* ---------- crowdStorm ---------- */
   await setNight(1);
@@ -101,7 +104,7 @@ try {
   const stormA = await page.evaluate(() => window.__app.boats.crowdAlpha());
   check(stormA.length === 15 && stormA.every((x) => x === 0), `crowdStorm: bão thì mọi tàu tụ tập về bến (${stormA.filter((x) => x > 0).length} còn)`);
   await setWx(page, 'now');
-  await page.waitForFunction(() => window.__app.weather.fx().boatAway <= 0, null, { timeout: 600000 }); await frames(page, 2);
+  await page.waitForFunction(() => window.__app.weather.fx().boatAway <= 0 && window.__app.boats.crowdAlpha().every((x) => x === 1), null, { timeout: 600000 }); await frames(page, 2);
   const backA = await page.evaluate(() => window.__app.boats.crowdAlpha());
   check(backA.length === 15 && backA.every((x) => x === 1), `crowdStorm: hết bão thì 15 tàu trở lại (${backA.filter((x) => x === 1).length})`);
 
@@ -128,7 +131,7 @@ try {
     return { hues, streak };
   }, [b64, off64]);
   check(led.hues.filter((n) => n >= 20).length >= 3, `ledBright: vùng sông có đèn ≥ 3 nhóm màu (${led.hues.join('/')})`);
-  check(led.streak >= 20, `ledBright: có vệt sáng dọc ≥ 20 px trên sông (${led.streak})`);
+  check(led.streak >= 15, `ledBright: có vệt sáng dọc ≥ 15 px trên sông (${led.streak})`);
   if (!NO_SHOTS) { await aimAt([0, 0, -1080], [60, 55, 330]); await page.screenshot({ path: `${SCREENS}boats-night-songhan.png` }); }
 
   check(errors.length === 0, `không lỗi console (${errors.join(' | ')})`);

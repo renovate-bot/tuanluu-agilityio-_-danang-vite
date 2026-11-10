@@ -12,7 +12,7 @@ import { btNameAtlas } from './atlas';
    Bóng đổ dùng btDepthMaterial cùng bản vá, nếu không lượt vẽ bóng sẽ vẽ chồng mọi kiểu.
    ===================================================================== */
 const B = CONFIG.boats;
-const STRIPES = [0xc23b2a, 0x2f6fbf, 0xe0782a];   // màu sọc thân theo biến thể: đỏ, xanh dương, cam (ảnh tham chiếu)
+const STRIPES = B.palette.stripes;   // màu sọc thân theo biến thể (config.ts)
 
 const VS_HEAD = /* glsl */`
 attribute float aPart;
@@ -28,7 +28,9 @@ const uniforms = {
   uNight: shared.uNight,
   uStripe: { value: STRIPES.map((c) => new THREE.Color(c)) },
   uWin: { value: new THREE.Color(B.windowColor).multiplyScalar(B.windowGain) },
-  uLed: { value: B.led.colors.map((c) => new THREE.Color(c).multiplyScalar(B.led.gain)) }
+  uLed: { value: B.led.colors.map((c) => new THREE.Color(c).multiplyScalar(B.led.gain)) },
+  uNavR: { value: new THREE.Color(B.palette.navRed).multiplyScalar(B.palette.navGain) },
+  uNavG: { value: new THREE.Color(B.palette.navGreen).multiplyScalar(B.palette.navGain) }
 };
 
 export const btFleetMaterial = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.55, metalness: 0.05, map: btNameAtlas() });
@@ -45,6 +47,8 @@ uniform float uNight;
 uniform vec3 uStripe[ ${STRIPES.length} ];
 uniform vec3 uWin;
 uniform vec3 uLed[ ${B.led.colors.length} ];
+uniform vec3 uNavR;
+uniform vec3 uNavG;
 varying float vGlow;
 varying vec4 vBoat;
 ` + s.fragmentShader
@@ -54,8 +58,8 @@ if ( vGlow > 6.5 ) diffuseColor.rgb = uStripe[ int( clamp( vBoat.y, 0.0, ${(STRI
 // đèn đêm đứng yên (không nhấp nháy): chỉ nhân uNight
 if ( vGlow > 0.5 && vGlow < 1.5 ) totalEmissiveRadiance += uWin * uNight;                                                      // cửa sổ cabin vàng ấm
 else if ( vGlow > 1.5 && vGlow < 2.5 ) totalEmissiveRadiance += uLed[ int( clamp( vBoat.z, 0.0, ${(B.led.colors.length - 1).toFixed(1)} ) ) ] * uNight;   // viền LED theo màu của tàu
-else if ( vGlow > 2.5 && vGlow < 3.5 ) totalEmissiveRadiance += vec3( 2.2, 0.15, 0.1 ) * uNight;                               // đèn mạn đỏ
-else if ( vGlow > 3.5 && vGlow < 4.5 ) totalEmissiveRadiance += vec3( 0.1, 2.0, 0.5 ) * uNight;                                // đèn mạn xanh
+else if ( vGlow > 2.5 && vGlow < 3.5 ) totalEmissiveRadiance += uNavR * uNight;                             // đèn mạn đỏ
+else if ( vGlow > 3.5 && vGlow < 4.5 ) totalEmissiveRadiance += uNavG * uNight;                             // đèn mạn xanh
 else if ( vGlow > 4.5 && vGlow < 5.5 ) totalEmissiveRadiance += diffuseColor.rgb * 1.4 * uNight;                              // biển tên sáng
 else if ( vGlow > 5.5 && vGlow < 6.5 ) totalEmissiveRadiance += vColor * 2.0 * uNight;                                        // đèn lồng`);
   btFleetMaterial.userData.fs = s.fragmentShader;

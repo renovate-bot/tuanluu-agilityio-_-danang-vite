@@ -2,7 +2,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { CONFIG } from '../../src/config.ts';
-import { btCrowdSlots, btInExclusion, btCrowdAlpha } from '../../src/environment/boats/crowd.ts';
+import { btCrowdSlots, btInExclusion, btCrowdTarget, btCrowdLevel, btCrowdShown } from '../../src/environment/boats/crowd.ts';
 
 test('slots đủ số: 8 quanh Cầu Rồng, 7 quanh Cầu sông Hàn', () => {
   const s = btCrowdSlots();
@@ -42,24 +42,31 @@ test('exclusion biên', () => {
   assert.equal(btInExclusion(-150, 120, 12), false);   // mặt nước trống phía Tây Cầu Rồng
 });
 
-test('alpha: ngày 0, đêm 1, bão 0', () => {
-  for (let i = 0; i < 15; i++) {
-    assert.equal(btCrowdAlpha(i, 15, 0, 0), 0);
-    assert.equal(btCrowdAlpha(i, 15, 1, 0), 1);
-    assert.equal(btCrowdAlpha(i, 15, 1, 1), 0);
-  }
+test('mục tiêu: ngày 0, đêm 1, bão 0', () => {
+  assert.equal(btCrowdTarget(0, 0), 0);
+  assert.equal(btCrowdTarget(1, 0), 1);
+  assert.equal(btCrowdTarget(1, 1), 0);
 });
 
-test('alpha không giảm khi trời tối dần', () => {
-  for (let i = 0; i < 15; i++) {
-    let prev = 0;
-    for (let k = 0; k <= 100; k++) { const a = btCrowdAlpha(i, 15, k / 100, 0); assert.ok(a >= prev - 1e-9, `tàu ${i} giảm ở night ${k / 100}`); prev = a; }
-  }
+test('mức hiện tiến chậm: từ 0 lên 1 mất ít nhất spreadSec', () => {
+  const S = CONFIG.boats.crowd.spreadSec;
+  let l = 0, t = 0;
+  while (l < 1 && t < 100) { l = btCrowdLevel(l, 1, 0.05); t += 0.05; }
+  assert.ok(t >= S - 1e-6, `lên đủ sau ${t.toFixed(2)} s`);
+  assert.ok(btCrowdLevel(0.5, 0.2, 0.05) < 0.5 && btCrowdLevel(0.5, 0.2, 0.05) >= 0.5 - 0.05 / S - 1e-9);
 });
 
-test('alpha so le giữa hai ngưỡng đêm', () => {
-  const [n0, n1] = CONFIG.boats.crowd.nightOn, mid = (n0 + n1) / 2;
-  const a = Array.from({ length: 15 }, (_, i) => btCrowdAlpha(i, 15, mid, 0));
-  assert.ok(a.some((x) => x > 0 && x < 1));
-  assert.ok(new Set(a.map((x) => x.toFixed(4))).size > 1);
+test('hiện theo mức: 0 không tàu nào, 1 đủ 15, không mất tàu khi mức tăng', () => {
+  for (let k = 0; k < 15; k++) { assert.equal(btCrowdShown(k, 0), false); assert.equal(btCrowdShown(k, 1), true); }
+  for (let k = 0; k < 15; k++) { let prev = false; for (let i = 0; i <= 100; i++) { const v = btCrowdShown(k, i / 100); assert.ok(!(prev && !v)); prev = v; } }
+});
+
+test('so le: bật đêm đột ngột thì tàu đầu và tàu cuối hiện cách nhau ≥ 3 s, mỗi tàu hiện đủ kích thước (không co giãn)', () => {
+  let l = 0, t = 0, first = -1, last = -1;
+  while (t < 60) {
+    l = btCrowdLevel(l, btCrowdTarget(1, 0), 0.05); t += 0.05;
+    const n = Array.from({ length: 15 }, (_, k) => btCrowdShown(k, l)).filter(Boolean).length;
+    if (n > 0 && first < 0) first = t; if (n === 15) { last = t; break; }
+  }
+  assert.ok(last - first >= 3, `${first.toFixed(2)} → ${last.toFixed(2)} s`);
 });

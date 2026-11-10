@@ -635,7 +635,7 @@ const boatsBase = {
     yawSwing: 0.12,                                 // rad — mũi tàu lắc qua lại quanh hướng đậu (ước lượng)
     yawSpread: 0.6,                                 // rad — độ lệch hướng mũi so với dọc sông, ± (ước lượng, theo ảnh tham chiếu)
     nightOn: [0.35, 0.85] as [number, number],      // mức đêm (0..1): bắt đầu hiện → hiện đủ 15 tàu (ước lượng)
-    rampFrac: 0.3                                   // phần khoảng nightOn mỗi tàu dùng để hiện dần, 0..1 (ước lượng)
+    spreadSec: 8                                    // s — thời gian tối thiểu từ tàu đầu tới tàu cuối hiện / về bến; tàu hiện lần lượt, đủ kích thước (ước lượng)
   },
   exclusion: {
     tunnelZ: -1700, tunnelHalf: 30,                 // m — hành lang Hầm |z + 1700| < 30 (bất biến dự án)
@@ -645,10 +645,17 @@ const boatsBase = {
     laneHalf: 12,                                   // m — nửa bề rộng luồng chừa cho tàu chạy (ước lượng)
     bankX: 262, bankMargin: 20                      // m — mép kè và khoảng cách an toàn tới kè (ước lượng)
   },
-  variants: 3,                                      // số biến thể màu sọc thân (đỏ, xanh dương, cam)
+  variants: 3,                                      // số biến thể màu sọc thân = số màu trong palette.stripes
   led: {
     colors: [0xb040ff, 0x30ff70, 0x2f8bff, 0xff4fa8, 0xffd23a],   // LED viền: tím, xanh lá, xanh dương, hồng, vàng (theo ảnh tham chiếu)
     gain: 2.2                                       // cường độ phát sáng LED về đêm, hệ số (ước lượng)
+  },
+  palette: {                                        // màu ban ngày (hex) theo ảnh tham chiếu; ước lượng
+    white: 0xf4f1ea, glass: 0x2a3a46, roof: 0xe9e6df, rail: 0xd8d8d8, led: 0xc8c8c8, fender: 0x1e1e1e,   // thân trắng, kính sẫm, mái, lan can, ống LED (ban ngày), lốp
+    wood: 0x8a5a3a, darkWood: 0x5a3a26, blueHull: 0x2f6f8f, flag: 0xda251d, star: 0xffe600, sail: 0xf0e8d8, mast: 0x6a6a6a, plate: 0xffffff,
+    stripes: [0xc23b2a, 0x2f6fbf, 0xe0782a],        // sọc thân theo biến thể: đỏ, xanh dương, cam
+    lanterns: [0xff3b3b, 0xffd23a, 0x3bd16f, 0x3b8bff, 0xff7a2f],   // đèn lồng boong thượng kiểu C
+    navRed: 0xff1a10, navGreen: 0x10ff40, navGain: 2.2                // đèn mạn đỏ / xanh về đêm, hệ số phát sáng
   },
   windowColor: 0xffc070,                            // màu cửa sổ cabin về đêm (vàng ấm, khớp MAT.boatCabin cũ)
   windowGain: 1.4,                                  // cường độ cửa sổ về đêm, hệ số (bằng emissiveIntensity cũ)

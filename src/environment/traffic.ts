@@ -6,7 +6,7 @@ import { windFx, weatherFx, vanished, shared } from '../core/shared';
 import { rand } from '../common/math';
 import type { BoatTypeId } from '../config';
 import { btCreateFleet, btSetInfo, btSetBoat, btHideBoat, btCommit, btFleets, type BoatFleet } from './boats/fleet';
-import { btCrowdSlots, btCrowdAlpha, btInExclusion } from './boats/crowd';
+import { btCrowdSlots, btCrowdTarget, btCrowdLevel, btCrowdShown, btInExclusion } from './boats/crowd';
 import { TYPES, CAR_COLORS, BIKE_COLORS, placePart, _e, _q, type VehicleType } from '../common/traffic';
 import { deckY } from '../bridges/dragon/profile';
 import { ttlRoadY } from '../bridges/tran-thi-ly/profile';
@@ -105,14 +105,16 @@ export function buildBoats() {
 }
 /* Tàu tụ tập ban đêm quanh Cầu Rồng / Cầu sông Hàn (spec G5, G6): đậu, trôi tròn chậm, mũi lắc nhẹ; hiện so le theo mức đêm, về bến khi bão */
 const crowd = btCrowdSlots(), crowdA: number[] = crowd.map(() => 0);
-export function btStepCrowd(f: BoatFleet, first: number, t: number) {
+let crowdLevel = 0;
+export function btStepCrowd(f: BoatFleet, first: number, t: number, dt: number) {
   const C = CONFIG.boats.crowd, w = (Math.PI * 2) / C.driftPeriod;
+  crowdLevel = btCrowdLevel(crowdLevel, btCrowdTarget(shared.uNight.value, weatherFx.boatAway), dt);
   crowd.forEach((c, k) => {
-    const a = crowdA[k] = btCrowdAlpha(k, crowd.length, shared.uNight.value, weatherFx.boatAway);
-    if (a <= 0) { btHideBoat(f, first + k); return; }
+    const on = btCrowdShown(k, crowdLevel); crowdA[k] = on ? 1 : 0;
+    if (!on) { btHideBoat(f, first + k); return; }
     const ph = t * w + c.phase, i = first + k;
     bq.setFromEuler(_e.set(Math.sin(t * 0.7 + k) * 0.012 * windFx.boatRock, c.yaw + C.yawSwing * Math.sin(ph * 0.7), Math.sin(t * 0.9 + k * 2) * 0.018 * windFx.boatRock, 'YXZ'));
-    btSetBoat(f, i, bBase.set(c.x + C.drift * Math.cos(ph), 0, c.z + C.drift * Math.sin(ph)), bq, c.len * a);   // hiện dần: lớn dần từ tâm
+    btSetBoat(f, i, bBase.set(c.x + C.drift * Math.cos(ph), 0, c.z + C.drift * Math.sin(ph)), bq, c.len);
   });
 }
 const bq = new THREE.Quaternion(), bBase = new THREE.Vector3();
@@ -124,7 +126,7 @@ export function updateBoats(dt: number, t: number) {
     bq.setFromEuler(_e.set(Math.sin(t * 0.9 + i) * 0.015 * windFx.boatRock, b.dir > 0 ? 0 : Math.PI, Math.sin(t * 1.1 + i * 2) * 0.02 * windFx.boatRock, 'YXZ'));   // mũi theo hướng chạy; tròng trành tăng theo gió (mặc định ×1)
     btSetBoat(fleet, i, bBase.set(b.x, 0, b.z), bq, b.len);
   });
-  btStepCrowd(fleet, RIVER_CROWD_FIRST, t);
+  btStepCrowd(fleet, RIVER_CROWD_FIRST, t, dt);
   btCommit(fleet);
 }
 /* Cho test (__app.boats) */
