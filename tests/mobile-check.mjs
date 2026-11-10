@@ -233,14 +233,38 @@ try {
   const D = await openApp(browser, srv.url, { width: 1280, height: 800 });
   check('máy tính 1280×800: không compact', await D.page.evaluate(() => !document.body.classList.contains('compact')));
   await D.page.evaluate(() => window.__app.ui.donate.set('https://me.momo.vn/bbk9x'));
+  // Mục 5 (D-025): mặc định hai bảng thu thành nút ⚙ / ☰ ở hai góc trên
+  check('máy tính: mặc định đóng', await D.page.evaluate(() => window.__app.ui.ui.sheet === 'none'));
+  check('máy tính: đóng — chỉ ⚙ và ☰ hiện', await visibleAll(D.page, ['#btnSettings', '#btnViewsSheet'])
+    && await hiddenAll(D.page, ['.brand h1', '.brand-top', '#brandBody', '.views .seg', '.views .tour-all', '.views .view-list:not([hidden])']));
+  const [cb] = await rects(D.page, ['.brand']), [cv] = await rects(D.page, ['.views']);
+  check('máy tính: đóng — hai nút nhỏ ở hai góc trên', !!cb && !!cv && Math.abs(cb.left - 14) < 1 && Math.abs(cb.top - 14) < 1 && cb.width <= 64 && cb.height <= 64
+    && Math.abs(cv.right - (1280 - 14)) < 1 && Math.abs(cv.top - 14) < 1 && cv.height <= 64 && cv.width <= 200);
+  await D.page.evaluate(() => window.__app.ui.openSheet('settings')); await frames(D.page, 1);
+  check('máy tính: mở Cài đặt — đủ mục, ⚙ sáng', await visibleAll(D.page, ['.brand-top', '#btnNight', '.weather-row', '#qualitySel', '#btnViewsSheet'])
+    && await hiddenAll(D.page, ['.views .seg']) && await D.page.evaluate(() => document.getElementById('btnSettings').getAttribute('aria-expanded') === 'true'));
   check('máy tính: donate nằm trong .brand', await D.page.evaluate(() => { const a = document.getElementById('donateLink').getBoundingClientRect(), b = document.querySelector('.brand').getBoundingClientRect(); return a.height > 0 && a.top >= b.top && a.bottom <= b.bottom + 1 && a.left >= b.left - 1 && a.right <= b.right + 1; }));
-  // máy tính không đổi
-  const b = await rects(D.page, ['.brand']);
-  check('máy tính: .brand neo trái 14 px, .views rộng 228 px', b.length === 1 && Math.abs(b[0].left - 14) < 1
-    && await D.page.evaluate(() => getComputedStyle(document.querySelector('.views')).width === '228px'));
   check('máy tính: vẫn blur', await D.page.evaluate(() => /blur/.test(getComputedStyle(document.querySelector('.brand')).backdropFilter)));
-  check('máy tính: không có nút sheet', await hiddenAll(D.page, ['#btnSettings', '#btnViewsSheet', '.sheet-close']));
+  await D.page.evaluate(() => window.__app.ui.openSheet('views')); await frames(D.page, 1);
+  const [ov] = await rects(D.page, ['.views']);
+  check('máy tính: mở Góc nhìn — đủ mục, rộng 228 px, nằm trong màn hình', await visibleAll(D.page, ['.views .seg', '.views .tour-all'])
+    && await D.page.evaluate(() => getComputedStyle(document.querySelector('.views')).width === '228px') && !!ov && ov.bottom <= 800);
   allErrors.push(...D.errors); await D.page.close();
+
+  // Mục 5 — RTL: hai nút đổi bên, bảng mở nằm trọn trong màn hình
+  const A = await openApp(browser, srv.url, { width: 1440, height: 780 });
+  A.page.setDefaultTimeout(180000);
+  await pick(A.page, '#langSelect', 'ar'); await A.page.evaluate(() => window.__app.ui.closeSheets()); await frames(A.page, 2);
+  const [as, av] = [(await rects(A.page, ['#btnSettings']))[0], (await rects(A.page, ['#btnViewsSheet']))[0]];
+  check('ar: ⚙ bên phải, ☰ bên trái', !!as && !!av && as.right > 1440 - 80 && av.left < 80);
+  let inside = true;
+  for (const sh of ['settings', 'views']) {
+    await A.page.evaluate((sh) => window.__app.ui.openSheet(sh), sh); await frames(A.page, 1);
+    const [p] = await rects(A.page, [sh === 'settings' ? '.brand' : '.views']);
+    inside = inside && !!p && p.left >= 0 && p.top >= 0 && p.right <= 1440 && p.bottom <= 780;
+  }
+  check('ar: bảng mở nằm trọn trong màn hình', inside);
+  allErrors.push(...A.errors); await A.page.close();
 
   // Mục 5 — thu gọn trên máy tính (D-025): hành vi dùng chung
   const E = await openApp(browser, srv.url, { width: 1440, height: 780 });

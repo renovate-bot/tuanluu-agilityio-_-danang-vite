@@ -93,7 +93,7 @@ button[aria-pressed="true"]{background:linear-gradient(180deg,var(--gold),var(--
 .swing-state{font-size:11.5px;color:var(--muted);line-height:1.35;}
 .swing-state b{color:var(--gold);font-weight:500;}
 .swing-note{font-size:10px;color:var(--muted);line-height:1.4;}
-.views{max-height:calc(100vh - 28px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));overflow-y:auto;}
+.views{max-height:calc(100vh - 28px - 26px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));overflow-y:auto;}   /* 28 = hai lề 14 px; 26 = padding 12 px × 2 + viền 1 px × 2 (max-height tính phần nội dung) */
 .mini-select select{appearance:auto;font:500 12px/1.2 var(--font-body);color:var(--text);background:rgba(255,255,255,.04);border:1px solid rgba(230,189,106,.32);border-radius:4px;padding:6px;}
 .mini-select select option{background:var(--ink);color:var(--text);}
 .seg button[aria-pressed="true"]{background:rgba(230,189,106,.16);border-color:rgba(230,189,106,.55);color:var(--gold);}
@@ -163,9 +163,25 @@ html:is([lang=th],[lang=hi],[lang=ar]) #wxScenario p{line-height:1.7;}
 #hrLabels{position:fixed;inset:0;pointer-events:none;z-index:5;overflow:hidden;}
 .hr-label{position:absolute;left:0;top:0;padding:3px 7px;font:500 11px/1.2 var(--font-body);color:var(--text);background:rgba(10,18,30,.72);border:1px solid rgba(230,189,106,.55);border-radius:4px;white-space:nowrap;will-change:transform;}
 .hr-label::after{content:"";position:absolute;left:50%;top:100%;width:1px;height:10px;background:rgba(230,189,106,.7);}
-/* Phần tử riêng của chế độ gọn: máy tính không hiện nút, hai khối bọc trong suốt nên bố cục .brand giữ nguyên */
+/* Hai khối bọc trong suốt nên bố cục .brand mở giữ như cũ; nút ⚙ / ☰ dùng ở cả máy tính lẫn điện thoại, nút × chỉ điện thoại */
 .brand-head,#brandBody{display:contents;}
-#btnSettings,#btnViewsSheet,.sheet-close{display:none;}
+.sheet-close{display:none;}
+#btnSettings[aria-expanded="true"],#btnViewsSheet[aria-expanded="true"]{background:rgba(230,189,106,.16);border-color:rgba(230,189,106,.55);color:var(--gold);}
+/* ===== Máy tính: bảng thu gọn (D-025) =====
+   Đóng: .brand chỉ còn nút ⚙, .views chỉ còn nút ☰ Góc nhìn, giữ neo 14 px ở hai góc trên (RTL tự đổi bên).
+   Mở (body.sheet-settings / body.sheet-views, compactUI.ts): bảng như bố cục cũ, nút ở đầu bảng. */
+body:not(.compact) #btnSettings{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;width:36px;height:36px;padding:0;}
+body:not(.compact) #btnSettings svg{width:16px;height:16px;}
+body:not(.compact) #btnViewsSheet{display:inline-flex;align-items:center;gap:6px;padding:8px 12px;white-space:nowrap;}
+body:not(.compact) #btnViewsSheet svg{width:14px;height:14px;flex:0 0 auto;}
+body:not(.compact) .views .label{display:none;}   /* nút ☰ Góc nhìn đã là tiêu đề bảng */
+body:not(.compact):not(.sheet-settings) .brand{padding:6px;}
+body:not(.compact):not(.sheet-settings) .brand-top,body:not(.compact):not(.sheet-settings) .brand h1,body:not(.compact):not(.sheet-settings) #brandBody{display:none;}
+body:not(.compact).sheet-settings .brand-head{display:flex;align-items:center;gap:10px;order:-1;}   /* mở: hàng đầu là ⚙ + tên, ⚙ giữ góc cũ */
+body:not(.compact).sheet-settings #btnSettings{order:-1;}
+body:not(.compact):not(.sheet-views) .views{width:auto;padding:6px;overflow:visible;}
+body:not(.compact):not(.sheet-views) .views > :not(#btnViewsSheet){display:none;}
+body:not(.compact).sheet-views #btnViewsSheet{order:-1;align-self:flex-start;}
 /* ===== Chế độ gọn (điện thoại): body.compact do compactUI.ts đặt theo CONFIG.ui.compactQuery =====
    Đóng: thanh trên (tên + nút Cài đặt) và thanh dưới (chip cầu, Tour 4 cầu, nút Góc nhìn).
    Mở: body.sheet-settings → .brand thành tờ đáy; body.sheet-views → danh sách góc nhìn hiện trên thanh dưới. */
@@ -190,7 +206,6 @@ body.compact.sheet-settings .brand{top:auto;bottom:0;inset-inline:0;max-width:no
   padding:12px calc(14px + env(safe-area-inset-right,0px)) calc(14px + env(safe-area-inset-bottom,0px)) calc(14px + env(safe-area-inset-left,0px));
   border-bottom:0;border-radius:14px 14px 0 0;}
 body.compact.sheet-settings .brand-head{order:-1;}
-body.compact #btnSettings[aria-expanded="true"],body.compact #btnViewsSheet[aria-expanded="true"]{background:rgba(230,189,106,.16);border-color:rgba(230,189,106,.55);color:var(--gold);}
 body.compact.sheet-settings .brand .sheet-close{display:inline-flex;}
 body.compact.sheet-settings .brand-top{display:flex;flex-wrap:wrap;}
 body.compact.sheet-settings .eyebrow{display:block;}
