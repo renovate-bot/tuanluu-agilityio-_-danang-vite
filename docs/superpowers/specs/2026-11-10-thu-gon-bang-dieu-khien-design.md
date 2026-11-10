@@ -1,5 +1,5 @@
 # Thu gọn bảng điều khiển trên máy tính — Thiết kế
-_2026-11-10 · Trạng thái: Thiết kế, chưa xây_
+_2026-11-10 · Trạng thái: Đã xây (nhánh `feature/thu-gon-bang-dieu-khien`, D-025)_
 
 Nguồn: yêu cầu của người dùng ngày 2026-11-10 qua brainstorming (bản phác chọn phương án B, lưu ở `.superpowers/brainstorm/`, đã gitignore). Mã liên quan: `src/ui/compactUI.ts`, `src/ui/setupUI.ts`, `src/styles/main.css` (khối `.brand`, `.views`, `body.compact`), `index.html` (`header.brand`, `nav.views`), `tests/lib.mjs` (`tap`, `pick`).
 
