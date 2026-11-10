@@ -8,6 +8,7 @@
 //  7. clearedStayZero: số tán đã dọn (scale 0) bằng mốc; thân cùng chỉ số cũng scale 0.
 //  8. windAttached: preset Bão ⇒ treeLean > 0, không lỗi shader.
 //  9. Không lỗi console.
+// 11. tunnelPalms: nhóm hầm giữ nguyên số InstancedMesh / Mesh con; lưới hr-concrete tăng số tam giác (dừa mới hơn cặp thân + nón cũ).
 // 10. Ảnh (bỏ bằng --no-shots) tests/screens/trees-*.png: gần ~20 m bờ Bạch Đằng (ngày), toàn cảnh mặc định, dải đi bộ đêm, kè Thuận Phước, bờ sông khi bão.
 //
 //   npm run build && npm run test:trees [-- --no-shots]
@@ -25,6 +26,8 @@ const check = (ok, msg) => { console.log(`${ok ? 'ĐẠT ' : 'LỖI '} ${msg}`);
 // Mốc đo trên code CHƯA sửa (8c56cdd, cây quả cầu / nón): số instance và tổng kiểm Σ(x·31 + z) của vị trí [x, z] (gồm cả instance đã dọn ở (0, 0)).
 // Tán dừa không có ở đây vì vị trí của nó dời lên đỉnh thân cong (kiểm riêng theo thân dừa).
 const MAIN_TREE_POS = {"trees-shade-trunk":{"count":890,"sum":-3857311.434},"trees-shade-crown":{"count":890,"sum":-3857311.434},"trees-palm-trunk":{"count":246,"sum":1318102.245},"tp-trees-trunk":{"count":128,"sum":420346.507},"tp-trees-crown":{"count":128,"sum":420346.507}};
+// Mốc đo trên code CHƯA sửa hầm (88ff1e5): số InstancedMesh, Mesh con của hr.group và số tam giác của hr-concrete
+const MAIN_TUNNEL = { inst: 0, mesh: 4, tris: 25104 };
 const MAIN_PAIRS = 3;             // __app.weather.fallen.state().pairs
 const MAIN_CLEARED = { "trees-shade-crown": 26, "trees-palm-crown": 2, "tp-trees-crown": 0 };        // { tên lưới tán: số instance scale 0 }
 // Mốc đo trên main 43cec90 (chép từ tests/traffic-check.mjs): speed của 7 tàu chạy chung
@@ -122,6 +125,17 @@ try {
   check(!errors.some((e) => /shader|program/i.test(e)), 'windAttached: không lỗi biên dịch shader');
   await setWx(page, 'now'); await frames(page, 3);
 
+  /* ---------- 11. tunnelPalms ---------- */
+  const tn = await page.evaluate(() => {
+    const g = window.__app.hr.group, k = g.children, conc = g.getObjectByName('hr-concrete'), gg = conc.geometry;
+    return { inst: k.filter((o) => o.isInstancedMesh).length, mesh: k.filter((o) => o.isMesh && !o.isInstancedMesh).length, tris: (gg.index ? gg.index.count : gg.attributes.position.count) / 3 };
+  });
+  if (!MAIN_TUNNEL) console.log('MỐC MAIN_TUNNEL =', JSON.stringify(tn));
+  else {
+    check(tn.inst === MAIN_TUNNEL.inst && tn.mesh === MAIN_TUNNEL.mesh, `tunnelPalms: nhóm hầm ${tn.inst} InstancedMesh, ${tn.mesh} Mesh con (mốc ${MAIN_TUNNEL.inst}, ${MAIN_TUNNEL.mesh})`);
+    check(tn.tris > MAIN_TUNNEL.tris, `tunnelPalms: hr-concrete ${tn.tris} tam giác > mốc ${MAIN_TUNNEL.tris} (có dừa mới)`);
+  }
+
   /* ---------- 10. ảnh ---------- */
   if (!NO_SHOTS) {
     const shot = async (name) => { await frames(page, 4); await page.screenshot({ path: `${SCREENS}trees-${name}.png` }); };
@@ -141,6 +155,8 @@ try {
     await aim('trees-palm-trunk', pi, [22, 9, -14], 4); await shot('gan-bach-dang-ngay-2');
     const tpi = await page.evaluate(() => { const p = window.__app.trees.positions('tp-trees-trunk'); const n = p.length / 2; for (let k = 0; k < n; k++) { const i = (Math.floor(n / 3) + k) % n; if (p[i * 2] !== 0 || p[i * 2 + 1] !== 0) return i; } return 0; });
     await aim('tp-trees-trunk', tpi, [-25, 14, 30], 3); await shot('ke-thuan-phuoc');
+    await page.evaluate(() => { const { camera, controls } = window.__app; camera.position.set(800, 11, -1692); controls.target.set(585, 2.5, -1700); controls.update(); });   // như góc hrPortalE (UI đang ẩn nên không bấm nút được)
+    await shot('tunnel-portal');
     await setNight(1);
     const pn = await palmNear(-430);
     await aim('trees-palm-trunk', pn, [26, 8, 30], 4); await shot('di-bo-dem');

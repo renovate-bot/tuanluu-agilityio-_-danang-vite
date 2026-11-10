@@ -155,11 +155,11 @@ test('cây dừa tĩnh cao h, đứng trên y = 0, hai mặt', () => { /* bbox.m
 **Interfaces:**
 - Consumes: `trPalmStaticGeo(h)` (Task 1), `prepColored` đang dùng trong file.
 
-- [ ] **Bước 1:** Thêm vào `tests/trees-check.mjs`: `tunnelPalms` — số `InstancedMesh` và `Mesh` con của nhóm hầm không đổi so với giá trị đo trước khi sửa (chạy một lần trước để lấy số); lưới bê tông của hầm tăng số tam giác (có cây mới); không lỗi console. Thêm ảnh `trees-tunnel-portal.png` (cửa hầm phía Đông, ngày).
-- [ ] **Bước 2:** Trong `hrBuildDecor`, thay cặp `tg` + `cg` bằng `trPalmStaticGeo(h)` đặt tại `(x, y, z)`, xoay yaw theo chỉ số (không gọi thêm `rnd()`), vẫn đẩy vào `bridge.concreteParts` qua `prepColored` (giữ màu đỉnh của hình). Thứ tự và số lời gọi `rnd()` giữ nguyên: mỗi cây vẫn đúng 1 lời gọi lấy `h`.
-- [ ] **Bước 3:** `npm run build && npm run test:trees` → ĐẠT; nhìn ảnh cửa hầm: hàng dừa ra dáng dừa, tàu lá không bị mất mặt sau.
-- [ ] **Bước 4:** `npm run test:tunnel` (một lần; test này chạm trực tiếp phần vừa sửa) → ĐẠT, hoặc ghi lỗi có sẵn không liên quan.
-- [ ] **Bước 5:** Commit `feat(trees): hàng dừa cửa hầm dùng dáng dừa mới`.
+- [x] **Bước 1:** Thêm vào `tests/trees-check.mjs`: `tunnelPalms` — số `InstancedMesh` và `Mesh` con của nhóm hầm không đổi so với giá trị đo trước khi sửa (chạy một lần trước để lấy số); lưới bê tông của hầm tăng số tam giác (có cây mới); không lỗi console. Thêm ảnh `trees-tunnel-portal.png` (cửa hầm phía Đông, ngày).
+- [x] **Bước 2:** Trong `hrBuildDecor`, thay cặp `tg` + `cg` bằng `trPalmStaticGeo(h)` đặt tại `(x, y, z)`, xoay yaw theo chỉ số (không gọi thêm `rnd()`), vẫn đẩy vào `bridge.concreteParts` qua `prepColored` (giữ màu đỉnh của hình). Thứ tự và số lời gọi `rnd()` giữ nguyên: mỗi cây vẫn đúng 1 lời gọi lấy `h`.
+- [x] **Bước 3:** `npm run build && npm run test:trees` → ĐẠT; nhìn ảnh cửa hầm: hàng dừa ra dáng dừa, tàu lá không bị mất mặt sau.
+- [x] **Bước 4:** `npm run test:tunnel` (một lần; test này chạm trực tiếp phần vừa sửa) → ĐẠT, hoặc ghi lỗi có sẵn không liên quan.
+- [x] **Bước 5:** Commit `feat(trees): hàng dừa cửa hầm dùng dáng dừa mới`.
 
 ---
 
