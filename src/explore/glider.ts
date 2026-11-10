@@ -97,15 +97,17 @@ function exLine(a: THREE.Vector3, b: THREE.Vector3): THREE.BufferGeometry {
 }
 
 /* Vẽ mặt cánh: nền đỏ, sao vàng 5 cánh một đỉnh hướng lên, đường ô khí. Tính theo mét nên sao không méo. glow: bản phát sáng ban đêm, tối hơn */
-function exDrawWing(x: CanvasRenderingContext2D, glow: boolean): void {
+function exDrawWing(x: CanvasRenderingContext2D, glow: boolean, wingColor?: string): void {
   const sx = ATLAS_W / G.span, sy = WING_H / G.chord, cx = ATLAS_W / 2, cy = WING_H / 2;
-  x.fillStyle = G.flagRed; x.fillRect(0, 0, ATLAS_W, BAND_Y);
-  x.beginPath();
-  for (let i = 0; i < 10; i++) {
-    const r = G.starRadius * (i % 2 ? 0.382 : 1), a = -Math.PI / 2 + i * Math.PI / 5;
-    x.lineTo(cx + Math.cos(a) * r * sx, cy + Math.sin(a) * r * sy);
+  x.fillStyle = wingColor ?? G.flagRed; x.fillRect(0, 0, ATLAS_W, BAND_Y);
+  if (!wingColor) {   // dù của mình: cờ đỏ sao vàng; dù người khác chỉ có nền màu
+    x.beginPath();
+    for (let i = 0; i < 10; i++) {
+      const r = G.starRadius * (i % 2 ? 0.382 : 1), a = -Math.PI / 2 + i * Math.PI / 5;
+      x.lineTo(cx + Math.cos(a) * r * sx, cy + Math.sin(a) * r * sy);
+    }
+    x.closePath(); x.fillStyle = G.flagStar; x.fill();
   }
-  x.closePath(); x.fillStyle = G.flagStar; x.fill();
   x.fillStyle = 'rgba(70,0,0,0.28)';
   for (let i = 0; i <= G.cells; i++) x.fillRect(i * ATLAS_W / G.cells - 1, 0, 2, WING_H);
   x.fillStyle = 'rgba(70,0,0,0.12)';
@@ -120,25 +122,30 @@ function exAtlasTexture(c: HTMLCanvasElement): THREE.CanvasTexture {
 }
 
 /* Màu cánh: mặt cánh + dải trơn trắng (nhân với vertex color) */
-function exColorMap(): THREE.CanvasTexture {
+function exColorMap(wingColor?: string): THREE.CanvasTexture {
   const c = document.createElement('canvas'); c.width = ATLAS_W; c.height = ATLAS_H;
   const x = c.getContext('2d')!;
-  exDrawWing(x, false);
+  exDrawWing(x, false, wingColor);
   x.fillStyle = '#fff'; x.fillRect(0, BAND_Y, ATLAS_W, ATLAS_H - BAND_Y);
   return exAtlasTexture(c);
 }
 
 /* Phát sáng ban đêm: cánh sáng dịu để vẫn thấy cờ; dải trơn nửa trái đen, nửa phải trắng */
-function exGlowMap(): THREE.CanvasTexture {
+function exGlowMap(wingColor?: string): THREE.CanvasTexture {
   const c = document.createElement('canvas'); c.width = ATLAS_W; c.height = ATLAS_H;
   const x = c.getContext('2d')!;
-  exDrawWing(x, true);
+  exDrawWing(x, true, wingColor);
   x.fillStyle = '#000'; x.fillRect(0, BAND_Y, ATLAS_W / 2, ATLAS_H - BAND_Y);
   x.fillStyle = '#fff'; x.fillRect(ATLAS_W / 2, BAND_Y, ATLAS_W / 2, ATLAS_H - BAND_Y);
   return exAtlasTexture(c);
 }
 
-export function exBuildGlider(): THREE.Group {
+/* Hình học dùng chung mọi dù (dựng một lần); vật liệu và texture riêng theo màu */
+let exGeo: THREE.BufferGeometry | null = null;
+const exMaps = new Map<string, { map: THREE.CanvasTexture; glow: THREE.CanvasTexture }>();
+
+function exGliderGeometry(): THREE.BufferGeometry {
+  if (exGeo) return exGeo;
   const parts: THREE.BufferGeometry[] = [];
   /* Cánh: mặt chính + dải đèn hai mép (nhô nhẹ lên trên mặt cánh) */
   const body = exWingUv(exWingStrip(-G.chord / 2, G.chord / 2, [1, 1, 1], UV_DARK, 0));
@@ -159,7 +166,16 @@ export function exBuildGlider(): THREE.Group {
   const geo = mergeGeometries(parts)!;
   /* Gốc group nằm giữa cánh (trên) và người (dưới): cánh ở +lines·k, người ở −lines·(1−k) */
   geo.translate(0, G.lines * G.originAt, 0);
-  const mat = new THREE.MeshStandardMaterial({ vertexColors: true, map: exColorMap(), roughness: G.roughness, side: THREE.DoubleSide, emissive: 0xffffff, emissiveMap: exGlowMap(), emissiveIntensity: 0 });
+  return exGeo = geo;
+}
+
+/* wingColor bỏ trống: dù cờ đỏ sao vàng của mình. Có wingColor: nền màu đó, không sao, giữ đường ô khí (dù người khác) */
+export function exBuildGlider(wingColor?: string): THREE.Group {
+  const geo = exGliderGeometry();
+  const key = wingColor ?? '';
+  let tex = exMaps.get(key);
+  if (!tex) exMaps.set(key, tex = { map: exColorMap(wingColor), glow: exGlowMap(wingColor) });
+  const mat = new THREE.MeshStandardMaterial({ vertexColors: true, map: tex.map, roughness: G.roughness, side: THREE.DoubleSide, emissive: 0xffffff, emissiveMap: tex.glow, emissiveIntensity: 0 });
   const mesh = new THREE.Mesh(geo, mat);
   mesh.castShadow = false; mesh.receiveShadow = false; mesh.frustumCulled = false;
   const g = new THREE.Group(); g.name = 'ex-glider'; g.add(mesh);

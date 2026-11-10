@@ -1,0 +1,18 @@
+name = "danang-sky"
+main = "src/worker.ts"
+compatibility_date = "2025-01-01"
+# Bật địa chỉ workers.dev, tắt địa chỉ xem trước
+workers_dev = true
+preview_urls = false
+
+[[durable_objects.bindings]]
+name = "SKY"
+class_name = "SkyObject"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["SkyObject"]
+
+[vars]
+# So khớp scheme + hostname, bỏ cổng; '*' khớp một đoạn chữ/số (bản xem trước PR của Netlify: deploy-preview-<số>--danangbridges)
+ALLOWED_ORIGINS = "https://danangbridges.netlify.app,https://deploy-preview-*--danangbridges.netlify.app,http://localhost,http://127.0.0.1"

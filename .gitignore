@@ -5,3 +5,5 @@ tests/screens/
 .env.production
 # Ảnh tham chiếu (bản quyền bên ngoài, chỉ dùng trên máy)
 docs/superpowers/specs/tham-chieu/
+.superpowers/
+.wrangler/

@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ES2022"],
+    "types": ["@cloudflare/workers-types"],
+    "noEmit": true,
+    "skipLibCheck": true,
+    "strict": false,
+    "allowImportingTsExtensions": false
+  },
+  "include": ["src", "../../src/explore/multi/protocol.ts", "../../src/explore/multi/params.ts"]
+}

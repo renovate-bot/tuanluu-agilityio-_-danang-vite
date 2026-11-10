@@ -244,11 +244,54 @@ body.compact #swStormNote{top:calc(124px + env(safe-area-inset-top,0px));max-wid
 .ex-card:disabled{opacity:.55;cursor:not-allowed;}
 .ex-card:disabled .ex-note{color:var(--gold);}
 .ex-card:focus-visible{outline:2px solid var(--gold);outline-offset:2px;}
+/* Bước chọn slot + nhập tên (dù lượn nhiều người): thay các thẻ trong cùng hộp thoại */
+.ex-cards[hidden],.ex-mp-lobby [hidden],.ex-mp-lobby[hidden]{display:none;}
+.ex-mp-lobby{display:flex;flex-direction:column;gap:10px;min-width:min(340px,100%);}
+.ex-mp-lobby h2{margin:0;}
+.ex-mp-seatline{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--text);}
+#exMpDots{display:inline-flex;gap:6px;flex:none;}
+#exMpDots i{width:12px;height:12px;border-radius:50%;box-sizing:border-box;border:1.5px solid var(--gold);background:transparent;}
+#exMpDots i.on{border-color:transparent;}
+#exMpList{display:flex;flex-direction:column;font-size:13px;}
+#exMpList .ex-mp-row{padding:4px 0;border-bottom:1px solid rgba(255,255,255,.08);overflow-wrap:anywhere;}
+#exMpList .ex-mp-row i{width:9px;height:9px;border-radius:50%;flex:none;}
+.ex-mp-field{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted);}
+.ex-mp-field input{font:500 14px/1.2 var(--font-body);color:var(--text);background:rgba(0,0,0,.35);border:1px solid var(--gold);border-radius:4px;padding:8px 10px;box-sizing:border-box;width:100%;}
+.ex-mp-field input:focus-visible{outline:2px solid var(--gold);outline-offset:1px;}
+#exMpNameHint{font-size:11px;color:var(--muted);}
+#exMpNameBad,#exMpOffline{font-size:12.5px;line-height:1.45;color:var(--gold);}
+.ex-mp-btn{width:100%;padding:10px;font-weight:700;font-size:13px;color:#14191c;background:var(--gold);border-color:var(--gold);}
+.ex-mp-btn:hover:not(:disabled){background:var(--gold);}
+.ex-mp-btn:disabled{opacity:.45;cursor:not-allowed;}
+.ex-mp-btn:focus-visible{outline:2px solid #fff;outline-offset:2px;}
+.ex-mp-btn.ex-mp-alt{color:var(--text);background:transparent;border-color:var(--gold);font-weight:600;}   /* nút phụ: Quay lại, Bay một mình khi có máy chủ */
+.ex-mp-btn.ex-mp-alt:hover:not(:disabled){background:rgba(255,255,255,.08);}
 /* Khi bay: chỉ còn ngôn ngữ, Ngày/Đêm, Chất lượng hình, dòng hướng dẫn và nút Thoát; mọi nút góc nhìn / cầu / Tour ẩn để không thoát chế độ bay bằng đường khác */
-#exHint,#exSpeed,#btnExExit{display:none;}
+#exHint,#exSpeed,#btnExExit,#exMpLabels,#exMpRoster,#exMpNotice{display:none;}
 body.explore #exSpeed{display:block;position:fixed;left:50%;transform:translateX(-50%);bottom:calc(14px + env(safe-area-inset-bottom,0px));padding:6px 14px;font-size:13px;color:var(--text);direction:ltr;font-variant-numeric:tabular-nums;white-space:nowrap;pointer-events:none;}
 body.explore #exHint{display:block;position:fixed;left:50%;transform:translateX(-50%);top:calc(14px + env(safe-area-inset-top,0px));padding:8px 14px;font-size:12px;color:var(--text);text-align:center;max-width:calc(100vw - 32px);box-sizing:border-box;}
 body.explore #btnExExit{display:block;inset-inline-end:calc(14px + env(safe-area-inset-right,0px));top:calc(56px + env(safe-area-inset-top,0px));padding:8px 14px;font-size:12px;color:var(--text);cursor:pointer;}
+body.explore #exMpLabels{display:block;position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:5;}
+.ex-mp-label{position:absolute;left:0;top:0;padding:2px 7px;font:500 11px/1.2 var(--font-body);color:var(--text);background:rgba(10,18,30,.72);border-radius:4px;white-space:nowrap;will-change:transform;direction:ltr;}
+.ex-mp-label[hidden]{display:none;}
+body.explore #exMpRoster:not([hidden]){display:flex;flex-direction:column;gap:3px;position:fixed;inset-inline-start:calc(14px + env(safe-area-inset-left,0px));top:calc(56px + env(safe-area-inset-top,0px));padding:8px 12px;font-size:12px;color:var(--text);pointer-events:none;z-index:5;}
+.ex-mp-head{font-weight:600;margin-bottom:2px;}
+.ex-mp-row{display:flex;align-items:center;gap:6px;}
+.ex-mp-row.me{font-weight:600;}
+.ex-mp-row i{width:9px;height:9px;border-radius:50%;flex:none;}
+body.explore #exMpNotice:not([hidden]){display:block;position:fixed;left:50%;transform:translateX(-50%);top:calc(100px + env(safe-area-inset-top,0px));padding:8px 14px;font-size:12px;color:var(--text);z-index:5;}
+/* Chế độ xem (hết chỗ hoặc vừa nhường chỗ): không có dù của mình nên ẩn dòng hướng dẫn lái và đồng hồ; hiện "Đang xem" và lời mời */
+body.ex-watching #exHint,body.ex-watching #exSpeed{display:none;}
+#exMpIdle{display:none;}
+body.explore #exMpIdle:not([hidden]){display:block;position:fixed;left:50%;transform:translateX(-50%);top:calc(150px + env(safe-area-inset-top,0px));padding:8px 14px;font-size:13px;color:var(--gold);max-width:calc(100vw - 32px);box-sizing:border-box;text-align:center;pointer-events:none;z-index:6;}
+#exMpWatch,#exMpInvite{display:none;}
+body.ex-watching #exMpWatch:not([hidden]){display:block;position:fixed;left:50%;transform:translateX(-50%);top:calc(14px + env(safe-area-inset-top,0px));padding:8px 14px;font-size:13px;color:var(--text);max-width:calc(100vw - 32px);box-sizing:border-box;text-align:center;pointer-events:none;z-index:5;}
+body.ex-watching #exMpInvite:not([hidden]){display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center;position:fixed;left:50%;transform:translateX(-50%);bottom:calc(14px + env(safe-area-inset-bottom,0px));padding:10px 14px;font-size:13px;color:var(--text);max-width:calc(100vw - 32px);box-sizing:border-box;z-index:6;}
+#exMpInvite input{font:500 14px/1.2 var(--font-body);color:var(--text);background:rgba(0,0,0,.35);border:1px solid var(--gold);border-radius:4px;padding:7px 10px;width:130px;box-sizing:border-box;}
+#exMpInvite input[hidden]{display:none;}
+#exMpInvite .ex-mp-btn{width:auto;padding:8px 16px;}
+.ex-mp-note{margin:0 0 12px;font-size:12.5px;line-height:1.45;color:var(--gold);}
+.ex-mp-note[hidden]{display:none;}
 body.explore .views,body.explore .specs,body.explore #tourCaption,body.explore #wxScenario,body.explore #hint,body.explore #swRideHint,body.explore #swStormNote,body.explore #hrLabels{display:none!important;}
 body.explore h1,body.explore .eyebrow,body.explore #btnShadow,body.explore .audio-row,body.explore .slider,body.explore .weather-row,body.explore .donate{display:none!important;}
 body.explore:not(.ex-test) .stats{display:none;}   /* HUD giữ khi URL có ?test để test đo draw call */

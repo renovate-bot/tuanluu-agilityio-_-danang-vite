@@ -39,6 +39,8 @@ import { exCreate, exStep, exInputFromKeys } from './explore/flight';
 import { exBuildGlider, exPlaceGlider } from './explore/glider';
 import { exChase } from './explore/chase';
 import { explore, setupExplore } from './explore';
+import { exMulti } from './explore/multi';
+import { exRemotes } from './explore/multi/remote';
 import { CONFIG } from './config';
 import { audio } from './audio';
 import { narration } from './audio/narration';
@@ -100,9 +102,19 @@ setupExplore(songHan.ctrl);
 const TEST_THREE = { Vector3: THREE.Vector3, Quaternion: THREE.Quaternion, Matrix4: THREE.Matrix4, Euler: THREE.Euler, Box3: THREE.Box3, Raycaster: THREE.Raycaster };
 /* ?test&perf: bật đo thời gian CPU từng bước trong vòng animate (tests/perf-check.mjs) */
 const query = new URLSearchParams(location.search);
+/* Cho test nhiều người (Task 5; sảnh thật là Task 6): mở phiên, vào phòng bằng tên, bay khi được cấp slot */
+const multiTest = {
+  url: () => exMulti.url(), get session() { return exMulti.session; }, remotes: exRemotes,
+  fly(name: string): boolean {
+    return exMulti.begin(() => {
+      exMulti.onChange = () => { if (exMulti.session!.phase === 'flying' && !explore.active()) explore.start(); };
+      exMulti.session!.join(name);
+    });
+  }
+};
 if (query.has('test')) {
   perf.on = query.has('perf');
-  (window as unknown as { __app: unknown }).__app = { reflectState, renderer, scene, camera, controls, cam, shared, songHan, hr: hanTunnel, sunWheel, riverfront, weather, hrDrive, swRide, windFx, THREE: TEST_THREE, dayNight, tours: TOURS, tour, narration, audio, perf, quality, ui: { ...ui, ui: compactState, openSheet, closeSheets, reveal }, explore, keys, exFlight: { exCreate, exStep, exInputFromKeys, exBuildGlider, exPlaceGlider, exChase, CONFIG_explore: CONFIG.explore } };
+  (window as unknown as { __app: unknown }).__app = { reflectState, renderer, scene, camera, controls, cam, shared, songHan, hr: hanTunnel, sunWheel, riverfront, weather, hrDrive, swRide, windFx, THREE: TEST_THREE, dayNight, tours: TOURS, tour, narration, audio, perf, quality, ui: { ...ui, ui: compactState, openSheet, closeSheets, reveal }, explore, keys, multi: multiTest, exFlight: { exCreate, exStep, exInputFromKeys, exBuildGlider, exPlaceGlider, exChase, CONFIG_explore: CONFIG.explore } };
 }
 
 /* ============================ Vòng lặp ============================ */

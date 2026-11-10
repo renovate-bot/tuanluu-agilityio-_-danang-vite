@@ -218,6 +218,7 @@
   <div class="panel ex-box">
     <label class="lang ex-lang"><span hidden data-i18n="language">Ngôn ngữ</span><select id="exLang" data-i18n-aria="language" aria-label="Ngôn ngữ"></select></label>
     <h2 id="exTitle" data-i18n="exTitle">Bạn muốn khám phá Đà Nẵng thế nào?</h2>
+    <p id="exMpLostNote" class="ex-mp-note" role="status" data-i18n="exMpLostChooser" hidden>Mất kết nối với bầu trời chung. Chọn Dù lượn để kết nối lại.</p>
     <div class="ex-cards">
       <button type="button" class="ex-card" data-pick="glider"><b data-i18n="exGlider">Dù lượn</b><span data-i18n="exGliderDesc">Bay tự do trên sông Hàn</span><i class="ex-note" data-i18n="exDesktopOnly" hidden>Chỉ dùng trên máy tính</i></button>
       <button type="button" class="ex-card" data-pick="car" disabled><b data-i18n="exCar">Ô tô</b><i class="ex-note" data-i18n="exSoon">Sắp có</i></button>
@@ -225,10 +226,34 @@
       <button type="button" class="ex-card" data-pick="walk" disabled><b data-i18n="exWalk">Đi bộ</b><i class="ex-note" data-i18n="exSoon">Sắp có</i></button>
       <button type="button" class="ex-card" data-pick="guided"><b data-i18n="exGuided">Tham quan có hướng dẫn</b><span data-i18n="exGuidedDesc">Tour, góc nhìn và thuyết minh</span></button>
     </div>
+    <section id="exMpLobby" class="ex-mp-lobby" hidden>
+      <h2 id="exMpSky" data-i18n="exMpSky">Bầu trời Đà Nẵng</h2>
+      <div id="exMpOnline">
+        <div class="ex-mp-seatline"><span id="exMpDots" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span><span id="exMpSeats" role="status"></span></div>
+        <div id="exMpList"></div>
+        <label class="ex-mp-field"><span data-i18n="exMpName">Tên của bạn</span><input id="exMpNameIn" type="text" autocomplete="off" spellcheck="false" dir="auto"></label>
+        <small id="exMpNameHint"></small>
+        <small id="exMpNameBad" role="alert" data-i18n="exMpNameBad" hidden>Tên này không dùng được, hãy chọn tên khác.</small>
+        <button type="button" id="exMpFly" class="ex-mp-btn" data-i18n="exMpFly" disabled>Bay ngay</button>
+      </div>
+      <div id="exMpOffline" role="alert" data-i18n="exMpOffline" hidden>Không kết nối được máy chủ. Bạn vẫn bay được, nhưng một mình.</div>
+      <button type="button" id="exMpSolo" class="ex-mp-btn" data-i18n="exMpSolo">Bay một mình</button>
+      <button type="button" id="exMpBack" class="ex-mp-btn ex-mp-alt" data-i18n="exMpBack">Quay lại</button>
+    </section>
   </div>
 </div>
 <div id="exHint" class="panel" data-i18n="exHint">W/S hoặc ↑/↓ để lên/xuống · A/D hoặc ←/→ để rẽ · Q/E để giảm/tăng tốc · Esc để thoát</div>
 <div id="exSpeed" class="panel"></div>
+<div id="exMpLabels" aria-hidden="true"></div>
+<div id="exMpRoster" class="panel" hidden></div>
+<div id="exMpNotice" class="panel" role="status" hidden></div>
+<div id="exMpIdle" class="panel" role="status" aria-live="polite" hidden></div>
+<div id="exMpWatch" class="panel" role="status" dir="auto" hidden></div>
+<div id="exMpInvite" class="panel" hidden>
+  <span data-i18n="exMpInvite">Có chỗ trống. Bạn muốn bay không?</span>
+  <input id="exMpInviteName" type="text" autocomplete="off" spellcheck="false" dir="auto" hidden>
+  <button type="button" id="exMpInviteFly" class="ex-mp-btn" data-i18n="exMpInviteFly">Vào bay</button>
+</div>
 <button id="btnExExit" class="panel" type="button" data-i18n="exExit">Thoát</button>
 
 <script type="module" src="/src/main.ts"></script>

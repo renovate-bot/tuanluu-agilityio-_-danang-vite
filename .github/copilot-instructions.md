@@ -52,6 +52,9 @@ npm run test:perf      -- [--strict]   # khung dài nhất, số shader biên d�
 npm run test:explore   # chế độ tự khám phá (dù lượn); đọc dist/
 npm run test:mobile    # giao diện điện thoại — chạy khi đổi index.html / styles / ui
 npm run test:citynight # đèn đêm tòa nhà + vệt trên sông; cần `-- --baseline` trên bản chưa sửa để có mốc chuẩn
+npm run test:multi:unit   # dù lượn nhiều người: logic phòng, tên, nội suy, idle (nhanh, không trình duyệt)
+npm run test:multi:worker # Worker qua wrangler dev: kiểm Origin
+npm run test:multi        # dù lượn nhiều người: trình duyệt + bot qua wrangler dev cục bộ; đọc dist/
 npm run gen:voice      # sinh lại clip thuyết minh đã đổi (-- --force: tất cả)
 ```
 

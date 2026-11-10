@@ -53,11 +53,14 @@ src/
     riverfront/      hai bờ sông: địa danh thật, mặt dựng LED trái tim + "DN", bảng quảng cáo, chi tiết dải đi bộ
     weather/         thời tiết: khí quyển 4 preset, mưa + mặt ướt, gió (cây, dây, thuyền), bão (chớp, đóng cầu, kịch bản 120 s), nắng hè, cây đổ, âm thanh
   explore/           tự khám phá bằng dù lượn: mô hình bay thuần, dù, camera bám, màn chọn phương tiện, điều phối
+    multi/           dù lượn nhiều người (5 chỗ): giao thức + thông số dùng chung với máy chủ, phiên, sảnh, dù người khác, nhãn, chế độ xem, rời máy
   views/             góc nhìn có sẵn, flyTo, Tour (đường cong + điểm dừng)
   audio/             nhạc, còi, tiếng xe; narration.ts phát giọng thuyết trình của Tour
   ui/                bảng điều khiển, nút quay cầu, âm thanh, chất lượng hình, chế độ gọn cho điện thoại (compactUI.ts)
   i18n/              index.ts + locales/{vi,en,ko,ja,zh,th,ar,hi,ru}.json
   styles/main.css
+server/
+  multi/             máy chủ dù lượn nhiều người (Cloudflare Worker + Durable Object, `npm --prefix server/multi run dev`)
 ```
 
 ## Hầm vượt sông Hàn
