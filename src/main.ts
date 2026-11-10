@@ -20,7 +20,7 @@ import { buildMountains } from './environment/mountains';
 import { buildStreets, finalizeRoads } from './environment/streets';
 import { buildCity } from './environment/city';
 import { buildTrees, buildStreetLamps } from './environment/trees';
-import { buildTraffic, buildBoats, updateTraffic, updateBoats } from './environment/traffic';
+import { buildTraffic, buildBoats, updateTraffic, updateBoats, boatsTest } from './environment/traffic';
 import {
   buildBridgeDeck, buildPiers, buildDragonBody, buildScales, buildHangers, buildDragonHead,
   createFire, createWaterJet, updateShow, updateEffects, show, showLabel, mouthW
@@ -114,7 +114,7 @@ const multiTest = {
 };
 if (query.has('test')) {
   perf.on = query.has('perf');
-  (window as unknown as { __app: unknown }).__app = { reflectState, renderer, scene, camera, controls, cam, shared, songHan, hr: hanTunnel, sunWheel, riverfront, weather, hrDrive, swRide, windFx, THREE: TEST_THREE, dayNight, tours: TOURS, tour, narration, audio, perf, quality, ui: { ...ui, ui: compactState, openSheet, closeSheets, reveal }, explore, keys, multi: multiTest, exFlight: { exCreate, exStep, exInputFromKeys, exBuildGlider, exPlaceGlider, exChase, CONFIG_explore: CONFIG.explore } };
+  (window as unknown as { __app: unknown }).__app = { reflectState, renderer, scene, camera, controls, cam, shared, songHan, hr: hanTunnel, sunWheel, riverfront, weather, hrDrive, swRide, windFx, THREE: TEST_THREE, dayNight, tours: TOURS, tour, narration, audio, perf, quality, ui: { ...ui, ui: compactState, openSheet, closeSheets, reveal }, explore, keys, multi: multiTest, exFlight: { exCreate, exStep, exInputFromKeys, exBuildGlider, exPlaceGlider, exChase, CONFIG_explore: CONFIG.explore }, boats: boatsTest };
 }
 
 /* ============================ Vòng lặp ============================ */

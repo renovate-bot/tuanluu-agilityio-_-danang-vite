@@ -32,7 +32,6 @@ export function applyNight(m: number, time: number) {
   stars.material.opacity = clamp((m - 0.4) / 0.6, 0, 1);
   clouds.material.opacity = lerp(0.85, 0.12, m);
   MAT.bulb.color.copy(C_BULB_DAY).lerp(C_BULB_NIGHT, m);
-  MAT.boatCabin.emissiveIntensity = m * 1.4;
   MAT.pupil.emissiveIntensity = m * 2.5;
   MAT.eye.emissiveIntensity = 0.05 + m * 0.4;
   vHead.visible = vTail.visible = m > 0.3;

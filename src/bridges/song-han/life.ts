@@ -1,9 +1,9 @@
 import * as THREE from 'three';
 import { CONFIG } from '../../config';
-import { MAT } from '../../core/materials';
 import { rng, lerp } from '../../common/math';
 import { createTraffic, stepTraffic, type Traffic, type BridgeVehicle } from '../../common/traffic';
 import { createBoats } from '../../common/boats';
+import { btCreateFleet, btSetInfo, btSetBoat, btCommit } from '../../environment/boats/fleet';
 import { createPeople, type Walker } from '../../common/people';
 import { SH, shRoadY } from './profile';
 import type { SwingController } from './SwingController';
@@ -15,9 +15,9 @@ export function shBuildLife(bridge: SongHanBridge) {
     lanes: [{ off: SH.lane, n: 26, speed: 11, bike: 0.6, bus: 0.04 }] });
   // thuyền du lịch nối lộ trình Cầu Rồng – Cầu sông Hàn – Cầu Thuận Phước (giữa các làn thuyền chung)
   bridge.boats = createBoats(bridge, [
-    { x: 31, z: 700, dir: -1, speed: 3.4, len: 22, w: 7, h: 2.6, cab: 2.9 },
-    { x: 41, z: -900, dir: 1, speed: 3.0, len: 18, w: 6.5, h: 2.5, cab: 2.7 }
-  ]);
+    { x: 31, z: 700, dir: -1, speed: 3.4, len: 22, w: 7, h: 2.6, cab: 2.9, type: 'A' },
+    { x: 41, z: -900, dir: 1, speed: 3.0, len: 18, w: 6.5, h: 2.5, cab: 2.7, type: 'B' }
+  ], 'sh-boats');
   // người đi bộ: lề cầu (phần cố định) và lề ven sông Bạch Đằng
   const rnd = rng(2903), list: Walker[] = [], zs = SH.hw - SH.sidewalk / 2 - 0.15;
   for (let i = 0; i < 36; i++) {
@@ -29,13 +29,10 @@ export function shBuildLife(bridge: SongHanBridge) {
   bridge.people = createPeople(bridge, list, bridge.mats.person, 'sh-people', rnd);
   // tàu buồm cao: cột buồm cao hơn tĩnh không, chỉ qua được khi cầu mở (luồng phía Tây)
   const ship = new THREE.Group(); ship.name = 'sh-tall-ship';
-  const hull = new THREE.Mesh(new THREE.BoxGeometry(7, 3, 30).translate(0, 1.0, 0), MAT.hull);
-  const house = new THREE.Mesh(new THREE.BoxGeometry(5, 2.4, 9).translate(0, 3.7, -6), MAT.boatCabin);
-  const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.3, 19, 8).translate(0, 11.5, 2), MAT.lampPole);
-  const sailShape = new THREE.Shape([new THREE.Vector2(0, 0), new THREE.Vector2(0, 16), new THREE.Vector2(-9, 0)]);
-  const sail = new THREE.Mesh(new THREE.ShapeGeometry(sailShape).rotateY(Math.PI / 2).translate(0, 4, 2.6), bridge.mats.sail);
-  ship.add(hull, house, mast, sail);
-  for (const o of [hull, house, mast, sail]) o.castShadow = true;
+  // một đội tàu 1 chiếc kiểu E (thân, nhà boong, cột, buồm gộp) = 1 lệnh vẽ; group ship vẫn do SongHanBridge di chuyển
+  const tall = btCreateFleet(1, ['E'], ship, 'sh-tall-ship-boat');
+  btSetInfo(tall, 0, { type: 'E', variant: 0, led: 4, name: 0 });
+  btSetBoat(tall, 0, new THREE.Vector3(), new THREE.Quaternion(), 30); btCommit(tall);
   ship.position.set(-36, 0, -260);
   bridge.life.add(ship);
   bridge.ship = { obj: ship, z: -260, target: -260, dir: 1, speed: 4.5 };

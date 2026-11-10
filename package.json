@@ -23,7 +23,8 @@
     "test:multi": "node tests/multi-check.mjs",
     "test:multi:unit": "tsx --test tests/multi-unit/*.test.ts",
     "test:multi:worker": "node tests/multi-unit/worker.integration.mjs",
-    "test:boats:unit": "tsx --test tests/boats-unit/*.test.ts"
+    "test:boats:unit": "tsx --test tests/boats-unit/*.test.ts",
+    "test:boats": "node tests/boats-check.mjs"
   },
   "dependencies": {
     "three": "^0.165.0"
