@@ -77,7 +77,7 @@
 - **Buýt nhỏ** (~470 đỉnh): thân loft 5 mặt cắt màu `busBody` (kính lái nghiêng nằm trên đoạn 2,3 → 3,3 m), tấm kính lái, mỗi bên một dải cửa sổ tối (`busWindow`) và dải chéo `busStripe` viền `busStripeEdge` làm bằng tấm mỏng đặt sát thân (không texture), kính sau, cục điều hòa `busAc`, 2 đèn pha, 2 đèn hậu đứng, 4 bánh. Số đo: hàm `miniBus` (file dựng thử dùng texture cho hai bên; ở đây thay bằng tấm màu đỉnh, dải chéo thấp ở đầu xe và cao dần về đuôi).
 - Hàm loft trong file dựng thử sinh tam giác không index; ở đây mỗi mặt tứ giác dùng 4 đỉnh + index, pháp tuyến phẳng theo mặt, mặt hướng ra ngoài (vật liệu `FrontSide`).
 
-- [ ] **Step 1: Viết test thất bại** `tests/traffic-unit/shapes.test.ts` và `config.test.ts` (import `.ts` trực tiếp như `tests/boats-unit/`):
+- [x] **Step 1: Viết test thất bại** `tests/traffic-unit/shapes.test.ts` và `config.test.ts` (import `.ts` trực tiếp như `tests/boats-unit/`):
 
 ```ts
 // shapes.test.ts
@@ -102,11 +102,11 @@ test('buýt vừa khoảng xếp hàng 7,5 m của Cầu sông Hàn', () => asse
 test('carColors ≥ 8, shirtColors ≥ 6, bikeColors = 5 màu cũ', () => {});
 ```
 
-- [ ] **Step 2:** `npm run test:traffic:unit` → FAIL (chưa có `shapes.ts`, `CONFIG.vehicles`).
-- [ ] **Step 3:** Thêm `vehiclesBase` vào `src/config.ts` (comment đầu khối `/* ---- Xe cộ ---- */`, ghi nguồn kích thước: siêu xe xấp xỉ McLaren 720S nếu kiểm được, không thì `(ước lượng)`), export `VehicleTypeId`, thêm `vehicles: vehiclesBase` cuối `CONFIG`.
-- [ ] **Step 4:** Viết `src/common/vehicles/shapes.ts` với lớp `Kit` kiểu `hulls.ts` (`box`, `loft`, `wheel`, `add(geometry, color, role)`), ba hàm dựng, cache, `vhBuildFleetGeometry`.
-- [ ] **Step 5:** `npm run test:traffic:unit` → PASS; `npm run typecheck` → không lỗi.
-- [ ] **Step 6:** Commit `feat(traffic): thông số và hình học siêu xe, xe tay ga, buýt nhỏ`.
+- [x] **Step 2:** `npm run test:traffic:unit` → FAIL (chưa có `shapes.ts`, `CONFIG.vehicles`).
+- [x] **Step 3:** Thêm `vehiclesBase` vào `src/config.ts` (comment đầu khối `/* ---- Xe cộ ---- */`, ghi nguồn kích thước: siêu xe xấp xỉ McLaren 720S nếu kiểm được, không thì `(ước lượng)`), export `VehicleTypeId`, thêm `vehicles: vehiclesBase` cuối `CONFIG`.
+- [x] **Step 4:** Viết `src/common/vehicles/shapes.ts` với lớp `Kit` kiểu `hulls.ts` (`box`, `loft`, `wheel`, `add(geometry, color, role)`), ba hàm dựng, cache, `vhBuildFleetGeometry`.
+- [x] **Step 5:** `npm run test:traffic:unit` → PASS; `npm run typecheck` → không lỗi.
+- [x] **Step 6:** Commit `feat(traffic): thông số và hình học siêu xe, xe tay ga, buýt nhỏ`.
 
 ### Task 2: Vật liệu, fleet và thay năm hệ xe
 
@@ -136,12 +136,12 @@ test('carColors ≥ 8, shirtColors ≥ 6, bikeColors = 5 màu cũ', () => {});
   - Màu buýt truyền cho `vhSetInfo` là `palette.busBody` (buýt không có đỉnh Paint nên không ảnh hưởng hình).
 - Produces (`environment/traffic.ts`): thay `vBody` / `vCabin` / `vHead` / `vTail` bằng `export let cityFleet: VehicleFleet`; `export const trafficTest = { fleets: () => vhFleets, city: () => vehicles, paths: PATHS, material: vhMaterial, types: CONFIG.vehicles.types }`; `main.ts` thêm `traffic: trafficTest` vào `__app`.
 
-- [ ] **Step 1:** Viết `material.ts` và `fleet.ts` theo mẫu `src/environment/boats/material.ts`, `fleet.ts`.
-- [ ] **Step 2:** Sửa `common/traffic.ts`. Vòng dựng danh sách giữ nguyên từng lời gọi `rnd()`; chỉ đổi nguồn bảng màu và bỏ `busColor`. `stepTraffic`: xe bị dọn → `vhHide`; còn lại → `vhSetVehicle(T.fleet, i, base, _q)`; cuối hàm `vhCommit`. Bỏ biến `lamps`.
-- [ ] **Step 3:** Sửa `environment/traffic.ts` tương tự. **Không thêm, bớt, đổi thứ tự lời gọi `rand()`**: biểu thức chọn màu ô tô vẫn là `colors[Math.floor(rand() * colors.length)]` và vẫn chỉ chạy cho ô tô.
-- [ ] **Step 4:** Sửa các nơi gọi, `dayNight.ts`, `cutaway.ts`, `materials.ts`, `main.ts`. Tìm bằng grep mọi chỗ còn nhắc `vHead`, `vTail`, `vBody`, `vCabin`, `busColor`, `MAT.vehicle`, `MAT.headLamp`, `MAT.tailLamp`, `TYPES`, `CAR_COLORS`, `BIKE_COLORS`, `placePart` → không còn.
-- [ ] **Step 5:** `npm run typecheck` → không lỗi; `npm run test:traffic:unit`, `npm run test:boats:unit` → PASS; `npm run build` → đạt.
-- [ ] **Step 6:** Commit `feat(traffic): mỗi hệ xe một lệnh vẽ, xe có dáng thật thay khối hộp`.
+- [x] **Step 1:** Viết `material.ts` và `fleet.ts` theo mẫu `src/environment/boats/material.ts`, `fleet.ts`.
+- [x] **Step 2:** Sửa `common/traffic.ts`. Vòng dựng danh sách giữ nguyên từng lời gọi `rnd()`; chỉ đổi nguồn bảng màu và bỏ `busColor`. `stepTraffic`: xe bị dọn → `vhHide`; còn lại → `vhSetVehicle(T.fleet, i, base, _q)`; cuối hàm `vhCommit`. Bỏ biến `lamps`.
+- [x] **Step 3:** Sửa `environment/traffic.ts` tương tự. **Không thêm, bớt, đổi thứ tự lời gọi `rand()`**: biểu thức chọn màu ô tô vẫn là `colors[Math.floor(rand() * colors.length)]` và vẫn chỉ chạy cho ô tô.
+- [x] **Step 4:** Sửa các nơi gọi, `dayNight.ts`, `cutaway.ts`, `materials.ts`, `main.ts`. Tìm bằng grep mọi chỗ còn nhắc `vHead`, `vTail`, `vBody`, `vCabin`, `busColor`, `MAT.vehicle`, `MAT.headLamp`, `MAT.tailLamp`, `TYPES`, `CAR_COLORS`, `BIKE_COLORS`, `placePart` → không còn.
+- [x] **Step 5:** `npm run typecheck` → không lỗi; `npm run test:traffic:unit`, `npm run test:boats:unit` → PASS; `npm run build` → đạt.
+- [x] **Step 6:** Commit `feat(traffic): mỗi hệ xe một lệnh vẽ, xe có dáng thật thay khối hộp`.
 
 ### Task 3: Test trình duyệt, ảnh chụp, chỉnh dáng
 
@@ -152,7 +152,7 @@ test('carColors ≥ 8, shirtColors ≥ 6, bikeColors = 5 màu cũ', () => {});
 **Interfaces:**
 - Consumes: `window.__app.traffic` (Task 2), `tests/lib.mjs` (`serveDir`, `launch`, `openApp`, `frames`), `tests/weather-lib.mjs` (`setWx`), `__app.boats.running()`.
 
-- [ ] **Step 1:** Viết `tests/traffic-check.mjs` theo khung `tests/boats-check.mjs` (khung 960×540, cờ `--no-shots`, comment đầu file đánh số mục kiểm). Các mục:
+- [x] **Step 1:** Viết `tests/traffic-check.mjs` theo khung `tests/boats-check.mjs` (khung 960×540, cờ `--no-shots`, comment đầu file đánh số mục kiểm). Các mục:
   1. `fleetOnly`: đúng 5 fleet tên `hr-traffic,sh-traffic,tp-traffic,traffic-city,ttl-traffic`, đều dùng vật liệu `vehicleFleet`; trong scene không còn `InstancedMesh` nào có `geometry.type === 'BoxGeometry'` mà `count` bằng số xe của một hệ.
   2. `counts`: `traffic.city().length === 536`; `sh-traffic` 52 instance; `hr-traffic` 348 instance.
   3. `randKept`: `boats.running()` có 7 tàu, `speed` trùng mảng `MAIN_SPEEDS` trong `tests/boats-check.mjs` (sai số < 1e-12). `buildBoats()` chạy ngay sau `buildTraffic()`, nên trùng nghĩa là số lời gọi `rand()` của xe không đổi.
@@ -164,16 +164,16 @@ test('carColors ≥ 8, shirtColors ≥ 6, bikeColors = 5 màu cũ', () => {});
   9. `stormClear`: `setWx(page, 'storm')`, chờ `weather.fx().clear >= 1` → trong `traffic-city` mọi xe trên `paths.axis` scale 0, xe trên `paths.bachDang` vẫn scale 1; `setWx(page, 'now')`, chờ `clear <= 0` → xe `axis` trở lại scale 1.
   10. Không lỗi console.
   11. Ảnh (nếu không `--no-shots`) vào `tests/screens/traffic-*.png`: ngày và đêm, mặt Cầu Rồng nhìn gần (camera cách một xe khoảng 12 m), toàn cảnh Cầu Rồng, đường Bạch Đằng, Cầu sông Hàn, trong hầm.
-- [ ] **Step 2:** `npm run build && npm run test:traffic` → mọi mục ĐẠT. Nếu mục nào LỖI do code Task 2 thì sửa code, không nới test.
-- [ ] **Step 3:** Mở từng ảnh `tests/screens/traffic-*.png` và so với `docs/superpowers/specs/tham-chieu/xe-co/ban-dung-thu-ngay.png`. Sửa `shapes.ts` / `config.ts` nếu thấy: xe chìm hoặc lơ lửng, đầu xe quay ngược hướng chạy, mặt bị lộn (thủng, đen), màu sai, đèn không sáng ban đêm hoặc sáng ban ngày, từ góc toàn cảnh vẫn như hộp. Chạy lại Step 2 sau khi sửa.
-- [ ] **Step 4:** Commit `test(traffic): test:traffic kiểm fleet, rand, đèn, bão, tắt làn`.
+- [x] **Step 2:** `npm run build && npm run test:traffic` → mọi mục ĐẠT. Nếu mục nào LỖI do code Task 2 thì sửa code, không nới test.
+- [x] **Step 3:** Mở từng ảnh `tests/screens/traffic-*.png` và so với `docs/superpowers/specs/tham-chieu/xe-co/ban-dung-thu-ngay.png`. Sửa `shapes.ts` / `config.ts` nếu thấy: xe chìm hoặc lơ lửng, đầu xe quay ngược hướng chạy, mặt bị lộn (thủng, đen), màu sai, đèn không sáng ban đêm hoặc sáng ban ngày, từ góc toàn cảnh vẫn như hộp. Chạy lại Step 2 sau khi sửa.
+- [x] **Step 4:** Commit `test(traffic): test:traffic kiểm fleet, rand, đèn, bão, tắt làn`.
 
 ### Task 4: Tài liệu và memory bank
 
 **Files:**
 - Modify: `.github/memory-bank/decisions.md` (thêm D-027), `.github/memory-bank/activeContext.md`, `.github/memory-bank/progress.md`, `.github/memory-bank/systemPatterns.md` (mẫu fleet xe, nếu chưa có mục tương tự cho tàu thì thêm một dòng trỏ tới cả hai), `.github/copilot-instructions.md` §5 (thêm `test:traffic:unit`, `test:traffic`), `README.md` mục **Cấu trúc** (thêm `common/vehicles/`), `tests/KET-QUA.md` (mục mới: kết quả `test:traffic`, số đỉnh từng loại, ghi rõ **chưa đo** `test:drawcalls`, `test:perf`, FPS GPU thật), plan này (đánh dấu ô đã xong)
 
-- [ ] **Step 1:** Viết D-027 theo khuôn D-026 (bối cảnh, quyết định, hệ quả: số đỉnh mỗi instance × số xe, buýt xanh đã bỏ, `MAT.vehicle` / `headLamp` / `tailLamp` đã xóa).
-- [ ] **Step 2:** Cập nhật `activeContext.md` (trạng thái, bước tiếp theo: test nặng chưa chạy, người dùng duyệt trên demo) và `progress.md` (hàng mới trong bảng "Đã xong", mục "Còn thiếu"). Ngày cập nhật 2026-11-10.
-- [ ] **Step 3:** Cập nhật `copilot-instructions.md`, `README.md`, `tests/KET-QUA.md`.
-- [ ] **Step 4:** Commit `docs(traffic): kết quả, README, memory bank (D-027)`.
+- [x] **Step 1:** Viết D-027 theo khuôn D-026 (bối cảnh, quyết định, hệ quả: số đỉnh mỗi instance × số xe, buýt xanh đã bỏ, `MAT.vehicle` / `headLamp` / `tailLamp` đã xóa).
+- [x] **Step 2:** Cập nhật `activeContext.md` (trạng thái, bước tiếp theo: test nặng chưa chạy, người dùng duyệt trên demo) và `progress.md` (hàng mới trong bảng "Đã xong", mục "Còn thiếu"). Ngày cập nhật 2026-11-10.
+- [x] **Step 3:** Cập nhật `copilot-instructions.md`, `README.md`, `tests/KET-QUA.md`.
+- [x] **Step 4:** Commit `docs(traffic): kết quả, README, memory bank (D-027)`.

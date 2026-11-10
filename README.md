@@ -42,6 +42,7 @@ src/
   config.ts          thông số các cầu
   core/              renderer, scene, camera, controls, bloom, trời/nước, đèn, uniform dùng chung, ngày/đêm
   common/            texture làn đường, loft, boxAt, beamBetween, cột đèn, bảng màu LED, xe cộ, thuyền, người, BridgeBase
+    vehicles/        xe cộ: siêu xe, xe tay ga, buýt nhỏ (hình học gộp), vật liệu đèn pha/hậu theo đêm, fleet InstancedMesh mỗi hệ xe
   bridges/
     dragon/          Cầu Rồng (mặt cầu, thân, đầu, lửa/nước)
     thuan-phuoc/     Cầu Thuận Phước
