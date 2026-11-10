@@ -4,6 +4,57 @@ Chromium + SwiftShader, khung 480×270. Draw call = renderer.info.render.calls (
 
 Khung test mặc định 480×270 khớp `(max-height: 500px)` nên cả bộ test chạy ở chế độ gọn (không blur): draw call không đổi; số hitch của `test:perf` không so sát được với mốc D-018 (đo khi còn blur).
 
+## Tàu thuyền sông Hàn (2026-11-10, nhánh `feature/tau-thuyen-song-han`, D-026)
+
+Mỗi đội tàu một `InstancedMesh` (thay 3 khối hộp). Draw call đo tại Task 3 (commit `9ae6c2a`, trước đèn đêm + cụm tàu tụ tập) so với `main` `43cec90` cùng máy (`node tests/drawcalls.mjs ../danang-dist-main`): **74/74 góc giảm 10–20, không góc nào tăng**. Cụm tàu tụ tập (Task 4) nằm trong đội tàu chung nên không thêm mesh; **chưa đo lại bản cuối** (lần chạy đủ bộ bị treo > 3,5 h do tranh CPU, người dùng chọn duyệt trên demo thay vì chạy lại).
+
+| Lệnh (bản cuối `566676f`) | Kết quả |
+|---|---|
+| `test:boats:unit` | 17/17 đạt |
+| `test:boats` | 18/18 đạt (crowdRamp 145/154 khung so le; ledBright vệt 19 px) |
+| `test:citynight -- --no-shots` (tại `63c3976`, trước sửa review) | đạt: warmDominant 88,1 %, dayDiff 1,30/255 — không cần chụp lại mốc |
+| `test:drawcalls` (bản cuối), `test:perf --strict`, `test:tour`, `test:voice`, `test:tunnel`, `test:riverfront`, `test:weather`, `test:sunwheel`, `test:mobile`, `test:explore` | **chưa chạy** (theo yêu cầu người dùng) |
+
+| Góc | ngày main | ngày mới | chênh | đêm main | đêm mới | chênh |
+|---|---|---|---|---|---|---|
+| overview | 282 | 272 | -10 | 306 | 296 | -10 |
+| head | 305 | 293 | -12 | 328 | 316 | -12 |
+| tail | 236 | 224 | -12 | 264 | 252 | -12 |
+| drive | 216 | 204 | -12 | 244 | 232 | -12 |
+| bird | 269 | 257 | -12 | 299 | 287 | -12 |
+| walk | 216 | 204 | -12 | 243 | 231 | -12 |
+| tpBay | 276 | 266 | -10 | 297 | 287 | -10 |
+| tpWater | 117 | 107 | -10 | 138 | 128 | -10 |
+| tpDrive | 125 | 115 | -10 | 145 | 135 | -10 |
+| tpBoth | 282 | 272 | -10 | 315 | 305 | -10 |
+| ttlOverview | 239 | 229 | -10 | 261 | 251 | -10 |
+| ttlBase | 130 | 120 | -10 | 151 | 141 | -10 |
+| ttlDeck | 147 | 137 | -10 | 168 | 158 | -10 |
+| ttlBoth | 247 | 235 | -12 | 269 | 257 | -12 |
+| shOverview | 282 | 262 | -20 | 331 | 311 | -20 |
+| shTop | 213 | 193 | -20 | 260 | 240 | -20 |
+| shBank | 235 | 219 | -16 | 282 | 266 | -16 |
+| shDeck | 206 | 190 | -16 | 253 | 237 | -16 |
+| hrOverview | 277 | 257 | -20 | 307 | 287 | -20 |
+| hrCutaway | 358 | 338 | -20 | 390 | 370 | -20 |
+| hrPortalW | 163 | 147 | -16 | 190 | 174 | -16 |
+| hrPortalE | 205 | 189 | -16 | 229 | 213 | -16 |
+| hrDrive | 210 | 194 | -16 | 234 | 218 | -16 |
+| hrGallery | 169 | 155 | -14 | 200 | 186 | -14 |
+| rfHearts | 278 | 258 | -20 | 277 | 257 | -20 |
+| rfBank | 203 | 187 | -16 | 203 | 187 | -16 |
+| wxRiverMouth | 283 | 273 | -10 | 283 | 273 | -10 |
+| wxTtlStays | 168 | 158 | -10 | 168 | 158 | -10 |
+| wxStreet | 286 | 270 | -16 | 286 | 270 | -16 |
+| swOverview | 185 | 175 | -10 | 185 | 175 | -10 |
+| swFront | 308 | 298 | -10 | 308 | 298 | -10 |
+| swBase | 239 | 229 | -10 | 239 | 229 | -10 |
+| swFromTTL | 133 | 123 | -10 | 133 | 123 | -10 |
+| swNight | 281 | 271 | -10 | 302 | 292 | -10 |
+| swTop | 119 | 109 | -10 | 140 | 130 | -10 |
+| swRide | 283 | 273 | -10 | 304 | 294 | -10 |
+| swTour | 187 | 174 | -13 | 209 | 198 | -11 |
+
 ## Dù lượn nhiều người (2026-11-10, nhánh `feature/du-luon-nhieu-nguoi`, D-024)
 
 Chromium + SwiftShader, máy chủ `wrangler dev` cục bộ, bot là kết nối WebSocket giả. Draw call đo cùng tư thế camera, trung vị khung thật (`tests/multi-check.mjs`). Dù người khác ở layer 1, không phản chiếu nước (Ruling R6), mỗi dù 1 draw call.
