@@ -9,7 +9,7 @@
 //   npm run build && node tests/riverfront-check.mjs [--no-shots]
 import { fileURLToPath } from 'node:url';
 import fs from 'node:fs';
-import { serveDir, launch, openApp, frames, waitFlight } from './lib.mjs';
+import { serveDir, launch, openApp, frames, waitFlight, tap, pick } from './lib.mjs';
 
 const shots = !process.argv.includes('--no-shots');
 const SCREENS = fileURLToPath(new URL('./screens/', import.meta.url));
@@ -65,13 +65,13 @@ try {
   // ---- 3 + 4. bật/tắt đèn trái tim, rò rỉ, độ sáng ngày/đêm ----
   const mem = () => page.evaluate(() => { const i = window.__app.renderer.info.memory; return [i.geometries, i.textures]; });
   const step = (n) => page.evaluate((n) => { for (let i = 0; i < n; i++) window.__app.riverfront.hearts.update(0.25); }, n);
-  await page.click('button[data-bridge="dragon"]'); await waitFlight(page); await frames(page, 2);
+  await tap(page, 'button[data-bridge="dragon"]'); await waitFlight(page); await frames(page, 2);
   const m0 = await mem();
   for (let i = 0; i < 3; i++) {
-    await page.click('#btnRfHearts'); await step(24);
+    await tap(page, '#btnRfHearts'); await step(24);
     const off = await page.evaluate(() => window.__app.riverfront.hearts.material.uniforms.uOn.value);
     check(off === 0, `tắt đèn trái tim lần ${i + 1}: uOn = ${off} ≠ 0`);
-    await page.click('#btnRfHearts'); await step(24);
+    await tap(page, '#btnRfHearts'); await step(24);
     const on = await page.evaluate(() => window.__app.riverfront.hearts.material.uniforms.uOn.value);
     check(on > 0.99, `bật lại lần ${i + 1}: uOn = ${on} chưa về 1`);
   }
@@ -83,11 +83,11 @@ try {
   const lv = await page.evaluate(() => { const h = window.__app.riverfront.hearts; return [h.brightness(0), h.brightness(1)]; });
   check(lv[0] / lv[1] <= 0.05, `độ sáng ban ngày/đêm = ${(lv[0] / lv[1]).toFixed(3)} > 5%`);
   // chế độ đối đáp / đồng bộ: pha hai tòa
-  const phase = async (mode) => { await page.selectOption('#rfHeartsMode', mode); return page.evaluate(() => { const a = window.__app.riverfront.hearts.mesh.geometry.attributes.aPhase; return [a.getX(0), a.getX(4)]; }); };
+  const phase = async (mode) => { await pick(page, '#rfHeartsMode', mode); return page.evaluate(() => { const a = window.__app.riverfront.hearts.mesh.geometry.attributes.aPhase; return [a.getX(0), a.getX(4)]; }); };
   const duet = await phase('duet'), sync = await phase('sync');
   check(Math.abs(duet[1] - duet[0]) === 12, `Đối đáp phải lệch pha nửa chu kỳ: ${duet}`);
   check(sync[0] === sync[1], `Đồng bộ phải cùng pha: ${sync}`);
-  await page.selectOption('#rfHeartsMode', 'duet');
+  await pick(page, '#rfHeartsMode', 'duet');
   console.log(`bộ nhớ GPU [geometry, texture] ${m0} → ${m1}; độ sáng ngày/đêm ${(lv[0] / lv[1] * 100).toFixed(1)}%`);
 
   // ---- 5. quảng cáo ----
@@ -115,8 +115,8 @@ try {
       await page.evaluate((v) => { window.__app.dayNight.target = v; window.__app.dayNight.night = v; }, night);
       const tag = night ? 'dem' : 'ngay';
       for (const [bridge, view] of [['dragon', 'rfHearts'], ['dragon', 'rfBank'], ['dragon', 'overview'], ['sh', 'shOverview'], ['dragon', 'bird']]) {
-        await page.click(`button[data-bridge="${bridge}"]`); await waitFlight(page);
-        await page.click(`button[data-view="${view}"]`); await waitFlight(page);
+        await tap(page, `button[data-bridge="${bridge}"]`); await waitFlight(page);
+        await tap(page, `button[data-view="${view}"]`); await waitFlight(page);
         if (night && view === 'rfHearts') { await freeze(14); await page.evaluate(() => { const A = window.__app; A.camera.position.set(60, 70, -760); A.controls.target.set(-352, 80, -1150); A.camera.lookAt(A.controls.target); }); }
         await shot(`rf-${view}-${tag}`);
       }

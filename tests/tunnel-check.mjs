@@ -11,7 +11,7 @@
 //   npm run build && node tests/tunnel-check.mjs [--no-shots]
 import { fileURLToPath } from 'node:url';
 import fs from 'node:fs';
-import { serveDir, launch, openApp, frames, waitFlight } from './lib.mjs';
+import { serveDir, launch, openApp, frames, waitFlight, tap, pick } from './lib.mjs';
 
 const shots = !process.argv.includes('--no-shots');
 const SCREENS = fileURLToPath(new URL('./screens/', import.meta.url));
@@ -54,8 +54,8 @@ try {
   check(G.sym === 0, 'trắc dọc không đối xứng qua tim sông');
   console.log(`hình học: dốc dìm ${(G.grade.immersed * 100).toFixed(2)}% · hầm kín bờ ${(G.grade.cover * 100).toFixed(2)}% · hầm hở ${(G.grade.ramp * 100).toFixed(2)}% · dư cao độ nóc/đáy sông ${G.roofMargin.toFixed(2)} m · phủ bờ ${G.landCover.toFixed(2)} m · gờ ngập +${G.sill.toFixed(2)} m tại |x|=${G.peakX}`);
 
-  await page.click('button[data-bridge="hr"]'); await waitFlight(page);
-  await page.click('button[data-view="hrOverview"]'); await waitFlight(page); await frames(page, 2);
+  await tap(page, 'button[data-bridge="hr"]'); await waitFlight(page);
+  await tap(page, 'button[data-view="hrOverview"]'); await waitFlight(page); await frames(page, 2);
 
   // ---- 2. mặt cắt: bật/tắt 3 lần ----
   const snap = () => page.evaluate(() => {
@@ -68,22 +68,22 @@ try {
   });
   const base = await snap();
   for (let i = 0; i < 3; i++) {
-    await page.click('#btnHrSection'); await frames(page, 2);
+    await tap(page, '#btnHrSection'); await frames(page, 2);
     const on = await snap();
     check(on.w[0] && !on.w[1] && on.w[3] === 1 && !on.l[0] && on.l[1] && on.geo && on.hrBed, `bật mặt cắt lần ${i + 1}: trạng thái không đúng ${JSON.stringify(on)}`);
-    await page.click('#btnHrSection'); await frames(page, 2);
+    await tap(page, '#btnHrSection'); await frames(page, 2);
     const off = await snap();
     check(JSON.stringify(off.w) === JSON.stringify(base.w) && JSON.stringify(off.l) === JSON.stringify(base.l) && !off.geo && !off.hrBed, `tắt mặt cắt lần ${i + 1}: chưa về trạng thái gốc ${JSON.stringify(off)} ≠ ${JSON.stringify(base)}`);
   }
 
   // ---- 3. mắt thích nghi ----
   await page.evaluate(() => { window.__app.dayNight.target = 0; window.__app.dayNight.night = 0; });
-  await page.click('button[data-view="hrDrive"]');
+  await tap(page, 'button[data-view="hrDrive"]');
   await page.evaluate(() => { window.__app.hrDrive.x = 0; });
   await page.evaluate(() => new Promise((ok) => { let n = 0; const f = () => (++n > 60 ? ok() : requestAnimationFrame(f)); f(); }));
   const inside = await page.evaluate(() => window.__app.renderer.toneMappingExposure);
   check(inside < 0.55 * 0.8, `độ phơi sáng trong hầm ${inside.toFixed(3)} chưa giảm so với 0,55`);
-  await page.click('button[data-view="hrOverview"]'); await waitFlight(page); await frames(page, 2);
+  await tap(page, 'button[data-view="hrOverview"]'); await waitFlight(page); await frames(page, 2);
   const after = await page.evaluate(() => window.__app.renderer.toneMappingExposure);
   check(after === 0.55, `độ phơi sáng sau khi thoát ${after} ≠ 0,55`);
 
@@ -117,15 +117,15 @@ try {
       await page.evaluate((v) => { window.__app.dayNight.target = v; window.__app.dayNight.night = v; }, night);
       const tag = night ? 'dem' : 'ngay';
       for (const view of ['hrOverview', 'hrCutaway', 'hrPortalW', 'hrPortalE', 'hrGallery']) {
-        await page.click(`button[data-view="${view}"]`); await waitFlight(page); await shot(`hr-${view}-${tag}`);
+        await tap(page, `button[data-view="${view}"]`); await waitFlight(page); await shot(`hr-${view}-${tag}`);
       }
-      await page.click('button[data-view="hrDrive"]');
+      await tap(page, 'button[data-view="hrDrive"]');
       for (const [x, name] of [[-640, 'ramp'], [-300, 'trong-ham']]) { await page.evaluate((x) => { window.__app.hrDrive.x = x; }, x); await shot(`hr-hrDrive-${name}-${tag}`); }
-      await page.click('button[data-view="hrOverview"]'); await waitFlight(page);
+      await tap(page, 'button[data-view="hrOverview"]'); await waitFlight(page);
     }
     // một khung giữa mô phỏng dìm (giai đoạn BALLAST)
     await page.evaluate(() => { window.__app.dayNight.target = 0; window.__app.dayNight.night = 0; });
-    await page.click('button[data-view="hrOverview"]'); await waitFlight(page);
+    await tap(page, 'button[data-view="hrOverview"]'); await waitFlight(page);
     await page.evaluate(() => { const c = window.__app.hr.ctrl; c.start(1); c.go('BALLAST'); c.speed = 0.0001; c.t = 50; c.update(0); });
     await shot('hr-dim-dot-ham');
     await page.evaluate(() => { const c = window.__app.hr.ctrl; c.speed = 400; });

@@ -3,7 +3,7 @@
 //   npm run build && node tests/weather-gd7-shots.mjs
 import { fileURLToPath } from 'node:url';
 import fs from 'node:fs';
-import { serveDir, launch, openApp, frames, pickView } from './lib.mjs';
+import { serveDir, launch, openApp, frames, pickView, tap, pick } from './lib.mjs';
 import { setWx, snapAtmosphere } from './weather-lib.mjs';
 
 const OUT = fileURLToPath(new URL('./screens/weather-gd7/', import.meta.url));
@@ -76,12 +76,12 @@ try {
 
   // 4) Kịch bản bão: tua nhanh ×12, chụp ở các mốc, kiểm trả preset, rò rỉ
   await pickView(page, 'dragon', 'overview');
-  await page.selectOption('#weatherSel', 'rain'); await frames(page, 2);
+  await pick(page, '#weatherSel', 'rain'); await frames(page, 2);
   const pre = await page.evaluate(() => { const s = window.__app.weather.state; return { preset: s.preset, k: s.intensity, night: window.__app.dayNight.night }; });
   const m0 = await mem(), memRuns = [];
   const snaps = new Set([0, 3, 4, 5, 7]);
   for (let run = 0; run < 3; run++) {
-    await page.click('#btnWxStorm');
+    await tap(page, '#btnWxStorm');
     await page.evaluate(() => { window.__app.weather.scenario.speed = 12; });
     const caps = [];
     for (let guard = 0; guard < 4000; guard++) {
@@ -109,22 +109,22 @@ try {
   if (memRuns[2].g > memRuns[1].g || memRuns[2].t > memRuns[1].t) problems.push(`rò rỉ: sau lần 2 ${JSON.stringify(memRuns[1])} → sau lần 3 ${JSON.stringify(memRuns[2])}`);
 
   // 5) Dừng giữa chừng + người xem chọn preset khác khi đang chạy
-  await page.click('#btnWxStorm'); await page.evaluate(() => { window.__app.weather.scenario.speed = 12; }); await frames(page, 30);
-  await page.click('#btnWxStorm'); await frames(page, 3);
+  await tap(page, '#btnWxStorm'); await page.evaluate(() => { window.__app.weather.scenario.speed = 12; }); await frames(page, 30);
+  await tap(page, '#btnWxStorm'); await frames(page, 3);
   const stopped = await page.evaluate(() => ({ running: window.__app.weather.scenario.running, preset: window.__app.weather.state.preset, sel: document.getElementById('weatherSel').value }));
   console.log('sau Dừng kịch bản:', JSON.stringify(stopped));
   if (stopped.running || stopped.preset !== 'rain') problems.push('Dừng kịch bản không trả preset cũ');
-  await page.click('#btnWxStorm'); await frames(page, 4); await page.selectOption('#weatherSel', 'summer'); await frames(page, 3);
+  await tap(page, '#btnWxStorm'); await frames(page, 4); await pick(page, '#weatherSel', 'summer'); await frames(page, 3);
   const user = await page.evaluate(() => ({ running: window.__app.weather.scenario.running, preset: window.__app.weather.state.preset }));
   if (user.running || user.preset !== 'summer') problems.push('chọn preset khi đang chạy kịch bản không dừng kịch bản');
 
   // 6) Esc / kéo chuột chỉ trả camera
-  await page.selectOption('#weatherSel', 'now'); await page.click('#btnWxStorm'); await frames(page, 4);
+  await pick(page, '#weatherSel', 'now'); await tap(page, '#btnWxStorm'); await frames(page, 4);
   await page.keyboard.press('Escape');
   const own = await page.evaluate(() => ({ owned: window.__app.weather.scenario.cameraOwned, running: window.__app.weather.scenario.running }));
   console.log('sau Esc:', JSON.stringify(own));
   if (own.owned || !own.running) problems.push('Esc phải trả camera nhưng giữ kịch bản chạy');
-  await page.click('#btnWxStorm'); await frames(page, 3);
+  await tap(page, '#btnWxStorm'); await frames(page, 3);
 
   // 7) Âm thanh: bật audio rồi thử setWeather / thunder (chỉ kiểm không lỗi; không nghe được trong headless)
   const snd = await page.evaluate(async () => {
@@ -135,17 +135,17 @@ try {
   if (snd.error) problems.push('audio: ' + snd.error);
 
   // 8) Chú thích ở 9 ngôn ngữ (khung cuối của kịch bản)
-  await page.click('#btnWxStorm'); await page.evaluate(() => { window.__app.weather.scenario.speed = 12; });
+  await tap(page, '#btnWxStorm'); await page.evaluate(() => { window.__app.weather.scenario.speed = 12; });
   await page.waitForFunction(() => window.__app.weather.scenario.step >= 3, null, { timeout: 240000 });
   for (const l of LOCALES) {
-    await page.selectOption('#langSelect', l); await page.waitForTimeout(500);
+    await pick(page, '#langSelect', l); await page.waitForTimeout(500);
     const r = await page.evaluate(() => ({ text: document.getElementById('wxScenarioText').textContent, btn: document.getElementById('btnWxStorm').textContent, dir: document.documentElement.dir }));
     if (/\{\w+\}|^wx[A-Z]/.test(r.text + r.btn)) problems.push(`${l}: chú thích hiện tham số/khoá trần: ${r.text}`);
     if (['ar', 'ru', 'ja', 'en'].includes(l)) await shot(`scenario-lang-${l}`);
     console.log(l, JSON.stringify(r.btn), r.text.slice(0, 50));
   }
-  await page.selectOption('#langSelect', 'vi');
-  await page.click('#btnWxStorm');
+  await pick(page, '#langSelect', 'vi');
+  await tap(page, '#btnWxStorm');
 } catch (e) { problems.push('lỗi script: ' + e.message); }
 finally { await page.close(); await browser.close(); srv.close?.(); }
 if (errors.length) problems.push('console: ' + errors.slice(0, 5).join(' | '));
