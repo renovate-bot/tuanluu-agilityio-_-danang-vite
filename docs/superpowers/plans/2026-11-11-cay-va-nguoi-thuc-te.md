@@ -141,7 +141,7 @@ test('cây dừa tĩnh cao h, đứng trên y = 0, hai mặt', () => { /* bbox.m
 - [x] **Bước 5:** `npm run build && npm run test:trees` → mọi kiểm tra ĐẠT. **Mở và nhìn** từng ảnh `tests/screens/trees-*.png`: cây ra dáng theo G1, G2; dây đèn đêm bám tán; không có cây đen, không có mảng vuông trong suốt sai. Chỉnh hình / màu cho tới khi đạt.
 - [x] **Bước 6:** `npm run test:trees:unit`, `npm run typecheck` → ĐẠT.
 - [x] **Bước 7 (cổng hiệu năng, một lần):** `npm run test:perf -- --strict`. ĐẠT thì ghi số vào mục "Kết quả" cuối file này. LỖI: giảm số cụm lá / tàu lá một lần, chạy lại; vẫn LỖI thì ghi vào "Cần người dùng quyết" kèm số đo và đi tiếp.
-- [ ] **Bước 8:** Commit `feat(trees): cây bóng mát và cây dừa thay quả cầu và nón ở khu phố, Thuận Phước`.
+- [x] **Bước 8:** Commit `feat(trees): cây bóng mát và cây dừa thay quả cầu và nón ở khu phố, Thuận Phước`.
 
 ---
 

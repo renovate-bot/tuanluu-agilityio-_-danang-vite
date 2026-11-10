@@ -77,7 +77,7 @@ try {
   if (!MAIN_TREE_POS) console.log('MỐC MAIN_TREE_POS =', JSON.stringify(got));
   else for (const n of POS_NAMES) check(got[n].count === MAIN_TREE_POS[n].count && Math.abs(got[n].sum - MAIN_TREE_POS[n].sum) < 0.01, `posKept: ${n} ${got[n].count} instance, tổng kiểm ${got[n].sum} (mốc ${MAIN_TREE_POS[n].count}, ${MAIN_TREE_POS[n].sum})`);
   const t = pos['trees-palm-trunk'].p, c = pos['trees-palm-crown'].p; let far = 0;
-  for (let i = 0; i < t.length; i += 2) if (Math.hypot(c[i] - t[i], c[i + 1] - t[i + 1]) > 0.35 * 0.8 + 0.002) far++;   // palm.bend × palm.trunkWidth
+  for (let i = 0; i < t.length; i += 2) if (Math.hypot(c[i] - t[i], c[i + 1] - t[i + 1]) > 0.35 * 0.8 + 0.002) far++;   // = CONFIG.trees.palm.bend (0,35) × CONFIG.trees.palm.trunkWidth (0,8); __app không lộ CONFIG nên giữ số, đổi config thì đổi ở đây
   check(c.length === t.length && far === 0, `posKept: ${c.length / 2} tán dừa nằm trên đỉnh thân cùng chỉ số (${far} lệch quá độ cong)`);
 
   /* ---------- 3. randKept ---------- */
@@ -99,7 +99,8 @@ try {
   for (const [tn, cn] of PAIRS) {
     const zc = await zeroIdx(cn), zt = new Set(await zeroIdx(tn));
     cleared[cn] = zc.length;
-    check(zc.every((i) => zt.has(i)), `clearedStayZero: ${cn} ${zc.length} tán đã dọn, thân cùng chỉ số đều scale 0 (${zc.filter((i) => !zt.has(i)).length} thân còn)`);
+    const zcs = new Set(zc), crownOnly = zc.filter((i) => !zt.has(i)).length, trunkOnly = [...zt].filter((i) => !zcs.has(i)).length;
+    check(crownOnly === 0 && trunkOnly === 0, `clearedStayZero: ${cn} ${zc.length} tán đã dọn, tập chỉ số scale 0 của thân trùng tập của tán (${crownOnly} thân còn, ${trunkOnly} tán còn)`);
   }
   if (!MAIN_CLEARED) console.log('MỐC MAIN_CLEARED =', JSON.stringify(cleared));
   else for (const [, cn] of PAIRS) check(cleared[cn] === MAIN_CLEARED[cn], `clearedStayZero: ${cn} số tán dọn ${cleared[cn]} (mốc ${MAIN_CLEARED[cn]})`);
@@ -130,10 +131,10 @@ try {
     const g = window.__app.hr.group, k = g.children, conc = g.getObjectByName('hr-concrete'), gg = conc.geometry;
     return { inst: k.filter((o) => o.isInstancedMesh).length, mesh: k.filter((o) => o.isMesh && !o.isInstancedMesh).length, tris: (gg.index ? gg.index.count : gg.attributes.position.count) / 3 };
   });
-  if (!MAIN_TUNNEL) console.log('MỐC MAIN_TUNNEL =', JSON.stringify(tn));
-  else {
+  {
+    const want = MAIN_TUNNEL.tris + 224 * 138;   // 224 dừa cửa hầm × 138 tam giác tĩnh mỗi cây
     check(tn.inst === MAIN_TUNNEL.inst && tn.mesh === MAIN_TUNNEL.mesh, `tunnelPalms: nhóm hầm ${tn.inst} InstancedMesh, ${tn.mesh} Mesh con (mốc ${MAIN_TUNNEL.inst}, ${MAIN_TUNNEL.mesh})`);
-    check(tn.tris > MAIN_TUNNEL.tris, `tunnelPalms: hr-concrete ${tn.tris} tam giác > mốc ${MAIN_TUNNEL.tris} (có dừa mới)`);
+    check(tn.tris === want, `tunnelPalms: hr-concrete ${tn.tris} tam giác = ${want} (mốc ${MAIN_TUNNEL.tris} + 224 × 138)`);
   }
 
   /* ---------- 10. ảnh ---------- */

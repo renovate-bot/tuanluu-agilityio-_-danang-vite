@@ -27,7 +27,7 @@ export interface Promenade {
   group: THREE.Group; lights: THREE.InstancedMesh; chunks: THREE.LOD[]; lightCount: number;
   update(): void; setEnabled(on: boolean): void; dispose(): void;
 }
-interface Tree { x: number; y: number; z: number; r: number; palm: boolean }
+interface Tree { x: number; y: number; z: number; r: number; palm: boolean; bx: number; bz: number }   // bx, bz: độ lệch ngọn so với gốc thân (chỉ dừa; thân cong bend·trunkWidth theo hướng xoay)
 function collectTrees(): Tree[] {
   scene.updateMatrixWorld(true);
   const out: Tree[] = [], m = new THREE.Matrix4(), p = new THREE.Vector3(), q = new THREE.Quaternion(), s = new THREE.Vector3();
@@ -39,7 +39,8 @@ function collectTrees(): Tree[] {
       if (s.x < 1e-6) continue;
       p.applyMatrix4(im.matrixWorld);
       if (p.x < -290 || p.x > -262 || p.z < -1600 || p.z > 1100) continue;              // Bạch Đằng, bờ Tây
-      out.push({ x: p.x, y: p.y, z: p.z, r: s.x, palm: im.material === MAT.palm });
+      const pal = im.material === MAT.palm, yaw = 2 * Math.atan2(q.y, q.w), bendX = CONFIG.trees.palm.bend * CONFIG.trees.palm.trunkWidth;
+      out.push({ x: p.x, y: p.y, z: p.z, r: s.x, palm: pal, bx: pal ? bendX * Math.cos(yaw) : 0, bz: pal ? -bendX * Math.sin(yaw) : 0 });
     }
   });
   return out;
@@ -106,7 +107,10 @@ export function buildPromenade(atlas: Atlas, adMat: THREE.Material, buildings: B
       const a = rnd() * 6.2832, e = t.palm ? 0 : (rnd() - 0.4) * 1.2, rr = t.palm ? 1.9 : t.r * 0.95;
       pts.push([t.x + Math.cos(a) * rr * Math.cos(e), t.y + Math.sin(e) * rr * (t.palm ? 0 : 0.85) - (t.palm ? 0.4 : 0), t.z + Math.sin(a) * rr * Math.cos(e), warm]);
     }
-    for (let i = 0; i < 3; i++) pts.push([t.x + 0.3, Y + 1 + i * (t.palm ? 3 : 1.4), t.z, warm]);
+    for (let i = 0; i < 3; i++) {
+      const dy = 1 + i * (t.palm ? 3 : 1.4), f = t.palm ? Math.pow(dy / Math.max(t.y - Y, 1), 2) : 0;   // dừa: thân cong theo y² (trPalmTrunkGeo), đèn bám thân theo độ cao
+      pts.push([t.x - t.bx * (1 - f) + 0.3, Y + dy, t.z - t.bz * (1 - f), warm]);
+    }
   }
   const L = R.love, lx1 = B, lx0 = B - L.length;
   for (let x = lx0 + 1.5; x < lx1 - 1; x += 3) for (const s of [-1, 1]) pts.push([x, Y + 1.5, L.z + s * (L.width / 2 - 0.1), [1, 0.1, 0.2]]);
