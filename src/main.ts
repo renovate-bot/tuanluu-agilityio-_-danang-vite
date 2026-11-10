@@ -31,6 +31,7 @@ import { SongHanBridge } from './bridges/song-han';
 import { HanTunnel } from './bridges/han-tunnel';
 import { SunWheel, swRide } from './bridges/sun-wheel';
 import { buildRiverfront, updateRiverfront } from './environment/riverfront';
+import { buildDragonPeople, updateDragonPeople, peopleTest } from './environment/pedestrians';
 import { buildWeather, updateWeather } from './environment/weather';
 import { updateCamera, hrDrive } from './views/camera';
 import { cam, keys } from './views/state';
@@ -83,6 +84,7 @@ scene.add(hanTunnel.group);
 const riverfront = buildRiverfront();    // sau HanTunnel: dọn nhà bị đè bằng scale 0, không đụng chuỗi rand()
 const sunWheel = new SunWheel();         // sau buildRiverfront, trước buildWeather: dọn nền bằng scale 0, không đụng chuỗi rand()
 scene.add(sunWheel.group);
+buildDragonPeople();                     // sau mọi lệnh dùng rand(), trước buildWeather: người Cầu Rồng dùng rng riêng
 const weather = buildWeather();          // sau buildRiverfront (sau mọi rand()): chụp giá trị gốc khí quyển/đường, dựng mưa (ẩn), điều biến sau applyNight
 weather.attachSwing(songHan.ctrl);       // bão: Cầu sông Hàn không quay (SwingController.canStart)
 const bridges = [thuanPhuoc, tranThiLy, songHan, hanTunnel, sunWheel];
@@ -114,7 +116,7 @@ const multiTest = {
 };
 if (query.has('test')) {
   perf.on = query.has('perf');
-  (window as unknown as { __app: unknown }).__app = { reflectState, renderer, scene, camera, controls, cam, shared, songHan, hr: hanTunnel, sunWheel, riverfront, weather, hrDrive, swRide, windFx, THREE: TEST_THREE, dayNight, tours: TOURS, tour, narration, audio, perf, quality, ui: { ...ui, ui: compactState, openSheet, closeSheets, reveal }, explore, keys, multi: multiTest, exFlight: { exCreate, exStep, exInputFromKeys, exBuildGlider, exPlaceGlider, exChase, CONFIG_explore: CONFIG.explore }, boats: boatsTest, traffic: trafficTest, trees: treesTest };
+  (window as unknown as { __app: unknown }).__app = { reflectState, renderer, scene, camera, controls, cam, shared, songHan, hr: hanTunnel, sunWheel, riverfront, weather, hrDrive, swRide, windFx, THREE: TEST_THREE, dayNight, tours: TOURS, tour, narration, audio, perf, quality, ui: { ...ui, ui: compactState, openSheet, closeSheets, reveal }, explore, keys, multi: multiTest, exFlight: { exCreate, exStep, exInputFromKeys, exBuildGlider, exPlaceGlider, exChase, CONFIG_explore: CONFIG.explore }, boats: boatsTest, traffic: trafficTest, trees: treesTest, people: peopleTest };
 }
 
 /* ============================ Vòng lặp ============================ */
@@ -136,7 +138,7 @@ function animate() {
   pt = perf.lap('weather', pt);
   updateShow(dt);
   updateEffects(dt, time); pt = perf.lap('effects', pt);
-  updateTraffic(dt); pt = perf.lap('traffic', pt);
+  updateTraffic(dt); updateDragonPeople(dt, time, camera); pt = perf.lap('traffic', pt);
   updateBoats(dt, time); pt = perf.lap('boats', pt);
   updateCamera(dt); explore.update(dt); pt = perf.lap('camera', pt);
   for (let k = 0; k < bridges.length; k++) { bridges[k].update(dt, time, camera); pt = perf.lap(bridgeKeys[k], pt); }

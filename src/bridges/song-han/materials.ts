@@ -30,7 +30,6 @@ export function shMaterials() {
     housing: new THREE.MeshStandardMaterial({ color: 0xe8b923, roughness: 0.5, metalness: 0.2 }),
     lamp: new THREE.MeshBasicMaterial({ color: 0xffffff }),           // đèn tín hiệu / hàng hải (màu theo instance)
     road: registerWet(new THREE.MeshStandardMaterial({ map: makeLaneTexture(1), roughness: 0.93 })),   // mặt ướt khi mưa (weather/wetness.ts)
-    person: new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.8 }),
     sail: new THREE.MeshStandardMaterial({ color: 0xf4efe3, roughness: 0.8, side: THREE.DoubleSide }),
     textures: [] as THREE.Texture[]
   };

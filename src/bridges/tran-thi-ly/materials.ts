@@ -19,7 +19,6 @@ export function ttlMaterials() {
     nvtSteel: new THREE.MeshStandardMaterial({ color: 0x7a8a92, roughness: 0.55, metalness: 0.6 }),
     road: registerWet(new THREE.MeshStandardMaterial({ map: makeLaneTexture(3), roughness: 0.93 })),   // mặt ướt khi mưa (weather/wetness.ts)
     beacon: new THREE.MeshBasicMaterial({ color: 0xff2a1a }),
-    person: new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.8 }),
     textures: [] as THREE.Texture[]
   };
   M.textures = [M.road.map];

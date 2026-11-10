@@ -4,7 +4,8 @@ import { rng, lerp } from '../../common/math';
 import { createTraffic, stepTraffic, type Traffic, type BridgeVehicle } from '../../common/traffic';
 import { createBoats } from '../../common/boats';
 import { btCreateFleet, btSetInfo, btSetBoat, btCommit } from '../../environment/boats/fleet';
-import { createPeople, type Walker } from '../../common/people';
+import { createPeople, ppApplyKinds, ppJoinKinds, ppFaceZ, type Walker } from '../../common/people';
+import { ppAssignKinds } from '../../common/people/kinds';
 import { SH, shRoadY } from './profile';
 import type { SwingController } from './SwingController';
 import type { SongHanBridge } from './SongHanBridge';
@@ -26,7 +27,11 @@ export function shBuildLife(bridge: SongHanBridge) {
   }
   for (let i = 0; i < 40; i++) list.push({ x: -276 + (rnd() - 0.5) * 18, z: lerp(-420, 420, rnd()), lo: -420, hi: 420, dir: rnd() < 0.5 ? -1 : 1,
     speed: 0.9 + rnd() * 0.5, axis: 'z', profile: () => CONFIG.landY + 0.05 });
-  bridge.people = createPeople(bridge, list, bridge.mats.person, 'sh-people', rnd);
+  // kiểu người (rng riêng): lề cầu 36 người, Bạch Đằng 40 người. Người đứng: lề cầu sát lan can z = ±(hw − 0,55), mặt quay ra ngoài cầu; Bạch Đằng sát lan can kè x = −264,5 (mép kè −262), mặt quay ra sông (+X)
+  ppApplyKinds(list, ppJoinKinds(ppAssignKinds(36, 2904), ppAssignKinds(40, 2905)), (w, _info, i) => {
+    if (i < 36) { const s = Math.sign(w.z); w.z = s * (SH.hw - 0.55); w.face = ppFaceZ(s); } else { w.x = -264.5; w.face = 0; }
+  });
+  bridge.people = createPeople(bridge, list, 'sh-people', rnd);
   // tàu buồm cao: cột buồm cao hơn tĩnh không, chỉ qua được khi cầu mở (luồng phía Tây)
   const ship = new THREE.Group(); ship.name = 'sh-tall-ship';
   // một đội tàu 1 chiếc kiểu E (thân, nhà boong, cột, buồm gộp) = 1 lệnh vẽ; group ship vẫn do SongHanBridge di chuyển

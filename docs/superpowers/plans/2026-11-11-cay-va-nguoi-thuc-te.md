@@ -222,7 +222,7 @@ test('cây dừa tĩnh cao h, đứng trên y = 0, hai mặt', () => { /* bbox.m
 - Cầu Rồng (`buildDragonPeople`, gọi trong `main.ts` ngay sau `new SunWheel()` / trước `buildWeather()`; `updateDragonPeople` gọi trong `animate` cạnh `updateTraffic`): `rng(CONFIG.people.dragon.seed)`; 70 người; `x ∈ [−325, 325]`, hai lề `z = ±(CONFIG.width / 2 − CONFIG.sidewalk / 2 − 0.15)`, `y = deckY(x) + 0.25`; người đứng `z = ±(CONFIG.width / 2 − 0.5)` mặt quay ra ngoài, và hai phần ba số người đứng có `x > 150` (đầu rồng ở phía Đông, +X). Nhóm tên `dragon-people` thêm vào `scene`, mọi lưới `layers.set(1)`, `frustumCulled = false`; ẩn cả nhóm khi camera xa tim cầu hơn `hideDistance`. Đóng cầu khi bão: `closable = true`.
 - Hai cầu `BridgeBase`: giữ `peopleOn`, nút bật/tắt và `details.visible` như cũ.
 
-- [ ] **Bước 1: Viết `tests/people-check.mjs` trước** (mẫu `tests/traffic-check.mjs`):
+- [x] **Bước 1: Viết `tests/people-check.mjs` trước** (mẫu `tests/traffic-check.mjs`):
   1. `systems`: đúng 3 hệ `ttl-people` 80, `sh-people` 76, `dragon-people` 70; mỗi hệ đúng 1 `InstancedMesh`, cùng một vật liệu.
   2. `noOldShape`: không còn lưới người nào ≤ 200 đỉnh (ống trụ cũ).
   3. `moving`: sau 60 khung, ≥ 60 % instance đã đổi vị trí; số instance đứng yên khớp số người `'stand'` (±1).
@@ -233,11 +233,11 @@ test('cây dừa tĩnh cao h, đứng trên y = 0, hai mặt', () => { /* bbox.m
   8. `randKept`: tốc độ 7 tàu khớp `MAIN_BOAT_SPEEDS` (người Cầu Rồng không được chạm `rand()`).
   9. Không lỗi console (kể cả lỗi biên dịch shader).
   10. Ảnh `tests/screens/people-*.png`: lề Cầu Rồng gần 10 m (ngày), lề Trần Thị Lý, lề Cầu sông Hàn, Bạch Đằng, và một ảnh đêm trên Cầu Rồng.
-- [ ] **Bước 2:** `npm run build && npm run test:people -- --no-shots` → LỖI ở `systems` / `noOldShape`.
-- [ ] **Bước 3:** Sửa `people.ts`, hai `life.ts`, viết `pedestrians.ts`, nối `main.ts`.
-- [ ] **Bước 4:** `npm run build && npm run test:people` → ĐẠT. **Mở và nhìn** từng ảnh: người đứng trên lề (không lơ lửng, không chìm), mặt hướng theo chiều đi, người đứng quay ra sông, có nón lá / ba lô / trẻ em, áo quần đủ màu.
-- [ ] **Bước 5:** `npm run test:people:unit`, `npm run test:trees -- --no-shots`, `npm run typecheck` → ĐẠT.
-- [ ] **Bước 6:** Commit `feat(people): người có tay chân đi, chạy, đứng lan can; thêm người Cầu Rồng; rời cầu khi bão`.
+- [x] **Bước 2:** `npm run build && npm run test:people -- --no-shots` → LỖI ở `systems` / `noOldShape`.
+- [x] **Bước 3:** Sửa `people.ts`, hai `life.ts`, viết `pedestrians.ts`, nối `main.ts`.
+- [x] **Bước 4:** `npm run build && npm run test:people` → ĐẠT. **Mở và nhìn** từng ảnh: người đứng trên lề (không lơ lửng, không chìm), mặt hướng theo chiều đi, người đứng quay ra sông, có nón lá / ba lô / trẻ em, áo quần đủ màu.
+- [x] **Bước 5:** `npm run test:people:unit`, `npm run test:trees -- --no-shots`, `npm run typecheck` → ĐẠT.
+- [x] **Bước 6:** Commit `feat(people): người có tay chân đi, chạy, đứng lan can; thêm người Cầu Rồng; rời cầu khi bão`.
 
 ---
 
