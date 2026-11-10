@@ -719,6 +719,46 @@ const treesBase = {
   }
 };
 
+/* ------------------------- Người đi bộ ------------------------- */
+/* docs/superpowers/specs/2026-11-11-cay-va-nguoi-thuc-te-design.md §5 — dáng đi / dáng chạy đã duyệt trong bản dựng thử (G5–G8).
+   Hình dáng: src/common/people/shapes.ts (mặt hướng +X, chân chạm y = 0, cao ≈ 1,65 m ở tỉ lệ 1); dáng: gait.ts (bản CPU của shader trong material.ts); kiểu người: kinds.ts. */
+const peopleBase = {
+  maxVerts: 900,                                    // đỉnh — trần số đỉnh hình học gộp một người (spec §6, quyết định của agent), unit test giữ
+  legLength: 0.86,                                  // m — chiều dài chân (hông tới đất) ở tỉ lệ 1, dùng cho nhịp bước không trượt (ước lượng theo bản thử)
+  walk: { amp: 0.34, speed: [1.05, 1.35] as [number, number] },   // đi bộ: biên độ hông rad, tốc độ [min, max] m/s (ước lượng theo bản thử)
+  run: {
+    amp: 0.6,                                       // rad — biên độ hông khi chạy (ước lượng theo bản thử)
+    speed: [2.6, 3.0] as [number, number],          // m/s — tốc độ chạy bộ [min, max] (ước lượng)
+    cadence: 8.8,                                   // rad/s, ≈ 1,4 chu kỳ/giây (170 bước/phút) ở tỉ lệ 1; chia √tỉ lệ (ước lượng theo bản thử)
+    lean: 0.17                                      // rad — thân đổ về trước quanh hông khi chạy (ước lượng theo bản thử)
+  },
+  bob: { walk: 0.022, run: 0.075 },                 // m — nhún: đi thấp nhất khi hai chân dang rộng (đỉnh–đỉnh 2 × 0,022), chạy bật lên giữa hai bước (ước lượng theo bản thử)
+  sway: 0.018,                                      // m — lắc vai sang hai bên theo sin φ (ước lượng theo bản thử)
+  photo: { shoulder: 1.0, elbow: 1.05 },            // rad — tư thế giơ tay phải chụp ảnh: góc vai, góc khuỷu (ước lượng theo bản thử)
+  mix: {
+    run: 0.12,                                      // phần người chạy bộ trên tổng số (ước lượng; bản thử 4/26)
+    stand: 0.2,                                     // phần người đứng lan can trên tổng số (ước lượng; bản thử 6/26)
+    companion: 0.18,                                // phần người đi cùng (đi đôi / trẻ em) trên tổng số (ước lượng; bản thử 4/26)
+    child: 0.25,                                    // phần người đi cùng là trẻ em (ước lượng)
+    hat: 0.25,                                      // phần người đội nón lá trên tổng số (ước lượng)
+    pack: 0.25,                                     // phần người đeo ba lô trên tổng số (ước lượng)
+    photo: 0.33                                     // phần người đứng giơ tay chụp ảnh (ước lượng; bản thử 2/6)
+  },
+  adultScale: [0.94, 1.08] as [number, number],     // tỉ lệ cỡ người lớn [min, max], không đơn vị (ước lượng)
+  childScale: 0.6,                                  // tỉ lệ cỡ trẻ em, không đơn vị (ước lượng)
+  companionGap: 0.6,                                // m — lệch ngang của người đi cùng so với người đi trước (ước lượng)
+  shirts: [0xd94b3d, 0x2f6fb5, 0xf2f2ee, 0x3a3a3a, 0xe0b23a, 0x4f9a5a, 0xc76fa8, 0xf08a4b, 0x7fc4d9, 0xffffff],   // màu áo: 7 màu cũ của people.ts đứng đầu, thêm cam, xanh nhạt, trắng (ước lượng)
+  pants: [0x26324a, 0x1d1d1f, 0x6b6f76, 0xc9b999, 0x3d5a80, 0x4a3b32],   // màu quần trầm: xanh than, đen, xám, kaki, xanh jean, nâu (ước lượng)
+  palette: { skin: 0xe2b48c, hair: 0x1c1612, shoe: 0x2a2a2e, hat: 0xe9dcae, pack: 0x7a2f2a },   // màu cố định theo đỉnh: da, tóc, giày, nón lá, ba lô (ước lượng theo bản thử)
+  roughness: 0.85,                                  // độ nhám vật liệu người, hệ số 0..1 (ước lượng theo bản thử)
+  dragon: {
+    n: 70,                                          // số người trên hai lề Cầu Rồng (ước lượng, spec §7)
+    seed: 4107,                                     // hạt rng riêng cho người Cầu Rồng (không gọi rand())
+    hideDistance: 1500,                             // m — camera xa hơn thì ẩn hệ người Cầu Rồng (ước lượng)
+    headBias: 0.6                                   // phần người đứng lan can đặt ở nửa cầu phía đầu rồng, phần còn lại rải đều (ước lượng, spec §7)
+  }
+};
+
 export const CONFIG = {
   ...base,
   perf: perfBase,
@@ -736,7 +776,8 @@ export const CONFIG = {
   tourAll: tourAllBase,
   explore: { ...exploreBase, multi: multiParams },
   vehicles: vehiclesBase,
-  trees: treesBase
+  trees: treesBase,
+  people: peopleBase
 };
 export type SongHanConfig = typeof CONFIG.songHan;
 export type HanTunnelConfig = typeof CONFIG.hanTunnel;
