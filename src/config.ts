@@ -695,6 +695,30 @@ const vehiclesBase = {
   maxVerts: 2000                                    // đỉnh — trần tổng số đỉnh hình học gộp 3 loại xe
 };
 
+/* ------------------------- Cây ------------------------- */
+/* docs/superpowers/specs/2026-11-11-cay-va-nguoi-thuc-te-design.md — cây bóng mát (G1) và cây dừa (G2).
+   Hình dáng: src/common/trees/shapes.ts (không gian chuẩn hóa, instance nhân cỡ thật); texture canvas: src/common/trees/textures.ts. */
+const treesBase = {
+  maxTris: { shadeCrown: 700, shadeTrunk: 150, palmCrown: 450, palmTrunk: 120, palmStatic: 260 },   // tam giác — trần mỗi hình (spec §6, quyết định của agent), unit test giữ
+  shade: {
+    blobs: { outer: 5, mid: 2, top: 1 },   // số cụm lá: vành ngoài thấp, vành giữa, đỉnh (tổng 8; mỗi cụm khối 20 mặt chia 1 lần = 80 tam giác) (ước lượng theo bản thử)
+    branches: 6,                           // số cành lớn tỏa từ chỗ tách thân, gồm 1 cành giữa gần thẳng đứng (ước lượng)
+    fork: 0.5,                             // cao độ chỗ tách cành, phần của chiều cao thân tới đầu cành cao nhất (ước lượng)
+    reach: 0.7,                            // bán kính ngang đầu cành, phần của bán kính tán (ước lượng)
+    sides: 5,                              // số cạnh mặt cắt thân và cành (ước lượng; ít cạnh vì cành bị tán che phần lớn)
+    seed: 4801                             // hạt sinh ngẫu nhiên riêng cho nhiễu cụm lá và hướng cành (rng riêng, không đụng rand())
+  },
+  palm: {
+    fronds: 14,                            // số tàu lá trên một ngọn dừa (ước lượng; dừa thật khoảng 25–30 tàu, giản lược theo trần tam giác)
+    frondSegs: 6,                          // số đoạn dọc mỗi tàu lá (ước lượng)
+    bend: 0.35,                            // m lệch đỉnh thân theo +X trong không gian chuẩn hóa (thân cao 1), trước khi nhân trunkWidth — thân cong nhẹ (ước lượng)
+    trunkWidth: 0.8,                       // hệ số ngang thân dừa: thân chuẩn hóa (bán kính đáy 0,35 / đỉnh 0,2, lệch bend) nhân hệ số này ra mét ⇒ đáy 0,28 m, đỉnh 0,16 m (ước lượng)
+    crownScale: 0.38,                      // tỉ lệ đều của tán dừa trên mỗi mét cao thân: tàu dài 0,75–1,15 × 0,38 × h ⇒ ≈ 2,9–4,4 m với h = 10 m (ước lượng)
+    staticFronds: 8,                       // số tàu lá dạng dải hai mặt của cây dừa gộp vào lưới bê tông cửa hầm (ước lượng)
+    seed: 9127                             // hạt sinh ngẫu nhiên riêng cho hướng tàu lá và quả (rng riêng)
+  }
+};
+
 export const CONFIG = {
   ...base,
   perf: perfBase,
@@ -711,7 +735,8 @@ export const CONFIG = {
   weather: weatherBase,
   tourAll: tourAllBase,
   explore: { ...exploreBase, multi: multiParams },
-  vehicles: vehiclesBase
+  vehicles: vehiclesBase,
+  trees: treesBase
 };
 export type SongHanConfig = typeof CONFIG.songHan;
 export type HanTunnelConfig = typeof CONFIG.hanTunnel;
