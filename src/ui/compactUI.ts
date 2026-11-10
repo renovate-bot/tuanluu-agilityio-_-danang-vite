@@ -9,11 +9,15 @@ export const ui: { compact: boolean; sheet: Sheet } = { compact: false, sheet: '
 
 /* Mỗi lúc chỉ một tờ mở; 'none' = đóng hết. aria-expanded của hai nút mở tờ theo trạng thái */
 export function openSheet(s: Sheet) {
+  // Đóng một tờ khi focus còn bên trong: đưa focus về nút mở tờ đó, không để kẹt trên ô chọn đã ẩn (mũi tên sẽ đổi cài đặt thay vì lái dù)
+  const SHEET: Record<Sheet, [string, string] | null> = { none: null, settings: ['.brand', 'btnSettings'], views: ['.views', 'btnViewsSheet'] };   // [khung tờ, nút mở]
+  const prev = SHEET[ui.sheet], back = ui.sheet !== s && prev && document.activeElement?.closest(prev[0]) ? prev[1] : '';
   ui.sheet = s;
   document.body.classList.toggle('sheet-settings', s === 'settings');
   document.body.classList.toggle('sheet-views', s === 'views');
   document.getElementById('btnSettings')?.setAttribute('aria-expanded', String(s === 'settings'));
   document.getElementById('btnViewsSheet')?.setAttribute('aria-expanded', String(s === 'views'));
+  if (back) document.getElementById(back)?.focus({ preventScroll: true });
 }
 
 export function closeSheets() { openSheet('none'); }

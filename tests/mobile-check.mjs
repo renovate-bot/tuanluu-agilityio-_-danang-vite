@@ -269,6 +269,13 @@ try {
   // Mục 5 — thu gọn trên máy tính (D-025): hành vi dùng chung
   const E = await openApp(browser, srv.url, { width: 1440, height: 780 });
   E.page.setDefaultTimeout(180000);
+  // bảng đóng khi focus còn bên trong: focus về nút mở bảng (không kẹt trên ô chọn đã ẩn)
+  await E.page.evaluate(() => { window.__app.ui.openSheet('settings'); document.getElementById('qualitySel').focus(); }); await frames(E.page, 1);
+  await E.page.keyboard.press('Escape'); await frames(E.page, 1);
+  check('máy tính: Esc đóng Cài đặt, focus về ⚙', await E.page.evaluate(() => document.activeElement?.id === 'btnSettings'));
+  await E.page.evaluate(() => { window.__app.ui.openSheet('views'); document.querySelector('[data-bridge="tp"]').focus(); }); await frames(E.page, 1);
+  await E.page.mouse.click(720, 400); await frames(E.page, 1);
+  check('máy tính: bấm cảnh đóng Góc nhìn, focus về ☰', await E.page.evaluate(() => document.activeElement?.id === 'btnViewsSheet'));
   await E.page.evaluate(() => window.__app.ui.reveal(document.querySelector('[data-bridge="hr"]')));
   check('máy tính: reveal mở tờ Góc nhìn cho chip cầu', await E.page.evaluate(() => window.__app.ui.ui.sheet === 'views'));
   await E.page.evaluate(() => window.__app.ui.closeSheets());
