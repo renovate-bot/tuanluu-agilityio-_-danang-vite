@@ -1,7 +1,8 @@
 import { CONFIG } from '../config';
 import { onChange } from '../i18n';
 
-/* ===== Chế độ gọn (điện thoại): body.compact + hai tờ Cài đặt / Góc nhìn (body.sheet-*) ===== */
+/* ===== Chế độ gọn (điện thoại): body.compact + hai tờ Cài đặt / Góc nhìn (body.sheet-*) =====
+   Máy tính dùng chung trạng thái tờ (bảng thu gọn thành nút ⚙ / ☰, D-025). */
 export type Sheet = 'none' | 'settings' | 'views';
 
 export const ui: { compact: boolean; sheet: Sheet } = { compact: false, sheet: 'none' };
@@ -17,11 +18,12 @@ export function openSheet(s: Sheet) {
 
 export function closeSheets() { openSheet('none'); }
 
-/* Đưa phần tử vào tầm nhìn: mở đúng tờ chứa nó (test và phím tắt dùng); phần tử ngoài hai tờ (chip .seg, nút Tour...) thì đóng hết */
+/* Đưa phần tử vào tầm nhìn: mở đúng tờ chứa nó (test và phím tắt dùng); phần tử ngoài hai tờ thì đóng hết.
+   Điện thoại: chip .seg, nút Tour 4 cầu nằm trên thanh dưới (ngoài tờ); máy tính: cả .views là bảng thu gọn */
 export function reveal(el: Element | null) {
-  if (!ui.compact || !el) return;
+  if (!el) return;
   if (el.closest('.brand')) openSheet('settings');
-  else if (el.closest('.view-list')) openSheet('views');
+  else if (el.closest('.view-list') || (!ui.compact && el.closest('.views'))) openSheet('views');
   else closeSheets();
 }
 
@@ -31,10 +33,17 @@ function wireSheets() {
   document.getElementById('btnSettings')?.addEventListener('click', toggle('settings'));
   document.getElementById('btnViewsSheet')?.addEventListener('click', toggle('views'));
   document.querySelectorAll('.sheet-close').forEach((b) => b.addEventListener('click', () => closeSheets()));
-  document.getElementById('scene')?.addEventListener('pointerdown', () => { if (ui.sheet !== 'none') closeSheets(); });   // thêm cạnh listener exitTour sẵn có (setupUI.ts)
+  // Bấm khung 3D khi có tờ mở: chỉ đóng tờ. Pha capture trên window chạy trước listener của canvas (exitTour, OrbitControls) nên chặn được cú bấm này
+  window.addEventListener('pointerdown', (e) => {
+    if (ui.sheet === 'none' || (e.target as Element | null)?.id !== 'scene') return;
+    closeSheets(); e.stopPropagation(); e.preventDefault();
+  }, true);
   document.querySelectorAll('[data-view]').forEach((b) => b.addEventListener('click', () => { if (ui.sheet !== 'none') closeSheets(); }));
-  // Esc khi có tờ mở: đóng tờ; KHÔNG chặn các listener Esc sẵn có (thoát Tour, xuống cabin vẫn chạy như trước)
-  window.addEventListener('keydown', (e) => { if (e.key === 'Escape' && ui.sheet !== 'none') closeSheets(); });
+  // Esc khi có tờ mở: chỉ đóng tờ, chặn các listener Esc khác (thoát Tour, xuống cabin, thoát bay); Esc lần sau mới tới chúng
+  window.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape' || ui.sheet === 'none') return;
+    closeSheets(); e.stopImmediatePropagation(); e.preventDefault();
+  }, true);
   const bar = document.querySelector<HTMLElement>('.views');
   if (!bar || typeof ResizeObserver === 'undefined') return;
   // chỉ đo lúc thanh đóng: tờ Góc nhìn làm .views cao lên, tờ Cài đặt ẩn .views
@@ -78,7 +87,7 @@ export function setupCompactUI() {
     const was = ui.compact;
     ui.compact = mq.matches;
     document.body.classList.toggle('compact', ui.compact);
-    if (was && !ui.compact) closeSheets();   // ra khỏi chế độ gọn: không để tờ mở dở
+    if (was !== ui.compact) closeSheets();   // qua ngưỡng gọn ↔ máy tính (cả hai chiều): không để tờ mở dở
     segFadeUpdate();
   };
   mq.addEventListener('change', apply);

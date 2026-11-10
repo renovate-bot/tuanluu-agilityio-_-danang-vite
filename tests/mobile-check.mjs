@@ -34,6 +34,13 @@ const topAtCenter = (page, sel) => page.evaluate((sel) => {
   const b = el.getBoundingClientRect(), t = document.elementFromPoint(b.left + b.width / 2, b.top + b.height / 2);
   return !!t && (t === el || el.contains(t));
 }, sel);
+/* Mục 5: Tour đang chạy + tờ Cài đặt mở; act(page) là cú bấm cảnh / Esc. Trả [tờ đóng?, Tour còn chạy?] sau act */
+const startTour = async (page) => {
+  await page.evaluate(() => document.querySelector('[data-view="tour"]').click());
+  await page.waitForFunction(() => document.body.classList.contains('touring'));
+  await page.evaluate(() => window.__app.ui.openSheet('settings')); await frames(page, 1);
+};
+const sheetTour = (page) => page.evaluate(() => [window.__app.ui.ui.sheet === 'none' && !/sheet-/.test(document.body.className), document.body.classList.contains('touring')]);
 const srv = await serveDir(fileURLToPath(new URL('../dist/', import.meta.url)));
 const browser = await launch();
 const allErrors = [];
@@ -200,6 +207,11 @@ try {
     }
   }
   await pick(P.page, '#langSelect', 'vi');
+  // Mục 5 (điện thoại): chạm cảnh khi có tờ mở chỉ đóng tờ, Tour vẫn chạy
+  await startTour(P.page);
+  await P.page.touchscreen.tap(195, 250); await frames(P.page, 1);
+  check('điện thoại: Tour + tờ mở, chạm cảnh chỉ đóng tờ', JSON.stringify(await sheetTour(P.page)) === '[true,true]');
+  await P.page.keyboard.press('Escape');
   allErrors.push(...P.errors); await P.page.close();
 
   // cửa sổ máy tính hẹp (chuột): gọn nhưng giữ nút Đi bộ + chữ chuột
@@ -229,6 +241,42 @@ try {
   check('máy tính: vẫn blur', await D.page.evaluate(() => /blur/.test(getComputedStyle(document.querySelector('.brand')).backdropFilter)));
   check('máy tính: không có nút sheet', await hiddenAll(D.page, ['#btnSettings', '#btnViewsSheet', '.sheet-close']));
   allErrors.push(...D.errors); await D.page.close();
+
+  // Mục 5 — thu gọn trên máy tính (D-025): hành vi dùng chung
+  const E = await openApp(browser, srv.url, { width: 1440, height: 780 });
+  E.page.setDefaultTimeout(180000);
+  await E.page.evaluate(() => window.__app.ui.reveal(document.querySelector('[data-bridge="hr"]')));
+  check('máy tính: reveal mở tờ Góc nhìn cho chip cầu', await E.page.evaluate(() => window.__app.ui.ui.sheet === 'views'));
+  await E.page.evaluate(() => window.__app.ui.closeSheets());
+  await startTour(E.page);
+  await E.page.mouse.click(720, 400); await frames(E.page, 1);
+  check('máy tính: Tour + tờ mở, bấm cảnh chỉ đóng tờ', JSON.stringify(await sheetTour(E.page)) === '[true,true]');
+  await E.page.mouse.click(720, 400); await frames(E.page, 1);
+  check('máy tính: không có tờ, bấm cảnh thoát Tour như cũ', (await sheetTour(E.page))[1] === false);
+  await startTour(E.page);
+  await E.page.keyboard.press('Escape'); await frames(E.page, 1);
+  check('máy tính: Tour + tờ mở, Esc chỉ đóng tờ', JSON.stringify(await sheetTour(E.page)) === '[true,true]');
+  await E.page.keyboard.press('Escape'); await frames(E.page, 1);
+  check('máy tính: Esc lần hai thoát Tour', (await sheetTour(E.page))[1] === false);
+  await E.page.evaluate(() => document.querySelector('[data-view="swRide"]').click()); await waitFlight(E.page);
+  await E.page.evaluate(() => window.__app.ui.openSheet('settings')); await frames(E.page, 1);
+  await E.page.keyboard.press('Escape'); await frames(E.page, 1);
+  check('máy tính: cabin + tờ mở, Esc chỉ đóng tờ', await E.page.evaluate(() => window.__app.ui.ui.sheet === 'none' && window.__app.cam.mode === 'swRide'));
+  await E.page.keyboard.press('Escape'); await frames(E.page, 1);
+  check('máy tính: Esc lần hai xuống cabin', await E.page.evaluate(() => window.__app.cam.mode !== 'swRide'));
+  await E.page.evaluate(() => window.__app.ui.openSheet('settings'));
+  await E.page.setViewportSize({ width: 700, height: 700 }); await frames(E.page, 2);
+  const s1 = await E.page.evaluate(() => window.__app.ui.ui.sheet === 'none' && !/sheet-/.test(document.body.className));
+  await E.page.evaluate(() => window.__app.ui.openSheet('views'));
+  await E.page.setViewportSize({ width: 1440, height: 780 }); await frames(E.page, 2);
+  check('qua ngưỡng: tờ đóng cả hai chiều', s1 && await E.page.evaluate(() => window.__app.ui.ui.sheet === 'none' && !/sheet-/.test(document.body.className)));
+  allErrors.push(...E.errors); await E.page.close();
+  const G = await openApp(browser, srv.url + '?explore=glider', { width: 1440, height: 780 });
+  G.page.setDefaultTimeout(180000);
+  await G.page.evaluate(() => window.__app.ui.openSheet('settings')); await frames(G.page, 1);
+  await G.page.keyboard.press('Escape'); await frames(G.page, 1);
+  check('dù lượn: tờ mở, Esc chỉ đóng tờ', await G.page.evaluate(() => window.__app.ui.ui.sheet === 'none' && window.__app.explore.active()));
+  allErrors.push(...G.errors); await G.page.close();
 
   check('console sạch', allErrors.length === 0);
   if (allErrors.length) console.log(allErrors.join('\n'));
