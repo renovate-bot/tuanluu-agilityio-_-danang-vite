@@ -302,6 +302,10 @@ try {
   check('dù lượn: tờ mở, Esc chỉ đóng tờ', await G.page.evaluate(() => window.__app.ui.ui.sheet === 'none' && window.__app.explore.active()));
   allErrors.push(...G.errors); await G.page.close();
 
+  // Mục 5 — swRideHint chỉ nhắc Esc (nút cabin nằm trong bảng thu gọn, D-025)
+  const RIDE = { vi: 'Kéo chuột để nhìn quanh · Esc để xuống cabin', en: 'Drag to look around · Esc to step off', ko: '드래그하여 둘러보기 · Esc로 내리기', ja: 'ドラッグで見回す · Esc で降ります', zh: '拖动鼠标环顾四周 · 按 Esc 下车', th: 'ลากเมาส์เพื่อมองรอบตัว · กด Esc เพื่อลง', ar: 'اسحب للنظر حولك · اضغط Esc للنزول', hi: 'चारों ओर देखने के लिए खींचें · उतरने के लिए Esc दबाएँ', ru: 'Перетаскивайте мышь, чтобы осмотреться · Esc — выйти из кабины' };
+  check('swRideHint không nhắc nút', Object.entries(RIDE).every(([l, v]) => JSON.parse(fs.readFileSync(new URL(`../src/i18n/locales/${l}.json`, import.meta.url), 'utf8')).swRideHint === v));
+
   check('console sạch', allErrors.length === 0);
   if (allErrors.length) console.log(allErrors.join('\n'));
 } catch (e) {

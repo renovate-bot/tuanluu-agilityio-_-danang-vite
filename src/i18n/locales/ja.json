@@ -399,7 +399,7 @@
   "swShowHeart": "ハートビート",
   "swShowOff": "オフ",
   "vSwRide": "ゴンドラに乗る",
-  "swRideHint": "ドラッグで見回す · Esc またはもう一度ボタンを押すと降ります",
+  "swRideHint": "ドラッグで見回す · Esc で降ります",
   "swStormNote": "悪天候のため観覧車は停止しました。ゴンドラは風で揺れ続けています。",
   "swStops": [
     [

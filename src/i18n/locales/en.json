@@ -399,7 +399,7 @@
   "swShowHeart": "Heartbeat",
   "swShowOff": "Off",
   "vSwRide": "Ride in a cabin",
-  "swRideHint": "Drag to look around · Esc or press the button again to step off",
+  "swRideHint": "Drag to look around · Esc to step off",
   "swStormNote": "The wheel has stopped because of the bad weather. Your cabin still sways in the wind.",
   "swStops": [
     [
