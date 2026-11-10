@@ -4,6 +4,29 @@ Chromium + SwiftShader, khung 480×270. Draw call = renderer.info.render.calls (
 
 Khung test mặc định 480×270 khớp `(max-height: 500px)` nên cả bộ test chạy ở chế độ gọn (không blur): draw call không đổi; số hitch của `test:perf` không so sát được với mốc D-018 (đo khi còn blur).
 
+## Dù lượn nhiều người (2026-11-10, nhánh `feature/du-luon-nhieu-nguoi`, D-024)
+
+Chromium + SwiftShader, máy chủ `wrangler dev` cục bộ, bot là kết nối WebSocket giả. Draw call đo cùng tư thế camera, trung vị khung thật (`tests/multi-check.mjs`). Dù người khác ở layer 1, không phản chiếu nước (Ruling R6), mỗi dù 1 draw call.
+
+| Tình huống | 0 người khác | Có người khác | Chênh | Ngưỡng spec |
+|---|---|---|---|---|
+| Đang bay, 4 người khác trong khung nhìn | 146 | 150 | +4 | ≤ +4 |
+| Đang xem (phòng đủ 5 người bay) | 145 | 150 | +5 | ≤ +5 |
+| Bay một mình (`?explore=glider`) | `exTakeoff` 247/266, `exDragon` 292/314, `exTp` 137/159, `exHigh` 259/287 (ngày/đêm) | — | +0 so với `main` | +0 |
+
+| Lệnh (tại `9d7b1fb`, chạy một lần) | Kết quả |
+|---|---|
+| `npm run build` | đạt |
+| `test:multi:unit` | 47/47 đạt |
+| `test:multi:worker` | đạt (Origin lạ / thiếu Origin → 403) |
+| `test:multi` | đạt, 68 kiểm tra; bot bay thẳng 15 m/s: bước nội suy mỗi 50 ms 0,73–0,76 m (chuẩn 0,75) |
+| `test:explore`, `test:mobile`, `test:tour`, `test:tunnel`, `test:riverfront`, `test:voice`, `test:weather`, `test:sunwheel` | đạt |
+| `test:citynight` | đạt (mốc `--baseline` chụp trên `main` 8bac32d) |
+| `test:drawcalls` | 73/74 khớp bảng `now`, chênh 0; `swTour` đêm 208 vs 207 = dao động đã biết (D-018) |
+| `test:perf -- --strict` | đạt |
+
+Chưa đo: FPS GPU thật, hai máy thật qua Worker đã triển khai.
+
 ## Tự khám phá bằng dù lượn (2026-11-09, nhánh `feature/explore-du-luon`, D-020)
 
 Bảng số đo là lần cuối (có cánh cờ, người treo, camera cao 9 m); bảng kết quả lệnh dưới đó đo tại `3985ce2`, sau đó chỉ chạy lại `test:explore` và `test:mobile` (đều đạt). Chromium + SwiftShader. Draw call là trung vị 5 khung thật của app (gồm bloom khi đêm). Phần dù = chênh khi bật/tắt `ex-glider`.

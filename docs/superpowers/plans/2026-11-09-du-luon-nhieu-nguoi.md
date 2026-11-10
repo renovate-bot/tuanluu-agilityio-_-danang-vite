@@ -235,3 +235,7 @@ Khi xem: `cam.mode = 'glider'`, không dựng dù của mình, `exChase` trên `
 - [ ] **Step 3:** `npm run build`, rồi chạy một lần: `test:multi:unit`, `test:multi:worker`, `test:multi`, `test:explore`, `test:mobile`, `test:drawcalls`, `test:tour`, `test:tunnel`, `test:riverfront`, `test:voice`, `test:weather`, `test:sunwheel`, `test:perf -- --strict`. Mong đợi: đạt; `test:drawcalls` góc cũ chênh 0 (trừ dao động `swTour` đã biết, D-018).
 - [ ] **Step 4:** Ghi draw call 0/4/5 người vào `KET-QUA.md`, cập nhật memory bank (FPS GPU thật, bản dịch chưa duyệt, hạn chế: script/nhiều tab chiếm slot).
 - [ ] **Step 5:** Triển khai Worker bản cuối; **người dùng** thử 2 máy thật trên `https://danangbridges.netlify.app`. Commit `docs(multi): kết quả và memory bank`.
+
+## Kết quả thực hiện (2026-11-10)
+
+Task 1–9 làm theo kiểu Subagent-driven, mỗi task có review riêng; review cuối toàn nhánh (With fixes) dẫn tới đợt sửa `d5b82d9` … `9d7b1fb`: máy chủ chỉ phát vị trí mới kèm giờ người gửi (hết "đứng rồi vọt"), `seen` qua hibernation, sảnh có Quay lại/Esc, lọc tên chặt hơn (tên vô hình, dấu chồng) và bỏ từ cấm chặn nhầm (Đàm, Các, Buổi, Lớn), kẹp yaw/bank, `?multi=` chỉ khi `?test`, thông báo tự ẩn. Lệch so với plan: Task 8 thêm mục mới sau mục 4 (mục 4 đã thuộc chế độ xem); kiểm tab ẩn giữ 23 s thay vì 5 s (hạn chờ máy chủ 10 s + quét 10 s); dù người khác ở layer 1, không phản chiếu nước (để giữ +4 draw call). Số đo ở `tests/KET-QUA.md`. Còn: deploy Worker bản cuối, thử 2 máy thật, FPS GPU thật, duyệt bản dịch.
