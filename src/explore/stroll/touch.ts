@@ -1,28 +1,26 @@
 /* ============================ Đi dạo: điều khiển cảm ứng ============================
-   Ba con trỏ độc lập trên #stHud: cần gạt #stPad (ngón trái), vuốt #stLook (nửa phải, dưới các nút), nút #stJump; #stPhoto là nút bấm thường (cả máy tính).
-   - Mỗi vùng chỉ theo con trỏ đã chạm vào nó (pointerId riêng + setPointerCapture), nên giữ cần gạt, vuốt camera và chạm Nhảy cùng lúc không lẫn nhau.
-   - Nhảy theo cạnh: một lần chạm gọi jump() một lần (stStep nhảy lại ngay khi chạm đất nếu jump còn giữ).
+   Ba con trỏ độc lập trên #stHud: cần gạt #stPad (ngón trái), vuốt #stLook (nửa phải, dưới các nút); #stPhoto là nút bấm thường (cả máy tính).
+   - Mỗi vùng chỉ theo con trỏ đã chạm vào nó (pointerId riêng + setPointerCapture), nên giữ cần gạt và vuốt camera cùng lúc không lẫn nhau.
    - Thả tay, pointercancel, lostpointercapture, blur, ẩn tab, xoay màn hình, đổi cỡ khung nhìn đáng kể: reset() — cần gạt về giữa, nhân vật dừng (Review Focus 2).
    - read(out) chỉ ghi đè mx / mz / run khi cần gạt đang được giữ (cảm ứng ưu tiên phím) và, khi đang giữ, báo activity() mỗi activityMs (giữ yên ngón tay không phát sự kiện); mỗi khung không cấp phát (D-018). */
 import { CONFIG } from '../../config';
 import { stStick } from './stick';
 import type { StInput } from './motion';
 
-export interface StTouchHandlers { look(dxPx: number, dyPx: number): void; jump(): void; photo(): void; activity(): void }
+export interface StTouchHandlers { look(dxPx: number, dyPx: number): void; photo(): void; activity(): void }
 
 export function stTouchBind(root: HTMLElement, h: StTouchHandlers): { read(out: StInput): void; reset(): void } {
   const pad = root.querySelector<HTMLElement>('#stPad'), knob = root.querySelector<HTMLElement>('#stKnob');
-  const look = root.querySelector<HTMLElement>('#stLook'), jump = root.querySelector<HTMLElement>('#stJump'), photo = root.querySelector<HTMLElement>('#stPhoto');
+  const look = root.querySelector<HTMLElement>('#stLook'), photo = root.querySelector<HTMLElement>('#stPhoto');
   const size = CONFIG.stroll.stick.size;
   root.style.setProperty('--st-pad', size + 'px');   // đường kính cần gạt lấy từ CONFIG
   let padId = -1, cx = 0, cy = 0, dx = 0, dy = 0, r = size / 2;   // cần gạt: con trỏ, tâm (px màn hình, chốt lúc chạm), độ lệch núm
   let padW = 0, padH = 1, lastAct = 0;                             // cỡ khung nhìn lúc chạm cần gạt, lần báo "còn đó" gần nhất (ms)
   let lookId = -1, lx = 0, ly = 0;                               // vuốt camera: con trỏ, vị trí trước
-  let jumpId = -1;
   const own = (el: HTMLElement, e: PointerEvent) => { try { el.setPointerCapture(e.pointerId); } catch { /* con trỏ không còn hoạt động (sự kiện giả) */ } };
 
   const knobTo = (x: number, y: number) => { if (knob) knob.style.transform = x === 0 && y === 0 ? '' : `translate(${x}px,${y}px)`; };
-  const reset = () => { padId = -1; lookId = -1; jumpId = -1; dx = 0; dy = 0; knobTo(0, 0); };
+  const reset = () => { padId = -1; lookId = -1; dx = 0; dy = 0; knobTo(0, 0); };
 
   if (pad) {
     pad.addEventListener('pointerdown', (e) => {
@@ -61,17 +59,6 @@ export function stTouchBind(root: HTMLElement, h: StTouchHandlers): { read(out: 
     look.addEventListener('pointerup', lookEnd);
     look.addEventListener('pointercancel', lookEnd);
     look.addEventListener('lostpointercapture', lookEnd);
-  }
-
-  if (jump) {
-    jump.addEventListener('pointerdown', (e) => {
-      e.preventDefault();
-      if (jumpId < 0) { jumpId = e.pointerId; own(jump, e); h.jump(); h.activity(); }   // một lần chạm một lần nhảy
-    });
-    const jumpEnd = (e: PointerEvent) => { if (e.pointerId === jumpId) jumpId = -1; };
-    jump.addEventListener('pointerup', jumpEnd);
-    jump.addEventListener('pointercancel', jumpEnd);
-    jump.addEventListener('lostpointercapture', jumpEnd);
   }
 
   if (photo) photo.addEventListener('click', () => { h.activity(); h.photo(); });   // chuột và chạm đều ra click

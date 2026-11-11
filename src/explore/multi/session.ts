@@ -59,7 +59,7 @@ export class MultiSession {
     if (this.phase === 'flying') this.t?.send({ t: 'pos', x, y, z, yaw, bank, ts });
   }
 
-  // Người đi dạo: pose (0 đứng, 1 đi, 2 chạy, 3 nhảy, 4 chụp ảnh) thay cho bank
+  // Người đi dạo: pose (0 đứng, 1 đi, 2 chạy, 3 rơi (bản cũ: nhảy), 4 chụp ảnh) thay cho bank
   sendWalk(x: number, y: number, z: number, yaw: number, pose: number, ts: number): void {
     if (this.phase === 'flying') this.t?.send({ t: 'pos', x, y, z, yaw, pose, ts });
   }

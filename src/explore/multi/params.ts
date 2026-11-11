@@ -34,8 +34,8 @@ export const multiParams = {
     slots: 5,            // số chỗ đi dạo cùng lúc, tách khỏi 5 chỗ bay (theo thiết kế)
     bounds: { x0: -400, x1: 400, z0: -1300, z1: 220 }, // m — khung kẹp vị trí người đi dạo (ước lượng)
     yMin: 2,             // m — cao độ thấp nhất của người đi dạo, mặt đất 2,5 trừ dung sai (ước lượng)
-    yMax: 20,            // m — cao độ cao nhất của người đi dạo, gồm mặt cầu và lúc nhảy (ước lượng)
-    poseMax: 4           // dáng lớn nhất: 0 đứng, 1 đi, 2 chạy, 3 nhảy, 4 chụp ảnh
+    yMax: 20,            // m — cao độ cao nhất của người đi dạo, gồm mặt cầu (ước lượng)
+    poseMax: 4           // dáng lớn nhất: 0 đứng, 1 đi, 2 chạy, 3 rơi (bản cũ: nhảy), 4 chụp ảnh
   },
   clockSlewMs: 4        // ms tối đa độ lệch giờ người gửi → giờ khách được giảm mỗi mẫu (gói nhanh hơn tới), giữ dù không vọt (ước lượng)
 };

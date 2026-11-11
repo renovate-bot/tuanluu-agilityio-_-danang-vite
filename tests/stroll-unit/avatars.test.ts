@@ -6,7 +6,7 @@ import { ppAmp } from '../../src/common/people/gait.ts';
 import { PP_FLAG } from '../../src/common/people/kinds.ts';
 import { ExTrack } from '../../src/explore/multi/interp.ts';
 import { stAvatarVar } from '../../src/explore/stroll/avatars.ts';
-import { ST_POSE_IDLE, ST_POSE_WALK, ST_POSE_RUN, ST_POSE_JUMP, ST_POSE_PHOTO } from '../../src/explore/stroll/motion.ts';
+import { ST_POSE_IDLE, ST_POSE_WALK, ST_POSE_RUN, ST_POSE_FALL, ST_POSE_PHOTO } from '../../src/explore/stroll/motion.ts';
 
 const cap = CONFIG.stroll.cadenceMax * CONFIG.people.run.cadence;
 const v = () => ({ amp: -1, cadence: -1, flags: -1 });
@@ -16,9 +16,8 @@ test('stAvatarVar: 5 dáng cho đúng biên độ và cờ', () => {
   stAvatarVar(ST_POSE_IDLE, 0, o); assert.equal(o.amp, 0); assert.equal(o.flags, 0);
   stAvatarVar(ST_POSE_WALK, CONFIG.stroll.walk, o); assert.equal(o.amp, ppAmp('walk')); assert.equal(o.flags, 0);
   stAvatarVar(ST_POSE_RUN, CONFIG.stroll.run, o); assert.equal(o.amp, ppAmp('run')); assert.equal(o.flags, 0);
-  stAvatarVar(ST_POSE_JUMP, CONFIG.stroll.walk, o); assert.equal(o.flags & PP_FLAG.jump, PP_FLAG.jump); assert.equal(o.flags & PP_FLAG.photo, 0);
-  stAvatarVar(ST_POSE_PHOTO, 0, o); assert.equal(o.amp, 0); assert.equal(o.flags & PP_FLAG.photo, PP_FLAG.photo); assert.equal(o.flags & PP_FLAG.jump, 0);
-  assert.equal(PP_FLAG.jump, 8);
+  stAvatarVar(ST_POSE_FALL, CONFIG.stroll.walk, o); assert.equal(o.amp, 0); assert.equal(o.flags, 0);   // rơi: chưa có dáng riêng ở bản hình khối
+  stAvatarVar(ST_POSE_PHOTO, 0, o); assert.equal(o.amp, 0); assert.equal(o.flags & PP_FLAG.photo, PP_FLAG.photo);
 });
 
 test('tốc độ 10 m/s: nhịp = cadenceMax × run.cadence (bị kẹp)', () => {

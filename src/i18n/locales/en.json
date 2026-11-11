@@ -482,10 +482,9 @@
   "stLate": "Someone was quicker.",
   "stReleased": "You gave up your spot.",
   "stLost": "Connection lost. You can still walk, but alone.",
-  "stJump": "Jump",
   "stPhoto": "Take photo",
   "stPhotoSaved": "Photo saved",
   "stPhotoFail": "Couldn't save the photo",
   "stLostChooser": "Connection lost. Choose Stroll to reconnect.",
-  "stHint": "W A S D: walk · hold Shift: run · Space: jump · drag mouse: turn camera · P: photo · Esc: exit"
+  "stHint": "W A S D: walk · hold Shift: run · drag mouse: turn camera · P: photo · Esc: exit"
 }

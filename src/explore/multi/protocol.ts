@@ -4,7 +4,7 @@ import { multiParams } from './params';
 export type ClientMsg =
   | { t: 'join'; name: string; kind?: 'walk' }   // kind: 'walk' = xin chỗ đi dạo; không có = chỗ bay (khách cũ)
   | { t: 'pos'; x: number; y: number; z: number; yaw: number; bank: number; ts?: number }   // ts: giờ gửi theo đồng hồ của khách (ms); máy chủ cũ bỏ qua
-  | { t: 'pos'; x: number; y: number; z: number; yaw: number; pose: number; ts?: number }   // người đi dạo: pose (0 đứng, 1 đi, 2 chạy, 3 nhảy, 4 chụp ảnh), không có bank
+  | { t: 'pos'; x: number; y: number; z: number; yaw: number; pose: number; ts?: number }   // người đi dạo: pose (0 đứng, 1 đi, 2 chạy, 3 rơi (bản cũ: nhảy), 4 chụp ảnh), không có bank
   | { t: 'hb' }
   | { t: 'leave' };
 

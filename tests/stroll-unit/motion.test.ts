@@ -9,7 +9,7 @@ import { deckY } from '../../src/bridges/dragon/profile.ts';
 import { SH } from '../../src/bridges/song-han/profile.ts';
 import { stValid, stSetGate, stAddSolids, stGroundY, type StMap, type StSolid } from '../../src/explore/stroll/map.ts';
 import { ST_GATE_SWING, stBuildStaticMap, stSpawn } from '../../src/explore/stroll/mapData.ts';
-import { stCreate, stStep, stPhotoPose, type StState, type StInput } from '../../src/explore/stroll/motion.ts';
+import { stCreate, stStep, stPhotoPose, ST_POSE_FALL, type StState, type StInput } from '../../src/explore/stroll/motion.ts';
 
 const C = CONFIG.stroll, R = C.radius, SHZ = CONFIG.songHan.z;
 const DT = 1 / 60;
@@ -29,7 +29,7 @@ function makeMap(): StMap {
   stAddSolids(map, houses);
   return map;
 }
-const IDLE: StInput = { mx: 0, mz: 0, run: false, jump: false, camYaw: 0 };
+const IDLE: StInput = { mx: 0, mz: 0, run: false, camYaw: 0 };
 const inp = (o: Partial<StInput>): StInput => ({ ...IDLE, ...o });
 function at(map: StMap, x: number, z: number): StState {
   const s = stCreate(map, -1); s.x = x; s.z = z; s.y = stGroundY(map, x, z); return s;
@@ -62,26 +62,20 @@ test('hướng theo camYaw', () => {
   assert.ok(s.z > z2 + 1, 'camYaw 0, sang phải → z tăng (chỗ rộng)');
 });
 
-test('nhảy: đỉnh 1,2 m, pose 3 trên không, giữ nút không nhảy lần hai', () => {
+test('bước khỏi bậc cao hơn stepMax thì rơi, dáng ST_POSE_FALL, chạm đất hết rơi', () => {
   const map = makeMap(), s = at(map, 0, 5), g = s.y;
-  let peak = 0, airFrames = 0, landed = -1;
-  for (let i = 0; i < 120; i++) {
-    stStep(s, inp({ jump: true }), map, 1 / 120);
-    peak = Math.max(peak, s.y - g);
-    if (s.air) { airFrames++; assert.equal(s.pose, 3); }
-    else if (landed < 0 && i > 2) landed = i;
-  }
-  assert.ok(Math.abs(peak - C.jumpHeight) <= 0.05, `đỉnh ${peak}`);
-  assert.ok(airFrames > 0);
-  /* một cú nhảy: thời gian bay = 2 v / g ≈ 0,69 s = 83 khung; sau đó (còn giữ) mới nhảy lần nữa, không có đỉnh thứ hai trước khi chạm */
-  const s2 = at(map, 0, 5); let rises = 0, prevVy = 0, hit = false;
-  for (let i = 0; i < 80; i++) {
-    stStep(s2, inp({ jump: true }), map, 1 / 120);
-    if (s2.vy > prevVy + 1e-9) rises++;
-    prevVy = s2.vy; if (!s2.air) hit = true;
-  }
-  assert.equal(rises, 1, 'vy chỉ tăng đúng một lần (lúc bật)');
-  assert.ok(!hit, 'chưa chạm đất trong 80 khung 1/120 s');
+  s.y = g + C.stepMax + 0.5;   // như vừa bước khỏi mép cao hơn stepMax (bản đồ thật không có bậc nào đủ cao trên đường đi: dựng bằng cách nâng chân)
+  stStep(s, IDLE, map, DT);
+  assert.equal(s.air, true); assert.equal(s.pose, ST_POSE_FALL); assert.equal(ST_POSE_FALL, 3);
+  let frames = 1, y = s.y;
+  while (s.air && frames < 600) { stStep(s, IDLE, map, DT); assert.ok(s.y <= y + 1e-9, 'đang rơi thì không đi lên'); y = s.y; frames++; }
+  assert.equal(s.air, false, 'phải chạm đất');
+  assert.ok(Math.abs(s.y - g) < 1e-9, `chạm đất ở ${s.y}, mặt đứng ${g}`);
+  assert.equal(s.vy, 0);
+  assert.notEqual(s.pose, ST_POSE_FALL);
+  /* bậc đúng bằng stepMax thì không rơi: bước xuống mượt */
+  const s2 = at(map, 0, 5); s2.y = g + C.stepMax;
+  stStep(s2, IDLE, map, DT); assert.equal(s2.air, false); assert.ok(Math.abs(s2.y - g) < 1e-9);
 });
 
 test('cao độ: đi dọc Cầu Rồng bám mặt cầu + bậc', () => {
@@ -125,20 +119,15 @@ test('dt = 2 s lúc chạy vào lan can Cầu Rồng: không vọt xa, không l�
   for (let k = 0; k < 5; k++) { const p = { x: t.x, z: t.z }; stStep(t, inp({ mz: 1, mx: 1, run: true, camYaw: 0 }), map, 2); assert.ok(Math.hypot(t.x - p.x, t.z - p.z) <= C.run * C.dtMax + 0.01); assert.ok(stValid(map, t.x, t.z, Infinity)); }
 });
 
-test('gờ chắn xe Cầu Rồng: đi ngang bị chặn, chạy + nhảy thì qua', () => {
+test('chạy thẳng vào gờ chắn xe Cầu Rồng 0,9 m: không qua', () => {
   const map = makeMap();
-  /* từ lề Nam (z 17,4) đi về dải Bắc (−z): camYaw π/2 → tới = −z */
-  let s = at(map, 100, 17.4);
-  for (let i = 0; i < 120; i++) stStep(s, inp({ mz: 1, camYaw: Math.PI / 2 }), map, DT);
-  assert.ok(s.z > 16.25, `đi bị gờ chặn, z = ${s.z}`);
-  s = at(map, 100, 17.4);
-  let crossed = false, jumped = false;
-  for (let i = 0; i < 90; i++) {
-    stStep(s, inp({ mz: 1, run: true, camYaw: Math.PI / 2, jump: !jumped && i >= 3 }), map, DT);
-    if (s.air) jumped = true;
-    if (s.z < 15.5) { crossed = true; break; }
+  /* từ lề Nam (z 17,4) về dải Bắc (−z): camYaw π/2 → tới = −z; gờ chiếm |z| 15,9–16,25, nên mép trong phía lề là z = 16,25 */
+  for (const run of [false, true]) {
+    const s = at(map, 100, 17.4);
+    for (let i = 0; i < 180; i++) { stStep(s, inp({ mz: 1, run, camYaw: Math.PI / 2 }), map, DT); assert.equal(s.air, false, 'không rời đất'); }
+    assert.ok(s.z >= 16.25, `${run ? 'chạy' : 'đi'} 3 s vẫn bị gờ chặn, z = ${s.z}`);
+    assert.ok(s.z < 17.4 - 0.5, `phải có bước sát gờ, z = ${s.z}`);
   }
-  assert.ok(crossed, `chạy + nhảy qua gờ, z = ${s.z}`);
 });
 
 test('đóng cổng shSwing dưới chân: sơ tán về nhịp cố định rồi trả điều khiển', () => {
@@ -193,27 +182,27 @@ test('fuzz 300 000 khung: không lọt tường, không ra khỏi vùng', () => 
     if (stValid(map, x, z, 0) && stGroundY(map, x, z) === stGroundY(map, x, z)) starts.push([x, z]);
   }
   const per = 15000;
-  let viol = 0, total = 0, airN = 0, runN = 0;
+  let viol = 0, total = 0, runN = 0;
   for (const [sx, sz] of starts) {
     const s = at(map, sx, sz);
     assert.equal(oracle(map, s.x, s.z), null, `điểm xuất phát ${sx},${sz}`);
-    const i2: StInput = { mx: 0, mz: 0, run: false, jump: false, camYaw: 0 };
+    const i2: StInput = { mx: 0, mz: 0, run: false, camYaw: 0 };
     let left = 0;
     for (let f = 0; f < per; f++) {
       if (left <= 0) {
         left = 0.2 + r() * 1.8;
         const a = r() * Math.PI * 2, m = r() < 0.15 ? 0 : 0.3 + 0.7 * r();
-        i2.mx = Math.cos(a) * m; i2.mz = Math.sin(a) * m; i2.run = r() < 0.5; i2.camYaw = r() * 6.28 - 3.14; i2.jump = r() < 0.3;
+        i2.mx = Math.cos(a) * m; i2.mz = Math.sin(a) * m; i2.run = r() < 0.5; i2.camYaw = r() * 6.28 - 3.14;
       }
       const dt = 1 / 120 + r() * (0.5 - 1 / 120) * (r() < 0.1 ? 1 : 0.05);
-      left -= dt; if (r() < 0.2) i2.jump = r() < 0.3;
+      left -= dt;
       stStep(s, i2, map, dt);
-      total++; if (s.air) airN++; if (s.pose === 2) runN++;
+      total++; if (s.pose === 2) runN++;
       const v = oracle(map, s.x, s.z);
       if (v && viol++ < 5) console.log('vi phạm:', v, s.x, s.z, 'từ', sx, sz, 'khung', f);
     }
   }
   assert.equal(total, 300000);
-  assert.ok(airN > 10000 && runN > 10000, `fuzz phải có nhảy và chạy: nhảy ${airN}, chạy ${runN}`);
+  assert.ok(runN > 10000, `fuzz phải có chạy: ${runN}`);
   assert.equal(viol, 0);
 });

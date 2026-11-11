@@ -82,12 +82,19 @@ test('vòng khép kín: BFS lưới 1 m (feet 0, cổng mở) từ điểm xuấ
   assert.equal(stZoneAt(map, 0, SHZ + 3)?.id, 'shSwing');
 });
 
-test('không nhảy: từ lề Cầu Rồng tới lòng đường có đường qua đầu cầu, gờ chắn xe chặn lối thẳng (nhảy qua được)', () => {
-  /* kỳ vọng ghi rõ: lề → lòng đường đi được bằng chân (vòng qua đầu gờ ở x = ±333), nên chặng "giữa Cầu Rồng" ở test trên dùng lòng đường (0, 10) */
+test('không nhảy: từ lề Cầu Rồng tới lòng đường có đường đi bộ, gờ chắn xe chặn lối thẳng', () => {
+  /* lề → lòng đường đi được bằng chân (vòng qua đầu gờ ở x = ±333), nên chặng "giữa Cầu Rồng" ở test trên dùng lòng đường (0, 10) */
   const seen = bfs(map, SPAWN.x, SPAWN.z);
   assert.ok(reached(seen, SPAWN.x, 10), 'lề không nối được lòng đường khi không nhảy');
   assert.equal(stValid(map, SPAWN.x, 16.1, 0), false, 'gờ chắn xe phải chặn khi chân ở mặt đứng');
-  assert.equal(stValid(map, SPAWN.x, 16.1, CONFIG.stroll.jumpHeight), true, 'nhảy cao 1,2 m phải qua được gờ 0,9 m');
+});
+
+test('không nhảy: từ lề Cầu sông Hàn tới lòng đường có đường đi bộ, gờ chắn bánh chặn lối thẳng', () => {
+  /* lề |dz| 4,7–6,24, lòng đường |dz| < 4,445, gờ chắn bánh |dz| 4,445–4,695 cao 0,545 > stepMax: chỉ vòng qua đường nối trên bờ (|x| ≥ 290) */
+  const seen = bfs(map, 100, SHZ + 5.5);
+  assert.ok(reached(seen, 100, SHZ + 3), 'lề Cầu sông Hàn không nối được lòng đường khi không nhảy');
+  assert.ok(reached(seen, 100, SHZ - 3), 'lề Nam không nối được lòng đường phía Bắc khi không nhảy');
+  assert.equal(stValid(map, 100, SHZ + 4.57, 0), false, 'gờ chắn bánh phải chặn khi chân ở mặt đứng');
 });
 
 test('cổng shSwing đóng: không qua được Cầu sông Hàn; bờ Đông và bờ Tây vẫn nối nhau qua Cầu Rồng', () => {

@@ -20,7 +20,13 @@ test('không có code (sự kiện giả) hoặc phím khác: dùng e.key viết
 });
 
 test('bố cục Nga: phím vật lý W cho đi tới', () => {
-  const out = { mx: 0, mz: 0, run: false, jump: false, camYaw: 0 };
+  const out = { mx: 0, mz: 0, run: false, camYaw: 0 };
   stInputFromKeys(new Set([stKeyName({ key: 'ц', code: 'KeyW' })]), 0, out);
   assert.equal(out.mz, 1);
+});
+
+test('Space không sinh đầu vào nào (đã bỏ nhảy)', () => {
+  const out = { mx: 1, mz: 1, run: true, camYaw: 0 };
+  stInputFromKeys(new Set([' ']), 0.5, out);
+  assert.deepEqual(out, { mx: 0, mz: 0, run: false, camYaw: 0.5 });
 });

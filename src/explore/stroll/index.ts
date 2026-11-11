@@ -4,12 +4,12 @@
    - Bản đồ dựng lần đầu vào chế độ: dữ liệu tĩnh + nhà / chân đế thu từ cảnh đã dựng (chỉ đọc, sau mọi rand()).
    - Nhịp quay Cầu sông Hàn đóng với người đi dạo khi cầu rời trạng thái CLOSED (spec §3 mục 13); không tự quay, không tăng tốc quay.
    - Ban đêm Cầu Rồng tự phun như khi bay dù (exNightStep, không đụng cầu quay).
-   - Nhảy theo cạnh: một lần bấm Space một lần nhảy, giữ Space không nhảy liên tục (stStep nhảy mỗi khung jump = true khi chạm đất).
+   - Không có nhảy (D-030): Space chỉ bị chặn hành vi mặc định (không cuộn trang, không bấm nút đang focus), không vào keys.
    - Phím chỉ ghi khi đang đi dạo, bỏ qua ô nhập và tổ hợp Ctrl / Meta / Alt; blur, ẩn tab, focus vào ô nhập thì xóa hết phím (Review Focus 3).
    - Nhiều người (exMulti, phiên kind 'walk'): xuất phát theo slot đi dạo, gửi vị trí + dáng; hết chỗ thì chế độ xem (startWatching) đặt camera sau lưng người được xem.
      Đổi phiên như dù lượn: bị thu chỗ → xem; mất kết nối khi đang đi → đi tiếp một mình + thông báo; mất kết nối khi xem → thoát, màn chọn báo mất kết nối.
    - Rời máy: phím điều khiển, kéo chuột và chạm cảm ứng gọi exMulti.activity().
-   - Cảm ứng (touch.ts, #stHud): cần gạt ghi đè phím khi đang được giữ; vuốt nửa phải xoay camera; chạm Nhảy là một lần nhảy (như một lần bấm Space); 📷 và phím P gọi stPhoto (photo.ts: chụp canvas sau lệnh vẽ chính).
+   - Cảm ứng (touch.ts, #stHud): cần gạt ghi đè phím khi đang được giữ; vuốt nửa phải xoay camera; 📷 và phím P gọi stPhoto (photo.ts: chụp canvas sau lệnh vẽ chính).
    Mỗi khung không cấp phát (D-018). */
 import { scene, camera, controls, canvas } from '../../core/renderer';
 import { cam, keys } from '../../views/state';
@@ -35,13 +35,12 @@ let map: StMap | null = null;
 let state: StState | null = null;
 let ctrl: SwingController | null = null;
 let exit: () => void = () => {};   // thoát chung (explore.exit), do setupStroll nhận
-let jumpQueued = false;      // Space vừa được bấm (không phải tự lặp): khung sau nhảy một lần
 let selfSlot = ST_SOLO_AVATAR;   // instance nhân vật của mình: slot đi dạo khi có chỗ, giữ nguyên khi mất kết nối (màu áo không đổi)
 let watching = false;        // đang xem người khác đi dạo (hết chỗ hoặc vừa nhường chỗ): không có nhân vật của mình, không đọc phím
 let touch: ReturnType<typeof stTouchBind> | null = null;   // điều khiển cảm ứng (setupStroll dựng)
 let chased = false;          // camera đã bám người được xem lần nào chưa (lần đầu đặt thẳng, không trượt từ xa)
 const camS: StCam = { yaw: 0, pitch: CONFIG.stroll.cam.pitch };
-const _inp: StInput = { mx: 0, mz: 0, run: false, jump: false, camYaw: 0 };   // đầu vào tái dùng mỗi khung
+const _inp: StInput = { mx: 0, mz: 0, run: false, camYaw: 0 };   // đầu vào tái dùng mỗi khung
 
 const active = () => cam.mode === 'stroll' && state !== null;
 const inMode = () => active() || watching;   // Esc và giao diện đi dạo áp cho cả chế độ xem
@@ -116,7 +115,7 @@ export const stroll = {
     const mesh = stAvatars.build();
     if (!mesh.parent) scene.add(mesh);
     stAvatars.setSelf(selfSlot, state);
-    keys.clear(); jumpQueued = false; if (touch) touch.reset();
+    keys.clear(); if (touch) touch.reset();
     cam.flight.then = null; cam.mode = 'stroll'; controls.enabled = false;
     stCamPlace(camera, controls.target, state, camS, m, 0, true);
     document.body.classList.add('explore', 'stroll');
@@ -128,7 +127,7 @@ export const stroll = {
     const mesh = stAvatars.build();
     if (!mesh.parent) scene.add(mesh);
     watching = true; chased = carry; state = null;
-    keys.clear(); jumpQueued = false;
+    keys.clear();
     camS.pitch = CONFIG.stroll.cam.pitch;
     cam.flight.then = null; cam.mode = 'stroll'; controls.enabled = false;
     document.body.classList.add('explore', 'stroll', 'ex-watching');
@@ -140,7 +139,6 @@ export const stroll = {
     if (!active()) return;
     stInputFromKeys(keys, camS.yaw, _inp);
     if (touch) touch.read(_inp);   // cần gạt đang giữ thì ghi đè hướng và chạy của phím
-    _inp.jump = jumpQueued; jumpQueued = false;
     advance(dt, _inp);
   },
   photo: stPhoto,
@@ -163,8 +161,8 @@ export function setupStroll(c: SwingController, onExit: () => void): void {
     exMulti.activity();   // phím điều khiển (kể cả tự lặp) tính là còn đó
     const k = stKeyName(e);   // theo vị trí phím (e.code): bố cục không Latin (ru, ar, th, hi) vẫn dùng WASD
     if (k === 'p') { if (!e.repeat) stPhoto(); return; }   // P chụp ảnh, không ghi vào keys
-    if (k === ' ') { e.preventDefault(); if (!e.repeat) jumpQueued = true; }
-    else if (k.startsWith('arrow')) e.preventDefault();
+    if (k === ' ') { e.preventDefault(); return; }   // Space: không cuộn trang, không bấm nút đang focus, không điều khiển gì
+    if (k.startsWith('arrow')) e.preventDefault();
     keys.add(k);
   });
   window.addEventListener('keyup', (e) => {
@@ -172,14 +170,13 @@ export function setupStroll(c: SwingController, onExit: () => void): void {
     keys.delete(k); keys.delete(e.key.toLowerCase());   // cả tên cũ: phím dù lượn ghi theo e.key
     if (k === ' ' && active() && !isField(e.target)) e.preventDefault();   // Space không bấm nút đang focus
   });
-  const drop = () => { keys.clear(); jumpQueued = false; };
+  const drop = () => { keys.clear(); };
   window.addEventListener('blur', drop);
   document.addEventListener('visibilitychange', () => { if (document.hidden) drop(); });
   window.addEventListener('focusin', (e) => { if (active() && isField(e.target)) drop(); });
   const hud = document.getElementById('stHud');
   if (hud) touch = stTouchBind(hud, {
     look: (dx, dy) => { if (active()) stCamDrag(camS, dx, dy, CONFIG.stroll.cam.touch); },
-    jump: () => { if (active()) jumpQueued = true; },
     photo: stPhoto,
     activity: () => exMulti.activity()
   });

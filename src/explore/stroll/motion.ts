@@ -1,5 +1,5 @@
 /* ============================ Đi dạo: chuyển động nhân vật (thuần) ============================
-   Mỗi khung: đọc đầu vào, đổi tốc độ / hướng mặt, nhảy, đi qua stMove (va chạm), bám cao độ đứng, chọn dáng (pose).
+   Mỗi khung: đọc đầu vào, đổi tốc độ / hướng mặt, đi qua stMove (va chạm), bám cao độ đứng, chọn dáng (pose).
    Thuần: không import three, không đụng DOM. stStep chạy mỗi khung nên không cấp phát (D-018): dùng đối tượng tạm cấp module.
    - dt kẹp về dtMax: khung rất dài (tab ẩn rồi quay lại) không làm nhân vật vọt qua tường, chỉ chậm đi một khung.
    - Hướng: tới = (cos yaw, 0, −sin yaw), yaw tăng là quay trái (như flight.ts).
@@ -9,7 +9,7 @@ import { CONFIG } from '../../config';
 import { stMove, stValid, stGroundY, stNearestValid, type StMap } from './map';
 import { stSpawn } from './mapData';
 
-export const ST_POSE_IDLE = 0, ST_POSE_WALK = 1, ST_POSE_RUN = 2, ST_POSE_JUMP = 3, ST_POSE_PHOTO = 4;
+export const ST_POSE_IDLE = 0, ST_POSE_WALK = 1, ST_POSE_RUN = 2, ST_POSE_FALL = 3, ST_POSE_PHOTO = 4;   // 3 = rơi (trên mạng giữ giá trị cũ của dáng nhảy; khách bản cũ còn gửi 3 khi nhảy)
 
 export interface StState {
   x: number; y: number; z: number;   // y: cao độ chân tuyệt đối, m
@@ -19,7 +19,7 @@ export interface StState {
   photo: number;                     // giây còn giơ tay chụp
   tx: number; tz: number;            // điểm sơ tán đã tính (chỉ có nghĩa khi evac)
 }
-export interface StInput { mx: number; mz: number; run: boolean; jump: boolean; camYaw: number }
+export interface StInput { mx: number; mz: number; run: boolean; camYaw: number }
 
 const EPS_STEP = 1e-3;      // dung sai khi so bậc cao độ với stepMax (bậc Cầu Rồng lề ↔ bờ đo 0,3500083), m
 const V_STOP = 0.1;         // m/s — dưới mức này coi là đứng yên
@@ -82,17 +82,14 @@ export function stStep(s: StState, inp: StInput, map: StMap, dt: number): void {
   if (moving) { hx = dx / Math.sqrt(dx * dx + dz * dz); hz = dz / Math.sqrt(dx * dx + dz * dz); s.yaw = stTurn(s.yaw, Math.atan2(-hz, hx), C.turn, dt); }
   else { hx = Math.cos(s.yaw); hz = -Math.sin(s.yaw); }
 
-  /* 3) nhảy: chỉ khi chạm đất */
-  if (!s.air && inp.jump) { s.vy = Math.sqrt(2 * C.gravity * C.jumpHeight); s.air = true; }
-
-  /* 4) đi (feet: độ cao chân trên cao độ đứng chỗ đang đứng) */
+  /* 3) đi (feet: độ cao chân trên cao độ đứng chỗ đang đứng) */
   const g0 = stGroundY(map, s.x, s.z);
   const feet = s.air && g0 === g0 ? Math.max(0, s.y - g0) : 0;
   const dist = s.speed * dt;
   stMove(map, s.x, s.z, hx * dist, hz * dist, feet, _mv);
   s.x = _mv.x; s.z = _mv.z;
 
-  /* 5) cao độ */
+  /* 4) cao độ */
   const g = stGroundY(map, s.x, s.z);
   if (s.air) {
     const ny = s.y + s.vy * dt - 0.5 * C.gravity * dt * dt;
@@ -106,10 +103,10 @@ export function stStep(s: StState, inp: StInput, map: StMap, dt: number): void {
     else s.y = g;
   }
 
-  /* 6) dáng */
+  /* 5) dáng */
   if (s.photo > 0) { if (moving || s.air) s.photo = 0; else { s.photo -= dt; if (s.photo < 0) s.photo = 0; } }
   const still = s.speed < V_STOP && !moving;
-  if (s.air) s.pose = ST_POSE_JUMP;
+  if (s.air) s.pose = ST_POSE_FALL;
   else if (s.photo > 0 && still) s.pose = ST_POSE_PHOTO;
   else if (s.speed < V_STOP) s.pose = ST_POSE_IDLE;
   else s.pose = s.speed > (C.walk + C.run) * 0.5 ? ST_POSE_RUN : ST_POSE_WALK;

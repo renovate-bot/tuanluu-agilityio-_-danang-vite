@@ -13,7 +13,7 @@ import { ppAmp, ppCadence, ppStride } from '../../common/people/gait';
 import { PP_FLAG } from '../../common/people/kinds';
 import { ExTrack, type ExPose } from '../multi/interp';
 import type { Flyer } from '../multi/protocol';
-import { ST_POSE_WALK, ST_POSE_RUN, ST_POSE_JUMP, ST_POSE_PHOTO, type StState } from './motion';
+import { ST_POSE_WALK, ST_POSE_RUN, ST_POSE_PHOTO, type StState } from './motion';
 
 const M = CONFIG.explore.multi, C = CONFIG.stroll, N = M.stroll.slots, TAU = Math.PI * 2;
 
@@ -24,7 +24,6 @@ export function stAvatarVar(pose: number, speed: number, out: { amp: number; cad
   out.amp = 0; out.cadence = 0; out.flags = 0;
   if (pose === ST_POSE_WALK) { out.amp = ppAmp('walk'); out.cadence = Math.min(cap, ppCadence('walk', v, 1)); }
   else if (pose === ST_POSE_RUN) { out.amp = ppAmp('run'); out.cadence = Math.min(cap, Math.max(ppCadence('run', v, 1), (TAU * v) / ppStride('run', 1))); }
-  else if (pose === ST_POSE_JUMP) out.flags = PP_FLAG.jump;   // biên độ 0: không nhún, không lắc, không đổ người; tay chân theo tư thế nhảy cố định
   else if (pose === ST_POSE_PHOTO) out.flags = PP_FLAG.photo;
 }
 

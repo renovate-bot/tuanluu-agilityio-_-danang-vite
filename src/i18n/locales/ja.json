@@ -482,10 +482,9 @@
   "stLate": "他の人が先でした。",
   "stReleased": "枠を譲りました。",
   "stLost": "接続が切れました。一人で散歩を続けられます。",
-  "stJump": "ジャンプ",
   "stPhoto": "写真を撮る",
   "stPhotoSaved": "写真を保存しました",
   "stPhotoFail": "写真を保存できませんでした",
   "stLostChooser": "接続が切れました。再接続するには「散歩」を選んでください。",
-  "stHint": "W A S D: 移動 · Shift 長押し: 走る · Space: ジャンプ · マウスドラッグ: カメラ回転 · P: 写真 · Esc: 終了"
+  "stHint": "W A S D: 移動 · Shift 長押し: 走る · マウスドラッグ: カメラ回転 · P: 写真 · Esc: 終了"
 }

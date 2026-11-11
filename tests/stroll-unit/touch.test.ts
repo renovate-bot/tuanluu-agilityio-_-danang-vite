@@ -23,8 +23,8 @@ Object.defineProperty(globalThis, 'performance', { value: { now: () => now }, co
 const { stTouchBind } = await import('../../src/explore/stroll/touch.ts');
 
 let acts = 0;
-const t = stTouchBind(root as any, { look() {}, jump() {}, photo() {}, activity() { acts++; } });
-const out = { mx: 0, mz: 0, run: false, jump: false, camYaw: 0 };
+const t = stTouchBind(root as any, { look() {}, photo() {}, activity() { acts++; } });
+const out = { mx: 0, mz: 0, run: false, camYaw: 0 };
 const down = () => els['#stPad'].dispatchEvent({ type: 'pointerdown', pointerId: 1, clientX: 60, clientY: 10, preventDefault() {} });
 const resize = () => win.dispatchEvent({ type: 'resize' });
 const held = () => { out.mz = 0; t.read(out); return out.mz !== 0 || out.mx !== 0; };
