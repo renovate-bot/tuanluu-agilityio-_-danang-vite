@@ -1,6 +1,6 @@
 # Đi dạo nhiều người (5 slot, góc nhìn sau lưng) — thiết kế
 
-_2026-11-11 · Trạng thái: Đã xây (chưa merge) · Quyết định dự kiến: D-029 · Nhánh: `feature/di-dao`_
+_2026-11-11 · Trạng thái: Đã xây, merge PR #23 · Quyết định: D-029 · Nhánh: `feature/di-dao`_
 
 ## 1. Ý định
 
