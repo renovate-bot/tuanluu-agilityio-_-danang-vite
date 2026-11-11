@@ -643,6 +643,7 @@ const strollBase = {
   stick: { dead: 0.15, run: 0.8, size: 120 },   // cần gạt ảo: vùng chết (phần bán kính), từ mức này là chạy (phần bán kính), đường kính px (ước lượng)
   labelAbove: 2.1,     // m — nhãn tên cao hơn chân người đi dạo (ước lượng)
   cadenceMax: 1.5,     // lần nhịp chạy CONFIG.people.run.cadence — trần nhịp bước khi chạy 10 m/s, không đơn vị (ước lượng)
+  pants: 0x1d1d1f,     // màu quần nhân vật đi dạo (hex sRGB), một màu tối cho mọi slot; áo theo multiParams.colors[slot] (ước lượng)
   photoHold: 1.2,      // s — thời gian nhân vật giơ tay chụp ảnh (ước lượng)
   flashMs: 180         // ms — thời gian chớp màn hình khi chụp (ước lượng)
 };
@@ -771,6 +772,7 @@ const peopleBase = {
   bob: { walk: 0.022, run: 0.075 },                 // m — nhún: đi thấp nhất khi hai chân dang rộng (đỉnh–đỉnh 2 × 0,022), chạy bật lên giữa hai bước (ước lượng theo bản thử)
   sway: 0.018,                                      // m — lắc vai sang hai bên theo sin φ (ước lượng theo bản thử)
   photo: { shoulder: 1.0, elbow: 1.05 },            // rad — tư thế giơ tay phải chụp ảnh: góc vai, góc khuỷu (ước lượng theo bản thử)
+  jump: { hip: 0.55, knee: -1.15, shoulder: 1.25, elbow: 0.45 },   // rad — tư thế nhảy (cờ 8, chỉ nhân vật đi dạo): hông đưa trước, gối gập, hai vai đưa lên, khuỷu hơi gập (ước lượng)
   mix: {
     run: 0.12,                                      // phần người chạy bộ trên tổng số (ước lượng; bản thử 4/26)
     stand: 0.2,                                     // phần người đứng lan can trên tổng số (ước lượng; bản thử 6/26)
