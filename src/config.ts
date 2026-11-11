@@ -646,7 +646,18 @@ const strollBase = {
   pants: 0x1d1d1f,     // màu quần nhân vật đi dạo (hex sRGB), một màu tối cho mọi slot; áo theo multiParams.colors[slot] (ước lượng)
   photoHold: 1.2,      // s — thời gian nhân vật giơ tay chụp ảnh (ước lượng)
   flashMs: 180,        // ms — thời gian chớp màn hình khi chụp (ước lượng)
-  photoUrlMs: 10000    // ms — thu hồi URL tạm của ảnh sau khi tải xong (ước lượng)
+  photoUrlMs: 10000,   // ms — thu hồi URL tạm của ảnh sau khi tải xong (ước lượng)
+  anim: {              // nhân vật có xương (explore/stroll/anim.ts, rig.ts); docs/superpowers/specs/2026-11-12-nguoi-di-dao-that-design.md §5
+    walkTo: 1.8,       // m/s — từ tốc độ này trở xuống là đi bộ thuần; trên đó trộn dần sang chạy bộ (ước lượng)
+    jogAt: 3.5,        // m/s — tại tốc độ này là chạy bộ thuần (bằng tốc độ đi CONFIG.stroll.walk) (ước lượng)
+    sprintFrom: 7.0,   // m/s — từ tốc độ này là chạy nhanh thuần; giữa jogAt và đây trộn chạy bộ với chạy nhanh (ước lượng)
+    rateMin: 0.6,      // hệ số tua đoạn di chuyển nhỏ nhất (tốc độ thật / tốc độ tự nhiên), không đơn vị, tránh chân lê chậm (ước lượng)
+    rateMax: 1.6,      // hệ số tua lớn nhất, không đơn vị, tránh chân quay quá nhanh khi chạy 10 m/s (ước lượng)
+    fade: 0.2,         // s — hằng thời gian làm mượt trọng số các đoạn khi đổi dáng (ước lượng)
+    fallMin: 0.1,      // m/s — dáng rơi (3) có tốc độ ngang dưới mức này thì đứng yên, trên mức này thì như đang chạy (ước lượng)
+    others: 4,         // số mô hình dành cho người khác (mô hình 1..others); mình luôn dùng mô hình 0 (ước lượng)
+    models: ['people/p0.glb', 'people/p1.glb', 'people/p2.glb', 'people/p3.glb', 'people/p4.glb']   // đường dẫn tương đối BASE_URL tới 5 mô hình có xương (scripts/people/convert.py)
+  }
 };
 
 /* ------------------------- Tàu thuyền sông Hàn ------------------------- */
