@@ -747,6 +747,7 @@ const treesBase = {
     fork: 0.5,                             // cao độ chỗ tách cành, phần của chiều cao thân tới đầu cành cao nhất (ước lượng)
     reach: 0.7,                            // bán kính ngang đầu cành, phần của bán kính tán (ước lượng)
     sides: 5,                              // số cạnh mặt cắt thân và cành (ước lượng; ít cạnh vì cành bị tán che phần lớn)
+    lodDetail: 0,                          // mức chia khối 20 mặt của bản tán thưa dùng ở lượt bóng và lượt phản chiếu mặt nước (0 = 20 mặt, tán 8 cụm = 160 tam giác; lượt chính vẫn mức 1 = 640) (ước lượng)
     seed: 4801                             // hạt sinh ngẫu nhiên riêng cho nhiễu cụm lá và hướng cành (rng riêng, không đụng rand())
   },
   palm: {

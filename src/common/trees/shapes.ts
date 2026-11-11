@@ -76,8 +76,9 @@ export function trShadeTrunkGeo(): THREE.BufferGeometry {
 
 /* ---------- Cây bóng mát: tán ---------- */
 /* Các cụm lá khối 20 mặt chia 1 lần (80 tam giác) nhiễu nhẹ, xếp vành ngoài thấp + vành giữa + đỉnh như bản thử.
-   Pháp tuyến hướng từ tâm cụm (bóng mềm); color = độ sáng: sáng ở trên ≈ 1, sẫm ở dưới và trong khe giữa các cụm ≈ 0,4. */
-export function trShadeCrownGeo(): THREE.BufferGeometry {
+   Pháp tuyến hướng từ tâm cụm (bóng mềm); color = độ sáng: sáng ở trên ≈ 1, sẫm ở dưới và trong khe giữa các cụm ≈ 0,4.
+   detail = mức chia của khối 20 mặt (1 = bản đầy đủ 640 tam giác, 0 = bản thưa 160 tam giác cho lượt bóng / phản chiếu); bố cục cụm và chuỗi rng không phụ thuộc detail. */
+export function trShadeCrownGeo(detail = 1): THREE.BufferGeometry {
   const S = T.shade, r = rng(S.seed + 1), blobs: { c: THREE.Vector3; s: THREE.Vector3 }[] = [];
   const add = (a: number, rr: number, y: number, s: number) => blobs.push({ c: V(Math.cos(a) * rr, y, Math.sin(a) * rr), s: V(s, s * 0.85, s) });
   for (let i = 0; i < S.blobs.outer; i++) add(i * (Math.PI * 2 / S.blobs.outer) + (r() - 0.5) * 0.3, 0.52 + r() * 0.05, -0.37 + r() * 0.06, 0.41 + r() * 0.04);   // vành ngoài, thấp
@@ -85,7 +86,7 @@ export function trShadeCrownGeo(): THREE.BufferGeometry {
   for (let i = 0; i < S.blobs.top; i++) add(r() * 6.28, 0.06, 0.38 + r() * 0.04, 0.48);                                                                  // đỉnh
   const inside = (q: THREE.Vector3, skip: number) => blobs.some((b, k) => k !== skip && q.clone().sub(b.c).divide(b.s).length() < 1.05);
   const parts = blobs.map((b, k) => {
-    const g = new THREE.IcosahedronGeometry(1, 1), p = g.getAttribute('position'), n = g.getAttribute('normal'), sd = r() * 20, q = new THREE.Vector3(), d = new THREE.Vector3();
+    const g = new THREE.IcosahedronGeometry(1, detail), p = g.getAttribute('position'), n = g.getAttribute('normal'), sd = r() * 20, q = new THREE.Vector3(), d = new THREE.Vector3();
     const c = new Float32Array(p.count * 3);
     for (let i = 0; i < p.count; i++) {
       d.fromBufferAttribute(p, i).normalize();
@@ -103,6 +104,14 @@ export function trShadeCrownGeo(): THREE.BufferGeometry {
     return g;
   });
   return mergeGeometries(parts);
+}
+
+/* Tán gộp [bản đầy đủ | bản thưa] trong một buffer: lượt chính vẽ đỉnh [0, fullCount), lượt bóng / phản chiếu vẽ [fullCount, fullCount + lodCount) (src/core/passLod.ts).
+   Hình học không index nên đơn vị đếm là đỉnh (đúng đơn vị drawRange). */
+export function trShadeCrownLodGeo(): { geo: THREE.BufferGeometry; fullCount: number; lodCount: number } {
+  const full = trShadeCrownGeo(1), lod = trShadeCrownGeo(T.shade.lodDetail);
+  const fullCount = full.getAttribute('position').count, lodCount = lod.getAttribute('position').count;
+  return { geo: mergeGeometries([full, lod]), fullCount, lodCount };
 }
 
 /* ---------- Cây dừa: thân ---------- */
