@@ -4,10 +4,12 @@
 //  2. noOldShape: không còn lưới người nào ≤ 200 đỉnh (ống trụ + cầu cũ).
 //  3. moving: sau 60 khung, ≥ 60 % instance đã đổi vị trí; số instance đứng yên khớp số người 'stand' (±1);
 //     mọi người thẳng đứng, người đang đi quay mặt (+X của hình) theo chiều đi.
-//  4. insideSidewalk: mọi instance hiện nằm trong dải lề của cầu mình, chân đúng mặt lề (không lơ lửng, không chìm).
+//  4. insideSidewalk: mọi instance hiện nằm trong dải lề của cầu mình, chân đúng mặt lề (không lơ lửng, không chìm);
+//     clearLamps: người Cầu Rồng có tâm ở |z| ∈ [17,3; 18,58] (ngoài hàng cột đèn |z| 17, trong lan can); standOverRiver: người đứng Cầu Rồng ở |x| ≤ 255.
 //  5. stormClear: bão ⇒ giữa chừng 0 < hiện < tổng, hết thời gian dọn 0 ở cả 3 hệ; hết bão ⇒ hiện đủ.
 //  6. toggleBack: bấm #btnTtlPeople hai lần (click()) ⇒ nhóm ẩn rồi hiện lại đủ 80.
 //  7. dragonLod: camera xa tim Cầu Rồng 2 000 m ⇒ nhóm dragon-people ẩn; về 300 m ⇒ hiện.
+//     dragonCull: gần Trần Thị Lý / Cầu sông Hàn (< 1 500 m), quay lưng lại Cầu Rồng ⇒ lưới không vẽ; nhìn vào cầu ⇒ vẽ.
 //  8. randKept: speed 7 tàu chạy chung trùng main (người Cầu Rồng không chạm rand()).
 //  9. Không lỗi console (kể cả lỗi biên dịch shader).
 // 10. Ảnh (bỏ bằng --no-shots) tests/screens/people-*.png: lề Cầu Rồng gần ~10 m (ngày), người đứng gần đầu rồng, người chạy,
@@ -101,6 +103,12 @@ try {
     check(ps.length === COUNTS[n] && out.length === 0, `insideSidewalk: ${n} ${ps.length} người, ${out.length} ngoài dải lề (${out.slice(0, 3).map((p) => `#${p.i} x ${p.x.toFixed(1)} z ${p.z.toFixed(2)}`).join('; ')})`);
     check(off.length === 0, `insideSidewalk: ${n} chân đúng mặt lề (${off.length} lệch: ${off.slice(0, 3).map((p) => `#${p.i} y ${p.y.toFixed(3)} / ${p.ground.toFixed(3)}`).join('; ')})`);
   }
+  /* Cầu Rồng: cột đèn ở |z| = 17,0 (bán kính ≤ 0,14), mặt trong lan can |z| ≈ 18,58 ⇒ tâm người phải ở |z| ∈ [17,3; 18,58];
+     người đứng chỉ trên phần cầu qua sông (|x| ≤ 255, mép kè 262) */
+  const dps = (await positions('dragon-people')).filter((p) => p.scale > 0);
+  const nearLamp = dps.filter((p) => Math.abs(p.z) < 17.3 || Math.abs(p.z) > 18.58), standLand = dps.filter((p) => p.kind === 'stand' && Math.abs(p.x) > 255);
+  check(dps.length === 70 && nearLamp.length === 0, `clearLamps: dragon-people ${dps.length} người, ${nearLamp.length} người lấn hàng cột đèn / lan can (${nearLamp.slice(0, 3).map((p) => `#${p.i} ${p.kind} z ${p.z.toFixed(2)}`).join('; ')}); |z| ${Math.min(...dps.map((p) => Math.abs(p.z))).toFixed(2)}…${Math.max(...dps.map((p) => Math.abs(p.z))).toFixed(2)}`);
+  check(standLand.length === 0, `standOverRiver: dragon-people ${standLand.length} người đứng trên phần cầu qua đất (|x| > 255) (${standLand.slice(0, 3).map((p) => `#${p.i} x ${p.x.toFixed(1)}`).join('; ')})`);
 
   /* ---------- 8. randKept ---------- */
   const rk = await page.evaluate(() => (window.__app.boats?.running() ?? []).map((b) => b.speed));
@@ -133,6 +141,19 @@ try {
   const dragonVis = async (pos) => { await setCam(pos, [0, 8, 0]); await frames(page, 3); return page.evaluate(() => ({ v: window.__app.scene.getObjectByName('dragon-people')?.visible, d: window.__app.camera.position.length() })); };
   const far = await dragonVis([0, 300, 1980]), near = await dragonVis([0, 120, 270]);
   check(far.v === false && near.v === true, `dragonLod: camera cách ${far.d.toFixed(0)} m ⇒ ẩn (${far.v}); ${near.d.toFixed(0)} m ⇒ hiện (${near.v})`);
+
+  /* ---------- 7b. dragonCull: trong tầm 1 500 m nhưng quay lưng lại Cầu Rồng ⇒ lưới người Cầu Rồng không vẽ (cắt theo khung nhìn); nhìn vào cầu ⇒ vẽ.
+     Cờ "đã vẽ khung này" = onAfterRender của InstancedMesh (renderer chỉ gọi khi thực sự vẽ đối tượng) ---------- */
+  const dragonDrawn = async (pos, tgt) => {
+    await setCam(pos, tgt); await frames(page, 2);
+    await page.evaluate(() => { const m = window.__app.scene.getObjectByName('dragon-people').children.find((o) => o.isInstancedMesh); window.__ppDrawn = 0; m.onAfterRender = () => { window.__ppDrawn++; }; });
+    await frames(page, 3);
+    return page.evaluate(() => { const g = window.__app.scene.getObjectByName('dragon-people'), m = g.children.find((o) => o.isInstancedMesh); m.onAfterRender = () => {}; return { drawn: window.__ppDrawn, group: g.visible, culled: m.frustumCulled, d: window.__app.camera.position.distanceTo(new window.__app.THREE.Vector3(0, 8, 0)) }; });
+  };
+  const awayTtl = await dragonDrawn([0, 60, 1380], [0, 20, 1800]), awaySh = await dragonDrawn([0, 60, -1080], [0, 20, -1500]), look = await dragonDrawn([0, 120, 270], [0, 8, 0]);
+  check(awayTtl.group && awayTtl.drawn === 0, `dragonCull: gần Trần Thị Lý (cách ${awayTtl.d.toFixed(0)} m), quay lưng lại Cầu Rồng ⇒ nhóm hiện (${awayTtl.group}), lưới vẽ ${awayTtl.drawn} lần (frustumCulled ${awayTtl.culled})`);
+  check(awaySh.group && awaySh.drawn === 0, `dragonCull: gần Cầu sông Hàn (cách ${awaySh.d.toFixed(0)} m), quay lưng lại Cầu Rồng ⇒ nhóm hiện (${awaySh.group}), lưới vẽ ${awaySh.drawn} lần`);
+  check(look.group && look.drawn > 0, `dragonCull: nhìn vào Cầu Rồng (cách ${look.d.toFixed(0)} m) ⇒ lưới vẽ ${look.drawn} lần`);
 
   /* ---------- 10. ảnh ---------- */
   if (!NO_SHOTS) {

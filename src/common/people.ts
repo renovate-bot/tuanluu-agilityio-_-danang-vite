@@ -35,8 +35,9 @@ export function ppJoinKinds(...parts: PersonInfo[][]): PersonInfo[] {
 
 /* Gán kiểu người lên danh sách đã dựng (sau khi lấy hết rnd() của cầu, trước createPeople):
    người chạy nhận tốc độ chạy; người đi cùng chép vị trí, hướng, tốc độ, dải của người dẫn rồi lệch ngang companionGap về phía trong
-   (về tim cầu với người đi dọc cầu, về phía sông với người đi dọc bờ); người đứng do từng cầu đặt sát lan can và quay mặt (place). */
-export function ppApplyKinds(list: Walker[], infos: PersonInfo[], place: (w: Walker, info: PersonInfo, i: number) => void): void {
+   (về tim cầu với người đi dọc cầu, về phía sông với người đi dọc bờ; outward = true thì lệch ra ngoài, về phía lan can — Cầu Rồng, tránh hàng cột đèn);
+   người đứng do từng cầu đặt sát lan can và quay mặt (place). */
+export function ppApplyKinds(list: Walker[], infos: PersonInfo[], place: (w: Walker, info: PersonInfo, i: number) => void, outward = false): void {
   const P = CONFIG.people, [r0, r1] = P.run.speed;
   infos.forEach((info, i) => {
     const w = list[i];
@@ -45,7 +46,7 @@ export function ppApplyKinds(list: Walker[], infos: PersonInfo[], place: (w: Wal
     if (info.follow >= 0) {
       const L = list[info.follow], lat = L.axis === 'z' ? 'x' : 'z';
       Object.assign(w, { x: L.x, z: L.z, dir: L.dir, speed: L.speed, lo: L.lo, hi: L.hi, axis: L.axis, profile: L.profile, follow: info.follow });
-      w[lat] -= Math.sign(w[lat]) * P.companionGap;
+      w[lat] += (outward ? 1 : -1) * Math.sign(w[lat]) * P.companionGap;
     }
     if (info.kind === 'stand') place(w, info, i);
   });

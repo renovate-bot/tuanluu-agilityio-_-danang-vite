@@ -755,7 +755,9 @@ const peopleBase = {
     n: 70,                                          // số người trên hai lề Cầu Rồng (ước lượng, spec §7)
     seed: 4107,                                     // hạt rng riêng cho người Cầu Rồng (không gọi rand())
     hideDistance: 1500,                             // m — camera xa hơn thì ẩn hệ người Cầu Rồng (ước lượng)
-    headBias: 0.6                                   // phần người đứng lan can đặt ở nửa cầu phía đầu rồng, phần còn lại rải đều (ước lượng, spec §7)
+    headBias: 0.6,                                  // phần người đứng lan can đặt ở nửa cầu phía đầu rồng, phần còn lại rải đều (ước lượng, spec §7)
+    walkZ: 17.55,                                   // m — |z| tuyến đi của người dẫn; người đi cùng lệch companionGap ra phía lan can (|z| 18,15). Dải trống giữa cột đèn (|z| 17,0, bán kính ≤ 0,14) và mặt trong lan can (|z| ≈ 18,58); nửa bề ngang người lớn nhất ≈ 0,34 m (nón lá 0,31 × 1,08) (ước lượng)
+    standX: 255                                     // m — người đứng lan can chỉ ở |x| ≤ standX, phần cầu qua sông (mép kè |x| = 262) (ước lượng)
   }
 };
 

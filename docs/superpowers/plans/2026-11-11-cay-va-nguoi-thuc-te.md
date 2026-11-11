@@ -271,7 +271,9 @@ _(điền khi làm)_
 - Sửa sau review (`39f5eee`): dây đèn quấn thân dừa bám thân cong theo độ cao (trừ độ lệch ngọn, cộng lại theo `(dy / h)²`); `clearedStayZero` so hai tập chỉ số thân / tán hai chiều; số tam giác hầm chính xác `25 104 + 224 × 138 = 56 016`. `typecheck`, `build`, `test:trees` 28/28 ĐẠT.
 - `test:weather`: ĐẠT (`weather-check: đạt`, exit 0, bản `39f5eee`)
 - `test:riverfront`: ĐẠT ("Hai bờ sông Hàn: tất cả kiểm tra đạt", exit 0, bản `39f5eee`; dọn nhà 40 lượt, 44 cây/đèn, 204/7934 instance nhà scale 0)
-- Chưa chạy theo yêu cầu: `test:drawcalls`, so thời gian khung với `main`, `test:citynight -- --baseline`, `test:tour`, `test:voice`, `test:tunnel`, `test:sunwheel`, `test:mobile`, `test:explore`, `test:boats`, `test:traffic`, `test:multi*`; chưa đo FPS GPU thật.
+- `test:tunnel`: ĐẠT (bản `f059090`; các commit sau không đụng tới hầm)
+- Sửa sau review cuối toàn nhánh: (1) người Cầu Rồng tránh cột đèn — người dẫn ở |z| = `CONFIG.people.dragon.walkZ` 17,55, người đi cùng lệch `companionGap` ra phía lan can (tham số `outward` của `ppApplyKinds`, mặc định giữ hành vi cũ cho Trần Thị Lý, Nguyễn Văn Trỗi, sông Hàn); (2) `dragon-people` bật frustum culling với `boundingSphere` cố định bao cả mặt cầu; (3) người đứng chỉ ở |x| ≤ `standX` 255 (cùng một `r()` mỗi người). `typecheck`, `test:people:unit` 19/19, `build`, `test:people` 37/37 ĐẠT (gồm `clearLamps`, `standOverRiver`, `dragonCull` mới).
+- Chưa chạy theo yêu cầu: `test:drawcalls`, so thời gian khung với `main`, `test:citynight -- --baseline`, `test:tour`, `test:voice`, `test:sunwheel`, `test:mobile`, `test:explore`, `test:boats`, `test:traffic`, `test:multi*`; chưa đo FPS GPU thật.
 
 ## Cần người dùng quyết
 

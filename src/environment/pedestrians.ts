@@ -18,7 +18,7 @@ const CENTER = new THREE.Vector3(0, deckY(0), 0);
 let dragon: People | null = null;
 
 export function buildDragonPeople(): void {
-  const r = rng(D.seed), W = CONFIG.people.walk, hw = CONFIG.width / 2, zWalk = hw - CONFIG.sidewalk / 2 - 0.15, list: Walker[] = [];
+  const r = rng(D.seed), W = CONFIG.people.walk, hw = CONFIG.width / 2, zWalk = D.walkZ, list: Walker[] = [];   // tuyến đi giữa hàng cột đèn (|z| 17) và lan can
   const onDeck = (x: number) => deckY(x) + 0.25;   // mặt lát lề cao 0,25 m trên bản mặt cầu (deck.ts)
   for (let i = 0; i < D.n; i++) list.push({ x: lerp(-325, 325, r()), z: (r() < 0.5 ? -1 : 1) * zWalk, lo: -325, hi: 325, dir: r() < 0.5 ? -1 : 1, speed: lerp(W.speed[0], W.speed[1], r()), profile: onDeck });
   const infos = ppAssignKinds(D.n, D.seed + 1), nHead = Math.round(infos.filter((k) => k.kind === 'stand').length * D.headBias);
@@ -26,10 +26,13 @@ export function buildDragonPeople(): void {
   ppApplyKinds(list, infos, (w) => {
     const s = Math.sign(w.z);
     w.z = s * (hw - 0.5); w.face = ppFaceZ(s);
-    w.x = k++ < nHead ? lerp(150, 325, r()) : lerp(-325, 150, r());   // headBias phần người đứng ở đoạn gần đầu rồng
-  });
+    w.x = k++ < nHead ? lerp(150, D.standX, r()) : lerp(-D.standX, 150, r());   // headBias phần người đứng ở đoạn gần đầu rồng; chỉ trên phần cầu qua sông (một r() mỗi người như cũ)
+  }, true);   // người đi cùng lệch ra phía lan can, không lấn vào hàng cột đèn
   dragon = createPeople({ group: scene, noReflect: [] }, list, 'dragon-people', r);
   dragon.group.traverse((o) => o.layers.set(1));
+  /* Cắt theo khung nhìn: khối cầu cố định bao mọi chỗ người có thể tới trên cả mặt cầu (không computeBoundingSphere — sẽ co theo vị trí lúc gọi) */
+  const box = new THREE.Box3(new THREE.Vector3(-326, CONFIG.roadY, -hw), new THREE.Vector3(326, deckY(0) + 2.5, hw));   // x ±(325 + 1) m, cao tới đỉnh nón / tay giơ trên đỉnh vồng
+  dragon.mesh.boundingSphere = box.getBoundingSphere(new THREE.Sphere()); dragon.mesh.frustumCulled = true;
 }
 
 export function updateDragonPeople(dt: number, elapsed: number, cam: THREE.Camera): void {
