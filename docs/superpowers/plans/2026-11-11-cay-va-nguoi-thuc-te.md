@@ -89,9 +89,9 @@ test('tàu dừa: có tàu dựng lên và tàu rũ xuống', () => { /* max y �
 test('cây dừa tĩnh cao h, đứng trên y = 0, hai mặt', () => { /* bbox.min.y ≈ 0; max.y trong [h, h + 0.45h]; mỗi tam giác tàu lá có bản đảo chiều */ });
 ```
 
-- [ ] **Bước 2:** `npm run test:trees:unit` → LỖI (chưa có module).
-- [ ] **Bước 3:** Viết `shapes.ts` và `CONFIG.trees`. Cụm lá: khối cầu thấp đa giác (ví dụ `IcosahedronGeometry(1, 1)` 80 tam giác) nhiễu nhẹ, pháp tuyến hướng tâm cụm để bóng mềm; sắp như bản thử (vành ngoài thấp, vành giữa, đỉnh) nhưng ít cụm hơn.
-- [ ] **Bước 4:** Viết `textures.ts` (chép ý `leafTex`, `frondTex` của bản thử; không import trong test).
+- [x] **Bước 2:** `npm run test:trees:unit` → LỖI (chưa có module).
+- [x] **Bước 3:** Viết `shapes.ts` và `CONFIG.trees`. Cụm lá: khối cầu thấp đa giác (ví dụ `IcosahedronGeometry(1, 1)` 80 tam giác) nhiễu nhẹ, pháp tuyến hướng tâm cụm để bóng mềm; sắp như bản thử (vành ngoài thấp, vành giữa, đỉnh) nhưng ít cụm hơn.
+- [x] **Bước 4:** Viết `textures.ts` (chép ý `leafTex`, `frondTex` của bản thử; không import trong test).
 - [ ] **Bước 5:** `npm run test:trees:unit` → mọi test ĐẠT. `npm run typecheck` → không lỗi.
 - [ ] **Bước 6:** Commit `feat(trees): hình học cây bóng mát và cây dừa`.
 
@@ -191,9 +191,9 @@ test('cây dừa tĩnh cao h, đứng trên y = 0, hai mặt', () => { /* bbox.m
   - `gait.test.ts`: đi bộ không trượt: `ppCadence('walk', v, s) · ppStride('walk', s) / 2π ≈ v` (sai số 1 %) với `v ∈ {1.05, 1.2, 1.35}`, `s ∈ {0.6, 1, 1.08}`; chạy ≈ 1,4 chu kỳ/giây ở `s = 1`; đứng = 0; `ppAngles('legL', 0.34, φ)` và `('legR', …)` lệch pha π; gối luôn ≤ 0 (gập về sau); biên độ hông khi đi ≤ 0,4 rad; khi chạy gối gập sâu nhất ≥ 1,5 rad; tay ngược dấu chân cùng bên ở `φ = π/2`.
   - `shapes.test.ts`: số đỉnh ≤ `CONFIG.people.maxVerts`; bbox: cao 1,6–1,9 (tính cả nón), `min.y` ≈ 0, rộng Z ≤ 0,7; đủ 7 giá trị `aPart`; mọi đỉnh `aSeg = 1` có `aPart ∈ 1..4`; đỉnh chân có `aPivot = PP_HIP`; không NaN.
   - `kinds.test.ts`: `ppAssignKinds(80, 1)` dài 80; cùng seed cho cùng kết quả; tỉ lệ từng kiểu trong ±2 người so với `mix`; mọi `follow ≥ 0` thỏa điều kiện trên; `{ run: false }` không có `'run'`; trẻ em luôn có `follow ≥ 0`.
-- [ ] **Bước 2:** `npm run test:people:unit` → LỖI.
-- [ ] **Bước 3:** Viết bốn file và `CONFIG.people` (hình và shader: xuất phát từ `personGeo`, `patchPerson` của bản thử; giảm số cạnh để ≤ 900 đỉnh).
-- [ ] **Bước 4:** `npm run test:people:unit`, `npm run typecheck` → ĐẠT.
+- [x] **Bước 2:** `npm run test:people:unit` → LỖI.
+- [x] **Bước 3:** Viết bốn file và `CONFIG.people` (hình và shader: xuất phát từ `personGeo`, `patchPerson` của bản thử; giảm số cạnh để ≤ 900 đỉnh).
+- [x] **Bước 4:** `npm run test:people:unit`, `npm run typecheck` → ĐẠT.
 - [ ] **Bước 5:** Commit `feat(people): hình học, dáng đi và vật liệu người đi bộ`.
 
 ---
@@ -248,10 +248,10 @@ test('cây dừa tĩnh cao h, đứng trên y = 0, hai mặt', () => { /* bbox.m
 **Files:**
 - Modify: `tests/KET-QUA.md`, `README.md` (mục Cấu trúc: `src/common/trees/`, `src/common/people/`, `src/environment/pedestrians.ts`, test mới), `.github/copilot-instructions.md` §5 (4 lệnh test mới), `.github/memory-bank/decisions.md` (D-028), `.github/memory-bank/activeContext.md`, `.github/memory-bank/progress.md`, `.github/memory-bank/systemPatterns.md` (quy ước ma trận cặp thân/tán; người một lưới mỗi hệ), file này (đánh dấu bước, mục Kết quả)
 
-- [ ] **Bước 1:** `npm run test:weather` và `npm run test:riverfront`, mỗi lệnh một lần (chạm trực tiếp cây đổ, gió, dây đèn, dọn cây). Ghi kết quả thật. Nếu lỗi do thay đổi này thì sửa; nếu test so ảnh / số đo cũ không còn đúng vì cây đổi dáng thì cập nhật mốc và ghi rõ.
-- [ ] **Bước 2:** Ghi `tests/KET-QUA.md`: mục mới cho D-028 gồm số tam giác từng lưới cây, số đỉnh người, số lưới (cây 6, người 3), kết quả các test đã chạy, và danh sách **chưa chạy** theo yêu cầu người dùng: `test:drawcalls`, so thời gian khung với `main`, `test:citynight -- --baseline` (mốc sẽ đổi vì cây đổi dáng), `test:tour`, `test:voice`, `test:sunwheel`, `test:mobile`, `test:explore`, `test:boats`, `test:traffic`, `test:multi*`; FPS GPU thật chưa đo.
-- [ ] **Bước 3:** Cập nhật memory bank theo `.github/prompts/update-memory-bank.prompt.md`: D-028 trong `decisions.md`; hàng mới ở `progress.md`; `activeContext.md` có mục **"Cần người dùng quyết"** chép từ cuối file này.
-- [ ] **Bước 4:** `npm run typecheck && npm run build` → ĐẠT. Commit `docs(trees-people): kết quả, README, memory bank (D-028)`.
+- [x] **Bước 1:** `npm run test:weather` và `npm run test:riverfront`, mỗi lệnh một lần (chạm trực tiếp cây đổ, gió, dây đèn, dọn cây). Ghi kết quả thật. Nếu lỗi do thay đổi này thì sửa; nếu test so ảnh / số đo cũ không còn đúng vì cây đổi dáng thì cập nhật mốc và ghi rõ.
+- [x] **Bước 2:** Ghi `tests/KET-QUA.md`: mục mới cho D-028 gồm số tam giác từng lưới cây, số đỉnh người, số lưới (cây 6, người 3), kết quả các test đã chạy, và danh sách **chưa chạy** theo yêu cầu người dùng: `test:drawcalls`, so thời gian khung với `main`, `test:citynight -- --baseline` (mốc sẽ đổi vì cây đổi dáng), `test:tour`, `test:voice`, `test:sunwheel`, `test:mobile`, `test:explore`, `test:boats`, `test:traffic`, `test:multi*`; FPS GPU thật chưa đo.
+- [x] **Bước 3:** Cập nhật memory bank theo `.github/prompts/update-memory-bank.prompt.md`: D-028 trong `decisions.md`; hàng mới ở `progress.md`; `activeContext.md` có mục **"Cần người dùng quyết"** chép từ cuối file này.
+- [x] **Bước 4:** `npm run typecheck && npm run build` → ĐẠT. Commit `docs(trees-people): kết quả, README, memory bank (D-028)`.
 - [ ] **Bước 5:** `git push -u origin feature/cay-va-nguoi-thuc-te`; `gh pr create` (tiêu đề tiếng Việt, mô tả: tóm tắt, test đã chạy / chưa chạy, mục cần người dùng quyết; kết thúc bằng dòng `🤖 Generated with [Claude Code](https://claude.com/claude-code)`); `gh pr merge --merge`; về `main`, `git pull`.
 
 ---
@@ -267,6 +267,12 @@ _(điền khi làm)_
 - Gió: vá thêm `MAT.trunk` (`tree-trunk-wind`) để tán dừa không rời đỉnh thân (ghi ở đầu `wind.ts`).
 - `npm run test:perf -- --strict` (một lần, 2026-11-11, ~90 phút trên SwiftShader): **perf-check: đạt** — mọi thao tác +0 program, render dài nhất ≤ 77 ms (ngưỡng 150). Khung đầu 26 646 ms, 172 program. Render trung bình (ms) overview 24,7 · head 26,0 · hrOverview 21,9 · swOverview 13,7 · tpBay 20,2; draw call 268 / 288 / 252 / 150 / 262. So với lần đo 2026-11-09 (trước D-026, D-027, cây mới; không cùng mốc): render 14,8 / 14,0 / 13,0 / 8,2 / 13,3, khung đầu 9 206 ms. Thời gian so với `main` hiện tại: **chưa đo**.
 
+### Task 6 (2026-11-11)
+- Sửa sau review (`39f5eee`): dây đèn quấn thân dừa bám thân cong theo độ cao (trừ độ lệch ngọn, cộng lại theo `(dy / h)²`); `clearedStayZero` so hai tập chỉ số thân / tán hai chiều; số tam giác hầm chính xác `25 104 + 224 × 138 = 56 016`. `typecheck`, `build`, `test:trees` 28/28 ĐẠT.
+- `test:weather`: ĐẠT (`weather-check: đạt`, exit 0, bản `39f5eee`)
+- `test:riverfront`: ĐẠT ("Hai bờ sông Hàn: tất cả kiểm tra đạt", exit 0, bản `39f5eee`; dọn nhà 40 lượt, 44 cây/đèn, 204/7934 instance nhà scale 0)
+- Chưa chạy theo yêu cầu: `test:drawcalls`, so thời gian khung với `main`, `test:citynight -- --baseline`, `test:tour`, `test:voice`, `test:tunnel`, `test:sunwheel`, `test:mobile`, `test:explore`, `test:boats`, `test:traffic`, `test:multi*`; chưa đo FPS GPU thật.
+
 ## Cần người dùng quyết
 
 _(điền khi làm; chép sang `activeContext.md` ở Task 6)_
@@ -275,3 +281,9 @@ _(điền khi làm; chép sang `activeContext.md` ở Task 6)_
 - (Task 2) `test:perf --strict` đạt, nhưng thời gian render trung bình trên SwiftShader cao hơn khoảng 1,6–1,9 lần so với lần đo 2026-11-09 (mốc đó trước cả D-026, D-027), khung đầu 26,6 s so với 9,2 s. Tổng tam giác cây khoảng 0,93 triệu (cũ ≈ 0,17 triệu), vẽ ở các lượt cảnh, bóng và phản chiếu. Nếu GPU thật thấy chậm: giảm cụm lá (`CONFIG.trees.shade.blobs`) / tàu lá (`palm.fronds`), hoặc bỏ cây khỏi lượt phản chiếu.
 - Mức chi tiết cây sau khi giản lược (≤ 850 và ≤ 570 tam giác mỗi cây) thấp hơn bản dựng thử đã duyệt; xem demo rồi quyết có cần tăng (đổi lấy độ mượt) không.
 - Cầu Rồng 70 người, ngày đêm như nhau; có muốn đông hơn về đêm / cuối tuần không.
+- (Task 6) Cầu Rồng: `headBias` 0,6 (8 trong 14 người đứng gần đầu rồng) thay vì hai phần ba.
+- (Task 6) Tốc độ đi bộ Trần Thị Lý và Cầu sông Hàn giữ dải cũ (1,0–1,6 và 0,9–1,4 m/s) thay vì 1,05–1,35 m/s của spec, để chuỗi `rnd()` của cầu không đổi.
+- (Task 6) Người đi cùng / trẻ em là người đi bộ cũ đổi kiểu (tổng giữ nguyên); không có người chạy ở cầu Nguyễn Văn Trỗi.
+- (Task 6) Dừa cửa hầm: 224 cây thêm khoảng 31 nghìn tam giác vào `hr-concrete` (đổ bóng; một nửa là mặt sau đảo chiều cho tàu lá hai mặt), chưa đo ở góc nhìn hầm; có thể giảm `staticFronds` 8 → 6.
+- (Task 6) Render SwiftShader gấp 1,6–1,9 lần mốc 2026-11-09 (khác baseline; tam giác cây khoảng 0,93 triệu so với 0,17 triệu, vẽ cả ở lượt bóng và phản chiếu), `test:perf --strict` vẫn đạt. Nếu GPU thật chậm: chuyển 4 lưới cây khu phố (thân + tán) sang layer 1 để bỏ khỏi phản chiếu nước, vẫn đổ bóng, đổi lại cây ven sông không soi xuống sông.
+- (Task 6) File rỗng `0` chưa theo dõi ở gốc repo, không rõ nguồn, để nguyên.

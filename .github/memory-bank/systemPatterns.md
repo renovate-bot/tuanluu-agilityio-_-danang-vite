@@ -83,6 +83,12 @@ Không kế thừa `BridgeBase`: module `index.ts` giữ một đối tượng `
 - Góc nhìn: `views/presets.ts` (`VIEWS`, tọa độ thế giới). Điểm dừng Tour: `views/tourStops.ts`. Tên/lời Tour: khóa trong locales, **đúng thứ tự** với mảng điểm dừng.
 - Cờ điểm dừng: `swing`, `immerse`, `cutaway`, `interior`.
 
+## Mẫu cây và người (D-028)
+- Cây = cặp InstancedMesh thân + tán **cùng chỉ số** (`trees-shade-*`, `trees-palm-*`, `tp-trees-*`). Ma trận tán giữ đúng tâm / tỉ lệ quả cầu cũ để `fallen.ts`, `promenade.ts`, dọn cây (scale 0) và gió đọc ma trận tán như trước. Dừa: thân cong `x = bend·y²` theo +X cục bộ nên tán đặt ở `(x, landY + h, z) + Ry(yaw)·(bend·trunkWidth, 0, 0)`; mọi code đọc x/z tán của dừa (dây đèn `promenade.ts`) phải trừ độ lệch này. Dọn cây phải scale 0 **cả hai** lưới cùng chỉ số (`clearedStayZero` so hai tập).
+- Yaw cây = `trYaw(i, seed)` (băm theo chỉ số, `rng` riêng), không gọi `rand()`.
+- Người: **một InstancedMesh mỗi hệ** (`ppBuildGeometry()` không cache vì `aVar`/`aPants` gắn vào hình), chung `ppMaterial()`. Phải `setColorAt` cho **mọi** instance (không có `instanceColor` thì `USE_INSTANCING_COLOR` tắt và người trắng); `aPants` là màu **tuyến tính** (qua `THREE.Color.setHex`).
+- Phần ngẫu nhiên mới của người dùng `rng(seed)` riêng (1966, 1967, 2904, 2905, 4107, 4108), danh sách người cũ giữ nguyên số lời gọi `rnd()`.
+
 ## Mẫu kiểm thử
 - `?test` → `window.__app` (renderer, scene, camera, cam, songHan, hr, tours, narration…). Thêm đối tượng mới vào `__app` khi cần kiểm.
 - `tests/lib.mjs`: `serveDir`, `launch` (SwiftShader), `openApp`, `frames`, `waitFlight`. Test đọc `dist/` → build trước.
@@ -98,3 +104,4 @@ Không kế thừa `BridgeBase`: module `index.ts` giữ một đối tượng `
 - Preset camera thấp hơn điểm nhìn mà không có `maxPolar` (vd `swFront`): khung đầu sau chuyến bay OrbitControls kẹp camera lên. Mã nào "nhớ tư thế camera để trả lại" (ngồi cabin) phải chốt qua `controls.update()` (damping tắt) trước khi lưu. Draw call phụ thuộc hướng nhìn (frustum culling mesh nhỏ như biển hiệu): test so ngày/đêm hoặc quay/dừng phải đặt cùng hướng nhìn và để vòng quay đạt tốc độ đích trước khi đo.
 - `env(safe-area-inset-*)` luôn bằng 0 nếu thiếu `viewport-fit=cover` trong `<meta viewport>` (index.html): tai thỏ/thanh home vẫn đè lên thanh dưới mà không báo lỗi. Có `cover` thì mọi mép cố định phải tự cộng `env(...)`.
 - Chế độ gọn không có `?test`-only nào: đo giả lập điện thoại phải mở trang KHÔNG `?test` (bậc chất lượng Tự động, `device.phone`), khi đó không có `__app`, tự chờ `#loading.done` và đọc `#ftime`/`#fps` bằng `textContent` (HUD ẩn).
+- Trong lệnh shell / heredoc, biểu thức như `p.y > p.ground` bị coi là chuyển hướng `>` và tạo file rỗng lạc ở gốc repo (từng sinh `p.ground`, `p.y`; file `0` có thể cùng nguyên nhân). Viết so sánh trong file bằng công cụ ghi file, không dán vào lệnh shell; kiểm `git status` có file rỗng lạ không.
