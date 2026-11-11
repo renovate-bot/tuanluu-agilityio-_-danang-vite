@@ -428,6 +428,9 @@ try {
     // dòng hướng dẫn phím (máy tính, có chuột): #stHint hiện đúng chữ, #exHint của dù lượn vẫn ẩn
     const hint = await P.evaluate(() => ({ st: document.getElementById('stHint').innerText, stShown: document.getElementById('stHint').getClientRects().length > 0, ex: document.getElementById('exHint').getClientRects().length > 0 }));
     check(`6 #stHint hiện "${hint.st}" (stHint vi), #exHint ẩn (${hint.ex})`, hint.stShown && hint.st === JSON.parse(readFileSync(new URL('../src/i18n/locales/vi.json', import.meta.url), 'utf8')).stHint && !hint.ex);
+    // máy tính (có chuột): điều khiển cảm ứng ẩn hết, chỉ 📷 hiện (lỗi cũ: "Nhảy" hiện ở góc trên trái vì `#stHud button{display:flex}` thắng `#stJump{display:none}`)
+    const desk = await P.evaluate(() => Object.fromEntries(['stJump', 'stPad', 'stLook', 'stPhoto'].map((id) => [id, document.getElementById(id).getClientRects().length > 0])));
+    check(`6 máy tính: #stJump ${desk.stJump}, #stPad ${desk.stPad}, #stLook ${desk.stLook} ẩn; #stPhoto ${desk.stPhoto} hiện`, !desk.stJump && !desk.stPad && !desk.stLook && desk.stPhoto);
     // Esc thoát
     await P.evaluate(() => { window.__reloadMark = 1; });
     await P.keyboard.press('Escape');
