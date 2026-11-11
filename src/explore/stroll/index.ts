@@ -21,7 +21,7 @@ import { stPhotoRequest, stPhotoAfterRender, stPhotoLast } from './photo';
 import { stAvatars } from './avatars';
 import { stCollectRuntime } from './sceneData';
 import { stCamPlace, stCamDrag, type StCam } from './camera';
-import { stInputFromKeys } from './keys';
+import { stInputFromKeys, stKeyName } from './keys';
 import { stTouchBind } from './touch';
 import { exNightStep } from '../nightShows';
 import { exMulti } from '../multi';
@@ -82,7 +82,7 @@ function stOnMultiChange(): void {
   const s = exMulti.session; if (!s) return;
   if (watching) {
     if (s.phase === 'flying') { stroll.start(); return; }   // chấp nhận lời mời: xuất phát như vào đi thường
-    if (s.phase === 'solo') { try { sessionStorage.setItem('exMpNotice', 'lost'); } catch { /* bộ nhớ bị chặn */ } exit(); return; }   // màn chọn đọc cờ này và hiện exMpLost
+    if (s.phase === 'solo') { try { sessionStorage.setItem('exMpNotice', 'lostWalk'); } catch { /* bộ nhớ bị chặn */ } exit(); return; }   // màn chọn đọc cờ này và hiện stLostChooser (nhắc Đi dạo, không phải Dù lượn)
     exWatchRender();
   } else if (active()) {
     if (s.phase === 'watching') { state = null; stAvatars.setSelf(selfSlot, null); stroll.startWatching(true); return; }   // chỗ bị thu hồi (rời máy): sang xem, camera giữ nguyên
@@ -161,15 +161,16 @@ export function setupStroll(c: SwingController, onExit: () => void): void {
     if (e.ctrlKey || e.metaKey || e.altKey) return;   // phím tắt trình duyệt không điều khiển nhân vật, tránh kẹt phím
     if (isField(e.target)) return;                    // gõ trong ô nhập / chọn không điều khiển nhân vật
     exMulti.activity();   // phím điều khiển (kể cả tự lặp) tính là còn đó
-    const k = e.key.toLowerCase();
+    const k = stKeyName(e);   // theo vị trí phím (e.code): bố cục không Latin (ru, ar, th, hi) vẫn dùng WASD
     if (k === 'p') { if (!e.repeat) stPhoto(); return; }   // P chụp ảnh, không ghi vào keys
     if (k === ' ') { e.preventDefault(); if (!e.repeat) jumpQueued = true; }
     else if (k.startsWith('arrow')) e.preventDefault();
     keys.add(k);
   });
   window.addEventListener('keyup', (e) => {
-    keys.delete(e.key.toLowerCase());
-    if (e.key === ' ' && active() && !isField(e.target)) e.preventDefault();   // Space không bấm nút đang focus
+    const k = stKeyName(e);
+    keys.delete(k); keys.delete(e.key.toLowerCase());   // cả tên cũ: phím dù lượn ghi theo e.key
+    if (k === ' ' && active() && !isField(e.target)) e.preventDefault();   // Space không bấm nút đang focus
   });
   const drop = () => { keys.clear(); jumpQueued = false; };
   window.addEventListener('blur', drop);

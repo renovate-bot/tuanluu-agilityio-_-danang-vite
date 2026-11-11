@@ -485,5 +485,7 @@
   "stJump": "Nhảy",
   "stPhoto": "Chụp ảnh",
   "stPhotoSaved": "Đã lưu ảnh",
-  "stPhotoFail": "Không lưu được ảnh"
+  "stPhotoFail": "Không lưu được ảnh",
+  "stLostChooser": "Mất kết nối. Chọn Đi dạo để kết nối lại.",
+  "stHint": "W A S D: đi · giữ Shift: chạy · Space: nhảy · kéo chuột: xoay camera · P: chụp ảnh · Esc: thoát"
 }

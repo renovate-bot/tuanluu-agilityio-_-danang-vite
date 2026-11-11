@@ -641,7 +641,7 @@ const strollBase = {
     touch: 0.006,      // rad/px — độ nhạy vuốt màn hình (ước lượng)
     lag: 0.12          // s — độ trễ camera bám theo nhân vật (ước lượng)
   },
-  stick: { dead: 0.15, run: 0.8, size: 120 },   // cần gạt ảo: vùng chết (phần bán kính), từ mức này là chạy (phần bán kính), đường kính px (ước lượng)
+  stick: { dead: 0.15, run: 0.8, size: 120, activityMs: 1000, resizeKeep: 0.15 },   // cần gạt ảo: vùng chết (phần bán kính), từ mức này là chạy (phần bán kính), đường kính px; giữ cần gạt báo "còn đó" mỗi activityMs ms; đổi cỡ khung nhìn chỉ thả cần gạt khi bề rộng đổi hoặc bề cao đổi quá resizeKeep (phần chiều cao lúc chạm, thanh địa chỉ điện thoại co giãn) (ước lượng)
   labelAbove: 2.1,     // m — nhãn tên cao hơn chân người đi dạo (ước lượng)
   cadenceMax: 1.5,     // lần nhịp chạy CONFIG.people.run.cadence — trần nhịp bước khi chạy 10 m/s, không đơn vị (ước lượng)
   pants: 0x1d1d1f,     // màu quần nhân vật đi dạo (hex sRGB), một màu tối cho mọi slot; áo theo multiParams.colors[slot] (ước lượng)

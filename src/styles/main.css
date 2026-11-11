@@ -313,6 +313,12 @@ body.explore h1,body.explore .eyebrow,body.explore #btnShadow,body.explore .audi
 body.explore:not(.ex-test) .stats{display:none;}   /* HUD giữ khi URL có ?test để test đo draw call */
 /* Đi dạo: dòng hướng dẫn và đồng hồ là của dù lượn nên ẩn; kéo chuột trên cảnh để xoay camera */
 body.explore.stroll #exHint,body.explore.stroll #exSpeed{display:none;}
+/* Dòng hướng dẫn phím của đi dạo (#stHint): cùng chỗ và kiểu với #exHint, chỉ khi có chuột (hover:hover) và không ở chế độ xem; cảm ứng đã có cần gạt */
+#stHint{display:none;}
+@media (hover:hover){
+  body.explore.stroll:not(.ex-watching) #stHint{display:block;position:fixed;left:50%;transform:translateX(-50%);top:calc(14px + env(safe-area-inset-top,0px));padding:8px 14px;font-size:12px;color:var(--text);text-align:center;max-width:calc(100vw - 200px);box-sizing:border-box;pointer-events:none;z-index:4;}
+  body.compact.stroll #stHint{top:calc(64px + env(safe-area-inset-top,0px));}
+}
 body.stroll #scene{cursor:grab;}
 body.stroll #scene:active{cursor:grabbing;}
 /* Đi dạo: điều khiển cảm ứng (explore/stroll/touch.ts). #stHud là lớp phủ trong suốt, chỉ các điều khiển nhận chạm; direction:ltr để ar (RTL) vẫn giữ cần gạt bên trái tay.

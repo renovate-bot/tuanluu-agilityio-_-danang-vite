@@ -2,8 +2,8 @@
    Ba con trỏ độc lập trên #stHud: cần gạt #stPad (ngón trái), vuốt #stLook (nửa phải, dưới các nút), nút #stJump; #stPhoto là nút bấm thường (cả máy tính).
    - Mỗi vùng chỉ theo con trỏ đã chạm vào nó (pointerId riêng + setPointerCapture), nên giữ cần gạt, vuốt camera và chạm Nhảy cùng lúc không lẫn nhau.
    - Nhảy theo cạnh: một lần chạm gọi jump() một lần (stStep nhảy lại ngay khi chạm đất nếu jump còn giữ).
-   - Thả tay, pointercancel, lostpointercapture, blur, ẩn tab, xoay màn hình, đổi cỡ khung nhìn: reset() — cần gạt về giữa, nhân vật dừng (Review Focus 2).
-   - read(out) chỉ ghi đè mx / mz / run khi cần gạt đang được giữ (cảm ứng ưu tiên phím); mỗi khung không cấp phát (D-018). */
+   - Thả tay, pointercancel, lostpointercapture, blur, ẩn tab, xoay màn hình, đổi cỡ khung nhìn đáng kể: reset() — cần gạt về giữa, nhân vật dừng (Review Focus 2).
+   - read(out) chỉ ghi đè mx / mz / run khi cần gạt đang được giữ (cảm ứng ưu tiên phím) và, khi đang giữ, báo activity() mỗi activityMs (giữ yên ngón tay không phát sự kiện); mỗi khung không cấp phát (D-018). */
 import { CONFIG } from '../../config';
 import { stStick } from './stick';
 import type { StInput } from './motion';
@@ -16,7 +16,8 @@ export function stTouchBind(root: HTMLElement, h: StTouchHandlers): { read(out: 
   const size = CONFIG.stroll.stick.size;
   root.style.setProperty('--st-pad', size + 'px');   // đường kính cần gạt lấy từ CONFIG
   let padId = -1, cx = 0, cy = 0, dx = 0, dy = 0, r = size / 2;   // cần gạt: con trỏ, tâm (px màn hình, chốt lúc chạm), độ lệch núm
-  let lookId = -1, lx = 0, ly = 0;                                 // vuốt camera: con trỏ, vị trí trước
+  let padW = 0, padH = 1, lastAct = 0;                             // cỡ khung nhìn lúc chạm cần gạt, lần báo "còn đó" gần nhất (ms)
+  let lookId = -1, lx = 0, ly = 0;                               // vuốt camera: con trỏ, vị trí trước
   let jumpId = -1;
   const own = (el: HTMLElement, e: PointerEvent) => { try { el.setPointerCapture(e.pointerId); } catch { /* con trỏ không còn hoạt động (sự kiện giả) */ } };
 
@@ -29,7 +30,7 @@ export function stTouchBind(root: HTMLElement, h: StTouchHandlers): { read(out: 
       e.preventDefault();
       const b = pad.getBoundingClientRect();
       cx = b.left + b.width / 2; cy = b.top + b.height / 2; r = b.width / 2 || size / 2;
-      padId = e.pointerId; own(pad, e); h.activity();
+      padId = e.pointerId; padW = window.innerWidth; padH = window.innerHeight; lastAct = performance.now(); own(pad, e); h.activity();
       pad.dispatchEvent(new PointerEvent('pointermove', { pointerId: e.pointerId, clientX: e.clientX, clientY: e.clientY }));   // núm theo ngón ngay lúc chạm
     });
     pad.addEventListener('pointermove', (e) => {
@@ -78,10 +79,18 @@ export function stTouchBind(root: HTMLElement, h: StTouchHandlers): { read(out: 
   window.addEventListener('blur', reset);
   document.addEventListener('visibilitychange', () => { if (document.hidden) reset(); });
   window.addEventListener('orientationchange', reset);
-  window.addEventListener('resize', reset);
+  /* Thanh địa chỉ điện thoại co giãn làm đổi innerHeight nhẹ: chỉ thả cần gạt khi bề rộng đổi hoặc bề cao đổi quá resizeKeep */
+  window.addEventListener('resize', () => {
+    if (padId < 0 || window.innerWidth !== padW || Math.abs(window.innerHeight - padH) > padH * CONFIG.stroll.stick.resizeKeep) reset();
+  });
 
   return {
-    read(out: StInput): void { if (padId >= 0) stStick(dx, dy, r, out); },
+    read(out: StInput): void {
+      if (padId < 0) return;
+      stStick(dx, dy, r, out);
+      const now = performance.now();   // giữ yên cần gạt không phát sự kiện: báo "còn đó" thưa, không cấp phát
+      if (now - lastAct >= CONFIG.stroll.stick.activityMs) { lastAct = now; h.activity(); }
+    },
     reset
   };
 }

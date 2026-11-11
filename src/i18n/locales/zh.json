@@ -485,5 +485,7 @@
   "stJump": "跳跃",
   "stPhoto": "拍照",
   "stPhotoSaved": "照片已保存",
-  "stPhotoFail": "无法保存照片"
+  "stPhotoFail": "无法保存照片",
+  "stLostChooser": "连接已断开。请选择“散步”重新连接。",
+  "stHint": "W A S D：行走 · 按住 Shift：奔跑 · Space：跳跃 · 拖动鼠标：旋转视角 · P：拍照 · Esc：退出"
 }

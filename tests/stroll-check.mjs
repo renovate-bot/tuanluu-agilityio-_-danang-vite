@@ -407,6 +407,27 @@ try {
     await frames(P, 30);
     const jumps = await P.evaluate(() => { cancelAnimationFrame(window.__jw); return window.__jumps; });
     check(`6 giữ Space 80 khung: nhảy ${jumps} lần (= 1)`, jumps === 1);
+    // chọn ô cài đặt bằng chuột rồi giữ W: ô chọn bỏ focus, nhân vật đi (không đổi chất lượng / ngôn ngữ bằng phím)
+    for (const id of ['qualitySel', 'langSelect']) {
+      await P.evaluate(() => { const S = window.__app.stroll; window.__st.put(-240, 17.4); S.stroll.state.yaw = 0; S.stroll.cam.yaw = Math.PI; window.__app.keys.clear(); });
+      const pre = await P.evaluate((i) => { window.__app.ui.openSheet('settings'); const s = document.getElementById(i); s.focus(); const had = document.activeElement === s; const v0 = s.value; s.dispatchEvent(new Event('pointerdown')); s.dispatchEvent(new Event('change')); return { had, v0, off: document.activeElement !== s }; }, id);
+      const m0 = await P.evaluate(() => window.__app.stroll.stroll.state.x);
+      await P.keyboard.down('w'); await frames(P, 60); await P.keyboard.up('w');
+      const m1 = await P.evaluate((i) => ({ x: window.__app.stroll.stroll.state.x, v: document.getElementById(i).value }), id);
+      await P.evaluate(() => window.__app.ui.closeSheets());
+      check(`6 chọn #${id} bằng chuột trong đi dạo: có focus trước (${pre.had}), sau đó bỏ focus (${pre.off}), giữ W đi ${(m0 - m1.x).toFixed(2)} m về −X, giá trị "${m1.v}" = "${pre.v0}"`, pre.had && pre.off && m0 - m1.x > 1 && m1.v === pre.v0);
+    }
+    // bố cục không Latin: phím vật lý W (e.code KeyW) đi tới dù e.key là "ц"
+    await P.evaluate(() => { const S = window.__app.stroll; window.__st.put(-240, 17.4); S.stroll.state.yaw = 0; S.stroll.cam.yaw = Math.PI; window.__app.keys.clear(); document.activeElement && document.activeElement.blur(); window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ц', code: 'KeyW', bubbles: true })); });
+    const c0 = await P.evaluate(() => window.__app.stroll.stroll.state.x);
+    await frames(P, 60);
+    await P.evaluate(() => window.dispatchEvent(new KeyboardEvent('keyup', { key: 'ц', code: 'KeyW', bubbles: true })));
+    await frames(P, 3);
+    const c1 = await P.evaluate(() => ({ x: window.__app.stroll.stroll.state.x, keys: window.__app.keys.size }));
+    check(`6 phím key="ц" code=KeyW: đi ${(c0 - c1.x).toFixed(2)} m về −X (> 1), nhả phím thì keys ${c1.keys} (= 0)`, c0 - c1.x > 1 && c1.keys === 0);
+    // dòng hướng dẫn phím (máy tính, có chuột): #stHint hiện đúng chữ, #exHint của dù lượn vẫn ẩn
+    const hint = await P.evaluate(() => ({ st: document.getElementById('stHint').innerText, stShown: document.getElementById('stHint').getClientRects().length > 0, ex: document.getElementById('exHint').getClientRects().length > 0 }));
+    check(`6 #stHint hiện "${hint.st}" (stHint vi), #exHint ẩn (${hint.ex})`, hint.stShown && hint.st === JSON.parse(readFileSync(new URL('../src/i18n/locales/vi.json', import.meta.url), 'utf8')).stHint && !hint.ex);
     // Esc thoát
     await P.evaluate(() => { window.__reloadMark = 1; });
     await P.keyboard.press('Escape');
@@ -525,10 +546,20 @@ try {
     await L.route(/fonts\.(googleapis|gstatic)\.com/, (r) => r.abort());
     let oldServer = false, opened = 0;
     await L.routeWebSocket(/127\.0\.0\.1:1\/sky/, (ws) => { opened++; ws.send(JSON.stringify(oldServer ? { t: 'lobby', flyers: [{ slot: 0, name: 'Bay' }] } : { t: 'lobby', flyers: [{ slot: 0, name: 'Bay' }], walkers: [] })); });
+    await L.addInitScript(() => { try { sessionStorage.setItem('exMpNotice', 'lostWalk'); } catch { /* bỏ qua */ } });   // như vừa mất kết nối khi xem người đi dạo
     await L.goto(srv.url + '?test&chooser&multi=' + encodeURIComponent('ws://127.0.0.1:1/sky'), { waitUntil: 'load', timeout: 180000 });
     await L.waitForFunction(() => window.__app && document.getElementById('loading')?.classList.contains('done'), null, { timeout: 180000 });
     await L.waitForSelector('#chooser', { state: 'visible', timeout: 240000 });
     const loc = (c) => JSON.parse(readFileSync(new URL(`../src/i18n/locales/${c}.json`, import.meta.url), 'utf8'));
+    {
+      const note = () => L.evaluate(() => { const n = document.getElementById('exMpLostNote'); return { txt: n.innerText, shown: n.getClientRects().length > 0, flag: sessionStorage.getItem('exMpNotice') }; });
+      const n0 = await note();
+      check(`9 mất kết nối khi xem người đi dạo: màn chọn hiện "${n0.txt}" (stLostChooser vi, nhắc Đi dạo), cờ đã xóa (${n0.flag})`, n0.shown && n0.txt === loc('vi').stLostChooser && /Đi dạo/.test(n0.txt) && n0.flag === null);
+      await L.selectOption('#exLang', 'en');
+      const n1 = await note();
+      check(`9 đổi sang en: "${n1.txt}" (stLostChooser en)`, n1.txt === loc('en').stLostChooser);
+      await L.selectOption('#exLang', 'vi');
+    }
     const lobbyTxt = () => L.evaluate(() => ({ sky: document.getElementById('exMpSky').innerText, seats: document.getElementById('exMpSeats').innerText, go: document.getElementById('exMpFly').innerText, solo: document.getElementById('exMpSolo').innerText, dir: document.documentElement.dir, list: document.getElementById('exMpList').children.length, kind: window.__app.multi.session && window.__app.multi.session.kind }));
     await L.click('#chooser [data-pick="walk"]');
     await L.waitForFunction(() => /Còn 5 trên 5 chỗ đi dạo/.test(document.getElementById('exMpSeats')?.innerText || ''), null, { timeout: 30000 }).catch(() => {});

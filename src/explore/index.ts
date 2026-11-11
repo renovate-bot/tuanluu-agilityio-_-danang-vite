@@ -133,7 +133,7 @@ export function setupExplore(ctrl: SwingController): void {
     let byMouse = false;
     sel.addEventListener('pointerdown', () => { byMouse = true; });
     sel.addEventListener('keydown', () => { byMouse = false; });
-    sel.addEventListener('change', () => { if (byMouse && active()) sel.blur(); byMouse = false; });
+    sel.addEventListener('change', () => { if (byMouse && (active() || stroll.active())) sel.blur(); byMouse = false; });
   }
   const q = new URLSearchParams(location.search);
   exNight.enabled = !q.has('test');   // test bật tường minh qua __app.explore.nightShows

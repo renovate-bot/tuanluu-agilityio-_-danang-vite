@@ -4,6 +4,12 @@
    Không cấp phát (gọi mỗi khung). */
 import type { StInput } from './motion';
 
+/* Tên phím chuẩn theo vị trí vật lý (e.code) để bố cục không Latin (ru, ar, th, hi) vẫn dùng được WASD / P / Shift / Space; không có code thì dùng e.key. Chỉ đi dạo dùng, phím dù lượn giữ nguyên. */
+const ST_CODE_KEY: Record<string, string> = { KeyW: 'w', KeyA: 'a', KeyS: 's', KeyD: 'd', KeyP: 'p', ShiftLeft: 'shift', ShiftRight: 'shift', Space: ' ' };
+export function stKeyName(e: { key: string; code?: string }): string {
+  return (e.code && ST_CODE_KEY[e.code]) || e.key.toLowerCase();
+}
+
 export function stInputFromKeys(keys: Set<string>, camYaw: number, out: StInput): StInput {
   let f = 0, r = 0;
   if (keys.has('w') || keys.has('arrowup')) f += 1;

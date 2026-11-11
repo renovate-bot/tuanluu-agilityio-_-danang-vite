@@ -373,6 +373,13 @@ try {
   // pointercancel: dừng, núm về tâm
   await F.cancel(); await waitStill(SL.page); await frames(SL.page, 2);
   check('pointercancel: tốc độ về 0, núm về tâm', (await SP(SL.page)) < 0.05 && await knobOff(SL.page));
+  // thanh địa chỉ co giãn (bề cao đổi 20 px ≈ 5 %): cần gạt đang giữ không bị thả
+  await F.down(1, px, py - 0.95 * R); await frames(SL.page, 4);
+  const vb = await SP(SL.page);
+  await SL.page.setViewportSize({ width: 844, height: 370 }); await frames(SL.page, 4);
+  check(`đổi bề cao 20 px lúc giữ cần gạt (đang ${vb.toFixed(1)} m/s): vẫn chạy ${(await SP(SL.page)).toFixed(1)} m/s, núm không về tâm`, vb > 5 && (await SP(SL.page)) > 5 && !(await knobOff(SL.page)));
+  await F.cancel(); await waitStill(SL.page);
+  await SL.page.setViewportSize({ width: 844, height: 390 }); await frames(SL.page, 4);
   // đổi kích thước khung nhìn lúc đang giữ
   await F.down(1, px, py - 0.95 * R); await frames(SL.page, 4);
   const vh = await SP(SL.page);
@@ -388,7 +395,8 @@ try {
   await pick(SP2.page, '#langSelect', 'ar'); await SP2.page.evaluate(() => window.__app.ui.closeSheets()); await frames(SP2.page, 2);
   const arHud = await strollLayout(SP2.page, 390, 844, 'ar dọc');
   const arPad = arHud.find((b) => b.sel === '#stPad');
-  check('ar: cần gạt vẫn ở nửa trái màn hình', !!arPad && arPad.left + arPad.width / 2 < 390 / 2);
+  check('đi dạo trên cảm ứng: dòng hướng dẫn phím #stHint ẩn', await SP2.page.evaluate(() => document.getElementById('stHint').getClientRects().length === 0));
+  check('ar: cần gạt vẫn ở nửa trái màn hình',!!arPad && arPad.left + arPad.width / 2 < 390 / 2);
   allErrors.push(...SP2.errors); await SP2.page.close();
 
   // màn chọn trên cảm ứng: thẻ Đi dạo bấm được, thẻ Dù lượn khóa

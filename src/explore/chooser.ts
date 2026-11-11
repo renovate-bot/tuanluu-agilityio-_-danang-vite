@@ -2,7 +2,7 @@
    Lớp phủ HTML (#chooser trong index.html), không thêm gì vào cảnh. Hiện sau khung đầu tiên (cảnh đã dựng phía sau)
    và chặn chuột vào canvas tới khi chọn. Chữ do data-i18n lo; ở đây chỉ khóa thẻ và gọi onPick. */
 
-import { getLang, onChange } from '../i18n';
+import { getLang, onChange, t } from '../i18n';
 import { exMulti } from './multi';
 import { exShowLobby } from './multi/lobby';
 
@@ -45,7 +45,10 @@ export function exShowChooser(onPick: (choice: ExChoice) => void, onWatch: (choi
   if (!root) return;
   lockGliderOnTouch(root);
   /* Lần trước mất kết nối khi đang xem (explore.exit tải lại trang): đọc cờ một lần rồi xóa, hiện exMpLostChooser */
-  try { if (sessionStorage.getItem('exMpNotice') === 'lost') { sessionStorage.removeItem('exMpNotice'); const n = document.getElementById('exMpLostNote'); if (n) n.hidden = false; } } catch { /* bộ nhớ bị chặn */ }
+  try {
+    const lost = sessionStorage.getItem('exMpNotice');   // 'lost' (xem bầu trời dù lượn) | 'lostWalk' (xem người đi dạo: câu nhắc chọn Đi dạo, vì thẻ Dù lượn bị khóa trên điện thoại)
+    if (lost === 'lost' || lost === 'lostWalk') { sessionStorage.removeItem('exMpNotice'); const n = document.getElementById('exMpLostNote'); if (n) { if (lost === 'lostWalk') { n.dataset.i18n = 'stLostChooser'; n.textContent = t('stLostChooser'); } n.hidden = false; } }
+  } catch { /* bộ nhớ bị chặn */ }
   wireLang(root);
   /* Không dùng { once: true }: từ sảnh bấm Quay lại / Esc thì các thẻ phải chọn lại được. Hộp đã đóng (đã chọn xong) thì bỏ qua */
   root.querySelectorAll<HTMLButtonElement>('button[data-pick]').forEach((b) => {
