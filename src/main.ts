@@ -13,7 +13,7 @@ import { buildWater, water, reflectState } from './core/water';
 import { applyNight, stepNight, dayNight } from './core/dayNight';
 import { renderFrame, onResize, scheduleResize } from './core/postprocessing';
 import { perf } from './core/perf';
-import { prewarm } from './core/prewarm';
+import { prewarm, warmLightSets } from './core/prewarm';
 import { quality } from './core/quality';
 import { buildRiverBanks } from './environment/river';
 import { buildMountains } from './environment/mountains';
@@ -154,6 +154,7 @@ function animate() {
   audio.update(dayNight.night, show.fireOn, show.waterOn, camera.position.distanceTo(mouthW)); pt = perf.lap('audio', pt);
   stepLights();                                             // bộ đèn ngày / đêm / đủ (D-031): sau mọi chỗ ghi cường độ đèn, trước khi vẽ
   quality.update(now0);                                     // bậc chất lượng (tự hạ khi lag), bóng đổ, giới hạn pixelRatio khi mưa
+  const pw = perf.start(); warmLightSets(); perf.lap('lightWarm', pw);   // hâm nền bộ đèn day / night (D-031 'bg'): sau quality.update (biết khung này có vẽ lại bóng), trước lượt vẽ thật; xong thì trả về ngay
   renderer.info.reset();
   renderFrame(dayNight.night, dt); stroll.afterRender(); perf.lap('render', pt);   // gồm cả biên dịch shader lần đầu (đồng bộ trên luồng chính)
   frames++; const now = performance.now(); fpsT = (now - fpsLast) / 1000;

@@ -23,13 +23,14 @@ const check = (ok, msg) => { if (!ok) problems.push(msg); return ok; };
 
 const srv = await serveDir(fileURLToPath(new URL('../dist/', import.meta.url)));
 const browser = await launch();
-const { page, errors } = await openApp(browser, srv.url + '?perf', { width: 480, height: 270 });
+// lightsets=sync (D-031): ba bộ đèn biên dịch trước khung đầu ⇒ kiểm được bộ 'day' / 'night' / 'full' ngay; ?test mặc định 'off' (luôn 'full')
+const { page, errors } = await openApp(browser, srv.url + '?perf&lightsets=sync', { width: 480, height: 270 });
 const res = { label, date: new Date().toISOString(), startup: {}, hitch: [], cpu: {}, quality: {} };
 const programs = () => page.evaluate(() => window.__app.renderer.info.programs.length);
 const reset = () => page.evaluate(() => window.__app.perf.reset());
 try {
   // ---- 1. Khởi động ----
-  res.startup = await page.evaluate(() => ({ firstFrameMs: Math.round(window.__app.perf.firstFrameMs), programs: window.__app.renderer.info.programs.length }));
+  res.startup = await page.evaluate(() => ({ firstFrameMs: Math.round(window.__app.perf.firstFrameMs), programs: window.__app.renderer.info.programs.length, lights: window.__app.lights.mode }));
 
   // ---- 2. Giật khựng ----
   const hitch = async (name, action) => {
@@ -123,7 +124,7 @@ try {
 }
 
 // ---- In kết quả ----
-console.log(`Khởi động: khung đầu ${res.startup.firstFrameMs} ms, ${res.startup.programs} program`);
+console.log(`Khởi động: khung đầu ${res.startup.firstFrameMs} ms, ${res.startup.programs} program, bộ đèn '${res.startup.lights}'`);
 console.log('Giật khựng (ms; render thường → dài nhất, +program):');
 for (const h of res.hitch) console.log(`  ${h.name.padEnd(22)} ${String(h.renderBase).padStart(5)} → ${String(h.renderMax).padStart(6)}  (+${h.extra})  +${h.dPrograms} program  khung dài nhất ${h.maxFrame}`);
 if (Object.keys(res.quality).length) console.log('Chất lượng (draw call overview Cao/Trung bình/Thấp; tự động):', JSON.stringify(res.quality));

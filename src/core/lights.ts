@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { CONFIG } from '../config';
 import { scene, renderer } from './renderer';
 import { deckY } from '../bridges/dragon/profile';
+import { device } from './device';
 
 /* ============================ Ánh sáng ============================ */
 export const sun = new THREE.DirectionalLight(0xfff1dc, 3.0);
@@ -37,14 +38,16 @@ export function buildLights() {
 /* Bộ đèn theo trạng thái (D-031). three bỏ đèn ẩn (visible = false) khỏi trạng thái đèn ⇒ shader không tính đèn đó cho từng điểm ảnh,
    và không vẽ shadow map khi sun ẩn. Đèn cường độ 0 vẫn tốn như đèn sáng (đo Intel Arc: 7 PointLight + moon ≈ 5 ms/khung ban ngày; bóng ban đêm ≈ 5,6 ms).
    Đổi bộ làm đổi số đèn trong program key: mỗi vật liệu giữ sẵn program của từng bộ (materialProperties.programs) nên chỉ là tra bảng,
-   với điều kiện cả ba bộ đã biên dịch trước (core/prewarm.ts). Ngoại lệ có kiểm soát của quy tắc D-018 "không đổi program key khi đang chạy":
+   với điều kiện bộ đó đã biên dịch + vẽ hâm (core/prewarm.ts: lightState.ready; mặc định hâm nền sau khung đầu). Ngoại lệ có kiểm soát của quy tắc D-018 "không đổi program key khi đang chạy":
    chỉ ba bộ cố định dưới đây; mọi cách đổi số đèn khác vẫn cấm.
    - day:   sun hiện, moon + 7 PointLight ẩn — khi sun.intensity > 0, moon.intensity = 0 và mọi PointLight cường độ 0
    - night: sun ẩn (không lượt bóng, không lấy mẫu bóng), moon + 7 PointLight hiện — khi sun.intensity = 0 (đêm ≥ 0,87)
    - full:  tất cả hiện — còn lại: đang chuyển ngày ↔ đêm, rồng phun lửa ban ngày */
 export type LightSet = 'day' | 'night' | 'full';
 export const LIGHT_SETS: readonly LightSet[] = ['day', 'night', 'full'];
-export const lightState = { set: 'full' as LightSet };   // lúc dựng mọi đèn đều hiện
+/* set: bộ đang dùng (lúc dựng mọi đèn đều hiện); mode: device.lightSets ('off' nếu trình duyệt không biên dịch song song được);
+   ready: bộ đã biên dịch xong — stepLights chỉ chuyển sang bộ đã sẵn sàng, chưa thì ở 'full' (hình như nhau, chỉ chậm hơn). 'full' sẵn sàng sau prewarm */
+export const lightState = { set: 'full' as LightSet, mode: device.lightSets, ready: { day: false, night: false, full: true } as Record<LightSet, boolean> };
 export function applyLightSet(set: LightSet) {
   lightState.set = set;
   sun.visible = set !== 'night';
@@ -61,6 +64,7 @@ export function stepLights() {
     for (let i = 0; i < ls.length; i++) if ((ls[i] as THREE.PointLight).intensity > 0) { dark = false; break; }
     if (dark) set = 'day';
   }
+  if (lightState.mode === 'off' || !lightState.ready[set]) set = 'full';
   if (set !== lightState.set) applyLightSet(set);
 }
 

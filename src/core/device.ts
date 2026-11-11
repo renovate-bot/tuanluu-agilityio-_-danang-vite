@@ -11,5 +11,8 @@ const small = Math.min(screen.width, screen.height) < 900;
 export const device = {
   test: q.has('test'),
   phone: !q.has('test') && coarse && small,                                                     // màn cảm ứng nhỏ: điện thoại / máy tính bảng nhỏ
-  weak: !q.has('test') && ((nav.deviceMemory ?? 8) <= 4 || (navigator.hardwareConcurrency ?? 8) <= 4)
+  weak: !q.has('test') && ((nav.deviceMemory ?? 8) <= 4 || (navigator.hardwareConcurrency ?? 8) <= 4),
+  /* Bộ đèn ngày / đêm (D-031, core/lights.ts): 'bg' biên dịch nền sau khung đầu, 'sync' biên dịch cả ba bộ trước khung đầu, 'off' luôn bộ đủ.
+     ?test mặc định 'off' (bảng draw call chuẩn, mọi test cũ giữ nguyên); ?test&lightsets=sync | bg để thử */
+  lightSets: (!q.has('test') ? 'bg' : q.get('lightsets') === 'sync' ? 'sync' : q.get('lightsets') === 'bg' ? 'bg' : 'off') as 'off' | 'sync' | 'bg'
 };
