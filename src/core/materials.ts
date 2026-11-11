@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { shared } from './shared';
 import { canvasTex } from './textures';
 import { makeRoadTexture } from '../common/textures';
+import { trLeafTexture, trFrondTexture } from '../common/trees/textures';
 
 /* ============================ Vật liệu dùng chung ============================ */
 const stoneMap = canvasTex(256, 128, (g, w, h) => {
@@ -27,9 +28,10 @@ export const MAT = {
   sand: new THREE.MeshStandardMaterial({ color: 0xe2d3a8, roughness: 1 }),
   grass: new THREE.MeshStandardMaterial({ color: 0x5f8a45, roughness: 1 }),
   mountain: new THREE.MeshStandardMaterial({ color: 0x2f4c33, roughness: 1, flatShading: true }),
-  trunk: new THREE.MeshStandardMaterial({ color: 0x6b5238, roughness: 1 }),
-  leaf: new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.9 }),
-  palm: new THREE.MeshStandardMaterial({ color: 0x4f8f3a, roughness: 0.85, side: THREE.DoubleSide }),
+  /* Cây (src/common/trees/): màu vỏ / độ sáng tán / màu tàu lá nằm trong màu đỉnh của hình ⇒ mọi lưới dùng 3 vật liệu này phải có thuộc tính color */
+  trunk: new THREE.MeshStandardMaterial({ color: 0xffffff, vertexColors: true, roughness: 1 }),
+  leaf: new THREE.MeshStandardMaterial({ color: 0xffffff, vertexColors: true, map: trLeafTexture(), roughness: 0.9 }),   // sắc xanh từng cây: instanceColor
+  palm: new THREE.MeshStandardMaterial({ color: 0xffffff, vertexColors: true, map: trFrondTexture(), alphaTest: 0.4, roughness: 0.85, side: THREE.DoubleSide }),   // tàu lá răng lược: alpha của texture
   lampPole: new THREE.MeshStandardMaterial({ color: 0x5a6066, roughness: 0.5, metalness: 0.7 }),
   bulb: new THREE.MeshBasicMaterial({ color: 0x9a9890 }),
   mouth: new THREE.MeshStandardMaterial({ color: 0x7a1a12, roughness: 0.6 }),

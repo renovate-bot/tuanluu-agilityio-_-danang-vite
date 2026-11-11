@@ -26,7 +26,11 @@
     "test:boats:unit": "tsx --test tests/boats-unit/*.test.ts",
     "test:boats": "node tests/boats-check.mjs",
     "test:traffic:unit": "tsx --test tests/traffic-unit/*.test.ts",
-    "test:traffic": "node tests/traffic-check.mjs"
+    "test:traffic": "node tests/traffic-check.mjs",
+    "test:trees": "node tests/trees-check.mjs",
+    "test:trees:unit": "tsx --test tests/trees-unit/*.test.ts",
+    "test:people:unit": "tsx --test tests/people-unit/*.test.ts",
+    "test:people": "node tests/people-check.mjs"
   },
   "dependencies": {
     "three": "^0.165.0"

@@ -5,6 +5,7 @@ import { canvasTex } from '../../core/textures';
 import { rng } from '../../common/math';
 import { prepColored, extrudeAlongX, fillBlock, bentBox, boxAt, roadStrip, shadowed } from '../../common/geometry';
 import { addLampPosts } from '../../common/deck';
+import { trPalmStaticGeo } from '../../common/trees/shapes';
 import { HR, hrRoadY } from './profile';
 import type { HanTunnel } from './HanTunnel';
 
@@ -115,11 +116,14 @@ function hrBuildDecor(bridge: HanTunnel) {
     for (let x = HR.coverHalf + 10; x < HR.rampHalf; x += 14) for (const z of [-1, 1]) palms.push([s * x + (rnd() - 0.5) * 2, z * (W + 3.4 + rnd() * 1.5)]);
     for (let x = HR.rampHalf + 20; x < 1440; x += 18) for (const z of [-1, 1]) palms.push([s * x + (rnd() - 0.5) * 3, z * (HR.tubeFar + 5.2 + rnd() * 1.5)]);
   }
-  // cọ: trụ + tán nón mở, hộp tĩnh có màu đỉnh gộp vào bê tông (một draw call chung, không cần InstancedMesh riêng)
-  const cp = bridge.concreteParts, tg = new THREE.CylinderGeometry(0.22, 0.35, 1, 6).translate(0, 0.5, 0), cg = new THREE.ConeGeometry(1, 1, 9, 1, true);
-  palms.forEach(([x, z]) => {
-    const h = 8 + rnd() * 4, y = hrRoadY(x) < LAND ? LAND : hrRoadY(x) - 0.1;
-    cp.push(prepColored(tg.clone().scale(0.8, h, 0.8).translate(x, y, z), () => [0.42, 0.32, 0.22]), prepColored(cg.clone().scale(3.8, 1.6, 3.8).translate(x, y + h + 0.3, z), () => [0.3, 0.55, 0.22]));
+  // dừa: hình học tĩnh trPalmStaticGeo (thân cong + tàu lá dải hai mặt, màu đỉnh sẵn) gộp vào bê tông (một draw call chung, không cần InstancedMesh riêng)
+  // yaw suy từ chỉ số cây bằng băm (không gọi thêm rnd(): chuỗi rng(7001) giữ nguyên), mỗi cây vẫn đúng 1 lời gọi rnd() lấy h
+  const cp = bridge.concreteParts;
+  palms.forEach(([x, z], i) => {
+    const h = 8 + rnd() * 4, y = hrRoadY(x) < LAND ? LAND : hrRoadY(x) - 0.1, yaw = (Math.sin(i * 12.9898) * 43758.5453 % 1 + 1) % 1 * Math.PI * 2;
+    const g = trPalmStaticGeo(h).rotateY(yaw).translate(x, y, z);
+    g.deleteAttribute('uv');                    // đã không indexed, có sẵn normal + color: không qua prepColored vì nó ghi đè màu đỉnh
+    cp.push(g);
   });
   // thuyền thúng: bát úp nửa cầu + mái chèo, xếp thành cụm bên cạnh cửa hầm phía Đông
   const bowl = new THREE.SphereGeometry(1, 18, 8, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2).scale(1.7, 0.9, 1.7);

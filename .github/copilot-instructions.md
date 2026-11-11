@@ -56,6 +56,10 @@ npm run test:boats:unit # tàu thuyền: vị trí tàu tụ tập, vùng cấm,
 npm run test:boats     # tàu thuyền: đội tàu, chuỗi rand() giữ nguyên, tàu tụ tập ngày/đêm/bão, LED trên sông; đọc dist/
 npm run test:traffic:unit # xe cộ: kích thước, hướng mặt, thông số từng loại xe (nhanh, không trình duyệt)
 npm run test:traffic   # xe cộ: một lệnh vẽ mỗi hệ, chuỗi rand() giữ nguyên, đèn theo đêm, bão dọn xe, tắt làn; đọc dist/
+npm run test:trees:unit # cây: hình học cây bóng mát / dừa, trần tam giác, thân cong (nhanh, không trình duyệt)
+npm run test:trees     # cây: 6 lưới, vị trí + chuỗi rand() giữ nguyên, dọn cây, cây đổ dựng lại, gió bám thân, dừa cửa hầm, ảnh; đọc dist/
+npm run test:people:unit # người đi bộ: dáng đi / chạy, hình học ≤ 900 đỉnh, chia kiểu người (nhanh, không trình duyệt)
+npm run test:people    # người đi bộ: 1 lưới mỗi hệ, kiểu đi / chạy / đứng, lề cầu, rời cầu khi bão, tắt/bật; đọc dist/
 npm run test:multi:unit   # dù lượn nhiều người: logic phòng, tên, nội suy, idle (nhanh, không trình duyệt)
 npm run test:multi:worker # Worker qua wrangler dev: kiểm Origin
 npm run test:multi        # dù lượn nhiều người: trình duyệt + bot qua wrangler dev cục bộ; đọc dist/

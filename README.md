@@ -43,6 +43,8 @@ src/
   core/              renderer, scene, camera, controls, bloom, trời/nước, đèn, uniform dùng chung, ngày/đêm
   common/            texture làn đường, loft, boxAt, beamBetween, cột đèn, bảng màu LED, xe cộ, thuyền, người, BridgeBase
     vehicles/        xe cộ: siêu xe, xe tay ga, buýt nhỏ (hình học gộp), vật liệu đèn pha/hậu theo đêm, fleet InstancedMesh mỗi hệ xe
+    trees/           cây: hình học cây bóng mát (thân + cành, tán cụm lá) và cây dừa (thân cong, tàu lá, bản tĩnh cho cửa hầm), texture canvas
+    people/          người đi bộ có tay chân: hình học (≤ 900 đỉnh), dáng đi / chạy / đứng, vật liệu dáng đi trong vertex shader, chia kiểu người
   bridges/
     dragon/          Cầu Rồng (mặt cầu, thân, đầu, lửa/nước)
     thuan-phuoc/     Cầu Thuận Phước
@@ -50,7 +52,7 @@ src/
     song-han/        Cầu sông Hàn + SwingController
     han-tunnel/      Hầm vượt sông Hàn (vỏ hầm, nội thất, máng hầm hở, cửa hầm, đáy sông, mặt cắt, mô phỏng dìm)
     sun-wheel/       Vòng quay Mặt Trời (bệ + nhà ga, khung tháp, vành và nan, 64 cabin, LED đêm, ngồi cabin, Tour)
-  environment/       sông Hàn, núi, đường phố, thành phố, cây, giao thông
+  environment/       sông Hàn, núi, đường phố, thành phố, cây, giao thông, người đi bộ trên Cầu Rồng (pedestrians.ts)
     boats/           tàu thuyền: 5 kiểu (hình học gộp), đội tàu InstancedMesh, đèn đêm, tàu tụ tập ban đêm
     riverfront/      hai bờ sông: địa danh thật, mặt dựng LED trái tim + "DN", bảng quảng cáo, chi tiết dải đi bộ
     weather/         thời tiết: khí quyển 4 preset, mưa + mặt ướt, gió (cây, dây, thuyền), bão (chớp, đóng cầu, kịch bản 120 s), nắng hè, cây đổ, âm thanh

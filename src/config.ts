@@ -695,6 +695,72 @@ const vehiclesBase = {
   maxVerts: 2000                                    // đỉnh — trần tổng số đỉnh hình học gộp 3 loại xe
 };
 
+/* ------------------------- Cây ------------------------- */
+/* docs/superpowers/specs/2026-11-11-cay-va-nguoi-thuc-te-design.md — cây bóng mát (G1) và cây dừa (G2).
+   Hình dáng: src/common/trees/shapes.ts (không gian chuẩn hóa, instance nhân cỡ thật); texture canvas: src/common/trees/textures.ts. */
+const treesBase = {
+  maxTris: { shadeCrown: 700, shadeTrunk: 150, palmCrown: 450, palmTrunk: 120, palmStatic: 260 },   // tam giác — trần mỗi hình (spec §6, quyết định của agent), unit test giữ
+  shade: {
+    blobs: { outer: 5, mid: 2, top: 1 },   // số cụm lá: vành ngoài thấp, vành giữa, đỉnh (tổng 8; mỗi cụm khối 20 mặt chia 1 lần = 80 tam giác) (ước lượng theo bản thử)
+    branches: 6,                           // số cành lớn tỏa từ chỗ tách thân, gồm 1 cành giữa gần thẳng đứng (ước lượng)
+    fork: 0.5,                             // cao độ chỗ tách cành, phần của chiều cao thân tới đầu cành cao nhất (ước lượng)
+    reach: 0.7,                            // bán kính ngang đầu cành, phần của bán kính tán (ước lượng)
+    sides: 5,                              // số cạnh mặt cắt thân và cành (ước lượng; ít cạnh vì cành bị tán che phần lớn)
+    seed: 4801                             // hạt sinh ngẫu nhiên riêng cho nhiễu cụm lá và hướng cành (rng riêng, không đụng rand())
+  },
+  palm: {
+    fronds: 14,                            // số tàu lá trên một ngọn dừa (ước lượng; dừa thật khoảng 25–30 tàu, giản lược theo trần tam giác)
+    frondSegs: 6,                          // số đoạn dọc mỗi tàu lá (ước lượng)
+    bend: 0.35,                            // m lệch đỉnh thân theo +X trong không gian chuẩn hóa (thân cao 1), trước khi nhân trunkWidth — thân cong nhẹ (ước lượng)
+    trunkWidth: 0.8,                       // hệ số ngang thân dừa: thân chuẩn hóa (bán kính đáy 0,35 / đỉnh 0,2, lệch bend) nhân hệ số này ra mét ⇒ đáy 0,28 m, đỉnh 0,16 m (ước lượng)
+    crownScale: 0.38,                      // tỉ lệ đều của tán dừa trên mỗi mét cao thân: tàu dài 0,75–1,15 × 0,38 × h ⇒ ≈ 2,9–4,4 m với h = 10 m (ước lượng)
+    staticFronds: 8,                       // số tàu lá dạng dải hai mặt của cây dừa gộp vào lưới bê tông cửa hầm (ước lượng)
+    seed: 9127                             // hạt sinh ngẫu nhiên riêng cho hướng tàu lá và quả (rng riêng)
+  }
+};
+
+/* ------------------------- Người đi bộ ------------------------- */
+/* docs/superpowers/specs/2026-11-11-cay-va-nguoi-thuc-te-design.md §5 — dáng đi / dáng chạy đã duyệt trong bản dựng thử (G5–G8).
+   Hình dáng: src/common/people/shapes.ts (mặt hướng +X, chân chạm y = 0, cao ≈ 1,65 m ở tỉ lệ 1); dáng: gait.ts (bản CPU của shader trong material.ts); kiểu người: kinds.ts. */
+const peopleBase = {
+  maxVerts: 900,                                    // đỉnh — trần số đỉnh hình học gộp một người (spec §6, quyết định của agent), unit test giữ
+  legLength: 0.86,                                  // m — chiều dài chân (hông tới đất) ở tỉ lệ 1, dùng cho nhịp bước không trượt (ước lượng theo bản thử)
+  walk: { amp: 0.34, speed: [1.05, 1.35] as [number, number] },   // đi bộ: biên độ hông rad, tốc độ [min, max] m/s (ước lượng theo bản thử)
+  run: {
+    amp: 0.6,                                       // rad — biên độ hông khi chạy (ước lượng theo bản thử)
+    speed: [2.6, 3.0] as [number, number],          // m/s — tốc độ chạy bộ [min, max] (ước lượng)
+    cadence: 8.8,                                   // rad/s, ≈ 1,4 chu kỳ/giây (170 bước/phút) ở tỉ lệ 1; chia √tỉ lệ (ước lượng theo bản thử)
+    lean: 0.17                                      // rad — thân đổ về trước quanh hông khi chạy (ước lượng theo bản thử)
+  },
+  bob: { walk: 0.022, run: 0.075 },                 // m — nhún: đi thấp nhất khi hai chân dang rộng (đỉnh–đỉnh 2 × 0,022), chạy bật lên giữa hai bước (ước lượng theo bản thử)
+  sway: 0.018,                                      // m — lắc vai sang hai bên theo sin φ (ước lượng theo bản thử)
+  photo: { shoulder: 1.0, elbow: 1.05 },            // rad — tư thế giơ tay phải chụp ảnh: góc vai, góc khuỷu (ước lượng theo bản thử)
+  mix: {
+    run: 0.12,                                      // phần người chạy bộ trên tổng số (ước lượng; bản thử 4/26)
+    stand: 0.2,                                     // phần người đứng lan can trên tổng số (ước lượng; bản thử 6/26)
+    companion: 0.18,                                // phần người đi cùng (đi đôi / trẻ em) trên tổng số (ước lượng; bản thử 4/26)
+    child: 0.25,                                    // phần người đi cùng là trẻ em (ước lượng)
+    hat: 0.25,                                      // phần người đội nón lá trên tổng số (ước lượng)
+    pack: 0.25,                                     // phần người đeo ba lô trên tổng số (ước lượng)
+    photo: 0.33                                     // phần người đứng giơ tay chụp ảnh (ước lượng; bản thử 2/6)
+  },
+  adultScale: [0.94, 1.08] as [number, number],     // tỉ lệ cỡ người lớn [min, max], không đơn vị (ước lượng)
+  childScale: 0.6,                                  // tỉ lệ cỡ trẻ em, không đơn vị (ước lượng)
+  companionGap: 0.6,                                // m — lệch ngang của người đi cùng so với người đi trước (ước lượng)
+  shirts: [0xd94b3d, 0x2f6fb5, 0xf2f2ee, 0x3a3a3a, 0xe0b23a, 0x4f9a5a, 0xc76fa8, 0xf08a4b, 0x7fc4d9, 0xffffff],   // màu áo: 7 màu cũ của people.ts đứng đầu, thêm cam, xanh nhạt, trắng (ước lượng)
+  pants: [0x26324a, 0x1d1d1f, 0x6b6f76, 0xc9b999, 0x3d5a80, 0x4a3b32],   // màu quần trầm: xanh than, đen, xám, kaki, xanh jean, nâu (ước lượng)
+  palette: { skin: 0xe2b48c, hair: 0x1c1612, shoe: 0x2a2a2e, hat: 0xe9dcae, pack: 0x7a2f2a },   // màu cố định theo đỉnh: da, tóc, giày, nón lá, ba lô (ước lượng theo bản thử)
+  roughness: 0.85,                                  // độ nhám vật liệu người, hệ số 0..1 (ước lượng theo bản thử)
+  dragon: {
+    n: 70,                                          // số người trên hai lề Cầu Rồng (ước lượng, spec §7)
+    seed: 4107,                                     // hạt rng riêng cho người Cầu Rồng (không gọi rand())
+    hideDistance: 1500,                             // m — camera xa hơn thì ẩn hệ người Cầu Rồng (ước lượng)
+    headBias: 0.6,                                  // phần người đứng lan can đặt ở nửa cầu phía đầu rồng, phần còn lại rải đều (ước lượng, spec §7)
+    walkZ: 17.55,                                   // m — |z| tuyến đi của người dẫn; người đi cùng lệch companionGap ra phía lan can (|z| 18,15). Dải trống giữa cột đèn (|z| 17,0, bán kính ≤ 0,14) và mặt trong lan can (|z| ≈ 18,58); nửa bề ngang người lớn nhất ≈ 0,34 m (nón lá 0,31 × 1,08) (ước lượng)
+    standX: 255                                     // m — người đứng lan can chỉ ở |x| ≤ standX, phần cầu qua sông (mép kè |x| = 262) (ước lượng)
+  }
+};
+
 export const CONFIG = {
   ...base,
   perf: perfBase,
@@ -711,7 +777,9 @@ export const CONFIG = {
   weather: weatherBase,
   tourAll: tourAllBase,
   explore: { ...exploreBase, multi: multiParams },
-  vehicles: vehiclesBase
+  vehicles: vehiclesBase,
+  trees: treesBase,
+  people: peopleBase
 };
 export type SongHanConfig = typeof CONFIG.songHan;
 export type HanTunnelConfig = typeof CONFIG.hanTunnel;

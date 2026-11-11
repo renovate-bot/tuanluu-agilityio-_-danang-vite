@@ -4,6 +4,26 @@ Chromium + SwiftShader, khung 480×270. Draw call = renderer.info.render.calls (
 
 Khung test mặc định 480×270 khớp `(max-height: 500px)` nên cả bộ test chạy ở chế độ gọn (không blur): draw call không đổi; số hitch của `test:perf` không so sát được với mốc D-018 (đo khi còn blur).
 
+## Cây và người thực tế hơn (2026-11-11, nhánh `feature/cay-va-nguoi-thuc-te`, D-028)
+
+Cây bóng mát (thân + cành, tán cụm lá) và cây dừa (thân cong, tàu lá có alphaTest) thay quả cầu và nón; người đi bộ có tay chân (đi, chạy, đứng lan can, đi cùng, trẻ em, nón lá, ba lô, chụp ảnh). Cây: 6 lưới `InstancedMesh` (khu phố 4: `trees-shade-trunk` / `trees-shade-crown` 890 instance, `trees-palm-trunk` / `trees-palm-crown` 246; Thuận Phước 2: `tp-trees-trunk` / `tp-trees-crown` 128) cộng 224 cây dừa tĩnh gộp vào `hr-concrete` của Hầm (0 lưới riêng). Tam giác mỗi cây: thân bóng mát 150, tán 640, thân dừa 120, tán dừa 396, dừa tĩnh 180 (hầm: `hr-concrete` 25 104 → 56 016). Người: 853 đỉnh / người (trần 900), 1 174 tam giác, 3 lưới (`ttl-people`, `sh-people`, `dragon-people` mới, 70 người), mỗi hệ 1 lệnh vẽ, Cầu Rồng +1 lệnh vẽ, người không đổ bóng.
+
+| Lệnh | Kết quả |
+|---|---|
+| `typecheck`, `build` | đạt |
+| `test:trees:unit` | 8/8 đạt |
+| `test:people:unit` | 19/19 đạt |
+| `test:trees` (bản `39f5eee`) | 28/28 ĐẠT: 6 lưới, vị trí khớp mốc, 7 tốc độ tàu trùng `main` (chuỗi `rand()` giữ nguyên), trần tam giác, 3 cặp thân–tán, dọn cây 26 / 2 / 0 (tập chỉ số thân = tập chỉ số tán), cây đổ 1,396 rad dựng lại trùng ma trận, bão `treeLean` 0,03, hầm 0 InstancedMesh / 4 Mesh / 56 016 tam giác, không lỗi console |
+| `test:people` (bản `d8b79ca`) | ĐẠT: 853 đỉnh, 10 màu áo mỗi hệ, người đi / đứng / chạy đúng, không nghiêng, không sai hướng, trong dải lề, bão dọn dần rồi hiện lại, tắt/bật, Cầu Rồng ẩn ở 2 003 m, không lỗi shader |
+| `test:perf -- --strict` (Task 2, `88ff1e5`, ~90 phút) | đạt: +0 program, render dài nhất ≤ 77 ms (ngưỡng 150); khung đầu 26 646 ms, 172 program; render TB overview 24,7 · head 26,0 · hrOverview 21,9 · swOverview 13,7 · tpBay 20,2 ms; draw call 268 / 288 / 252 / 150 / 262. Lần đo 2026-11-09 (trước D-026, D-027, cây mới, không cùng mốc): 14,8 / 14,0 / 13,0 / 8,2 / 13,3 ms, khung đầu 9 206 ms |
+| `test:weather` | ĐẠT (`weather-check: đạt`, exit 0, bản `39f5eee`) |
+| `test:riverfront` | ĐẠT ("Hai bờ sông Hàn: tất cả kiểm tra đạt", exit 0, bản `39f5eee`; dọn nhà 40 lượt, 44 cây/đèn, 204/7934 instance nhà scale 0) |
+| `test:tunnel` | ĐẠT (bản `f059090`; các commit sau không đụng tới hầm) |
+| Sửa sau review cuối (người Cầu Rồng): `typecheck`, `test:people:unit` 19/19, `build`, `test:people` 37/37 | ĐẠT: người dẫn ở \|z\| 17,55, người đi cùng lệch ra phía lan can (\|z\| 18,15), người đứng 18,25 ⇒ 70/70 người ở \|z\| ∈ [17,3; 18,58] (ngoài hàng cột đèn \|z\| 17); lưới `dragon-people` cắt theo khung nhìn (khối cầu bao cả mặt cầu): quay lưng lại Cầu Rồng ở gần Trần Thị Lý (1 381 m) / Cầu sông Hàn (1 081 m) ⇒ 0 lần vẽ, nhìn vào cầu ⇒ vẽ; người đứng chỉ ở \|x\| ≤ 255; 7 tốc độ tàu trùng `main` |
+| `test:drawcalls`, `test:citynight -- --baseline`, `test:tour`, `test:voice`, `test:sunwheel`, `test:mobile`, `test:explore`, `test:boats`, `test:traffic`, `test:multi*`, so thời gian khung với `main` | **chưa chạy** theo yêu cầu người dùng; `test:citynight` phải chụp lại mốc ngày (`-- --baseline`) vì cây đổi dáng; chưa đo FPS GPU thật |
+
+Render SwiftShader cao hơn khoảng 1,6–1,9 lần mốc 2026-11-09, nhưng mốc đó không cùng baseline (trước tàu, xe, cây): tổng tam giác cây khoảng 0,93 triệu (cũ khoảng 0,17 triệu), vẽ cả ở lượt bóng và lượt phản chiếu. Dừa cửa hầm thêm khoảng 31 nghìn tam giác vào `hr-concrete` (đổ bóng, một nửa là mặt sau đảo chiều cho tàu lá hai mặt); chưa đo ở góc nhìn hầm.
+
 ## Xe cộ thực tế hơn (2026-11-10, nhánh `feature/xe-co-thuc-te`, D-027)
 
 Năm hệ xe, mỗi hệ một `InstancedMesh` (thay 4 khối hộp mỗi hệ): `traffic-city` 536 xe (Cầu Rồng, 2 làn trong mỗi chiều của Trần Thị Lý, đường Bạch Đằng và Trần Hưng Đạo), `ttl-traffic` 60 (làn ngoài Trần Thị Lý), `tp-traffic` 100, `sh-traffic` 52, `hr-traffic` 348 (Hầm vượt sông Hàn). **Chưa đo** draw call (`test:drawcalls`), `test:perf --strict`, so hiệu năng với `main` (spec: thời gian traffic/render lệch ≤ 15 %) và FPS GPU thật, theo yêu cầu người dùng duyệt trên demo. Số đỉnh hình học gộp (cho mỗi instance): siêu xe 676, buýt 496, xe tay ga 636, **gộp 1 808** (≤ `CONFIG.vehicles.maxVerts` 2 000; trước sửa sau review: siêu xe 628, gộp 1 760).
