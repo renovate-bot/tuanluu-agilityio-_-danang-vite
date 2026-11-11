@@ -52,9 +52,11 @@ export function buildPromenade(atlas: Atlas, adMat: THREE.Material, buildings: B
   const furn: THREE.BufferGeometry[][] = Array.from({ length: 2 * n }, () => []), signs: THREE.BufferGeometry[][] = Array.from({ length: 2 * n }, () => []);
   const cid = (sd: number, z: number) => (sd < 0 ? 0 : n) + Math.min(n - 1, Math.max(0, Math.floor((z - z0) / P.chunk)));
   // lan can kè + ghế đá + bồn hoa + thùng rác
+  const LG = R.love, lgz0 = LG.z - LG.width / 2 - LG.railGap, lgz1 = LG.z + LG.width / 2 + LG.railGap;
   for (const sd of [-1, 1]) {
     for (let z = (sd < 0 ? -2600 : -2300) + 2; z < z1; z += P.railStep) {
       if (blocked(z, 4)) continue;
+      if (sd > 0 && z + P.railStep > lgz0 && z - 0.14 < lgz1) continue;   // bờ Đông: chừa lối vào Cầu Tình Yêu, bỏ cột + đoạn tay vịn [z, z + railStep] chạm bề rộng cầu tàu + railGap (người đi dạo qua đây)
       const f = furn[cid(sd, z)], x = sd * (B + 1);
       f.push(bx(0.28, 1.1, 0.28, x, Y + 0.5, z, STONE), bx(0.1, 0.07, P.railStep, x, Y + 1.5, z + P.railStep / 2, STEEL), bx(0.06, 0.05, P.railStep, x, Y + 1.05, z + P.railStep / 2, STEEL));
     }

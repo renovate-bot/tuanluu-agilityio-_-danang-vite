@@ -42,6 +42,23 @@ function archFeet(): number[] {
   return xs;
 }
 
+/* lan can kè ven sông, chép bố cục promenade.ts:24,55-60: mỗi cột z có đoạn [z − 0,14, z + railStep]; bỏ ở chân cầu / hầm (blocked(z, 4))
+   và ở bờ Đông trước Cầu Tình Yêu (đoạn chạm |z − love.z| < width/2 + railGap) */
+const RF = CONFIG.riverfront, LV = RF.love, RSTEP = RF.promenade.railStep;
+const RF_RAIL = CONFIG.bankX + 1 + 0.28 / 2;                          // mặt phía bờ của cột lan can kè, m
+const rfBlocked = (z: number, pad = 0) => Math.abs(z) < 34 + pad || Math.abs(z - CONFIG.songHan.z) < 18 + pad || Math.abs(z - CONFIG.ttl.z) < 40 + pad || Math.abs(z - (CONFIG.ttl.z - 65)) < 14 + pad || Math.abs(z - CONFIG.hanTunnel.z) < 28 + pad;
+function railSegs(sd: number): [number, number][] {
+  const segs: [number, number][] = [], g0 = LV.z - LV.width / 2 - LV.railGap, g1 = LV.z + LV.width / 2 + LV.railGap;
+  for (let z = (sd < 0 ? -2600 : -2300) + 2; z < 2600; z += RSTEP) {
+    if (rfBlocked(z, 4)) continue;
+    if (sd > 0 && z + RSTEP > g0 && z - 0.14 < g1) continue;
+    segs.push([z - 0.14, z + RSTEP]);
+  }
+  return segs;
+}
+const RAIL = { [-1]: railSegs(-1), [1]: railSegs(1) } as Record<number, [number, number][]>;
+const railAt = (sd: number, z: number) => RAIL[sd].some(([a, b]) => z >= a && z <= b);
+
 const out = { x: 0, z: 0 };
 const SPAWN = (() => { stSpawn(map, 2, out); return { x: Math.round(out.x), z: Math.round(out.z) }; })();
 
@@ -86,10 +103,19 @@ test('cổng shSwing đóng: không qua được Cầu sông Hàn; bờ Đông v
   assert.ok(reached(all, 0, 10), 'Cầu Rồng phải đi được');
 });
 
-test('Cầu Tình Yêu: có đường từ bờ Đông tới giữa cầu tàu; ngoài lan can 0,5 m không hợp lệ; tượng chặn', () => {
+test('Cầu Tình Yêu: có đường từ bờ Đông tới giữa cầu tàu qua khe lan can kè; ngoài lan can 0,5 m không hợp lệ; tượng chặn', () => {
   const L = CONFIG.riverfront.love, x0 = CONFIG.bankX - L.length, xm = Math.round((x0 + CONFIG.bankX) / 2);
   const seen = bfs(map, 300, -500);
   assert.ok(reached(seen, xm, L.z), 'không tới được giữa Cầu Tình Yêu');
+  /* lối vào: cột lưới x = 263 nằm giữa mép kè và mép vùng bờ (263,49); ngoài mặt cầu thì chỉ đi được ở vùng love, tức là qua khe lan can */
+  assert.ok(reached(seen, 263, L.z), 'đường lên cầu tàu không qua khe lan can kè');
+  assert.equal(stZoneAt(map, 263, L.z)?.id, 'love');
+  for (let z = B.z0; z <= B.z1; z++) if (reached(seen, 263, z)) assert.match(stZoneAt(map, 263, z).id, /^(love|dragon|songHanE)$/, `(263, ${z}) đi được ngoài khe lan can`);
+  /* khe lan can trong cảnh phủ cả bề rộng vùng love cộng bán kính người; bờ Tây vẫn có lan can ở đó */
+  const lz = stBuildZones().find((zn) => zn.id === 'love');
+  for (let z = lz.z0 - C.radius; z <= lz.z1 + C.radius; z += 0.05) assert.equal(railAt(1, z), false, `lan can kè bờ Đông còn ở z = ${z}`);
+  assert.ok(railAt(-1, L.z), 'bờ Tây phải còn lan can');
+  assert.ok(railAt(1, L.z - L.width / 2 - L.railGap - RSTEP - 0.5) && railAt(1, L.z + L.width / 2 + L.railGap + RSTEP), 'khe lan can bờ Đông quá rộng');
   assert.equal(stZoneAt(map, xm, L.z)?.id, 'love');
   assert.ok(Math.abs(stGroundY(map, xm, L.z) - 3.0) < 1e-9, 'mặt cầu tàu cao 3,0 m (landmarks.ts:62)');
   for (const s of [-1, 1]) assert.equal(stValid(map, xm, L.z + s * (L.width / 2 + 0.5), 0), false);
@@ -107,6 +133,21 @@ test('mép kè: 2 000 z ngẫu nhiên, (±(262 − 0,1), z) không hợp lệ tr
       assert.match(id, /^(dragon|songHan|sh|love)/, `(${x}, ${z}) hợp lệ trong vùng ${id}`);
     }
   }
+});
+
+test('lan can kè: 2 000 z ngẫu nhiên có lan can, tâm cách mặt cột lan can ít hơn radius không hợp lệ ở cả hai bờ', () => {
+  let seed = 13, n = 0; const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+  for (let i = 0; i < 2000; i++) {
+    const z = B.z0 + rnd() * (B.z1 - B.z0);
+    for (const s of [-1, 1]) {
+      if (!railAt(s, z)) continue;                                        // chân cầu, lối vào Cầu Tình Yêu: không có lan can
+      const x = s * (RF_RAIL + C.radius - 0.05);
+      assert.equal(stValid(map, x, z, Infinity), false, `(${x}, ${z}) xuyên lan can kè`);
+      n++;
+    }
+  }
+  assert.ok(n > 3500, `quá ít điểm có lan can (${n})`);
+  assert.ok(stValid(map, RF_RAIL + C.radius + 0.05, -500, 0) && stValid(map, -(RF_RAIL + C.radius + 0.05), -500, 0), 'ngay sau lan can phải đi được');
 });
 
 test('không đứng trên mặt nước: lưới 1 m, mọi điểm hợp lệ có |x| < 262 thuộc vùng cầu hoặc love', () => {

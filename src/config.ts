@@ -274,7 +274,7 @@ const riverfrontBase = {
   admin: { x: -470, z: -1230, h: 166.8, r0: 17, r1: 9 },          // Trung tâm Hành chính, 24 Trần Phú: 34 tầng, 166,8 m; chân/đỉnh thân (ước lượng)
   market: { x: -366, z: -500, w: 64, d: 48, h: 13 },              // Chợ Hàn: 3 tầng, mặt tiền quay +X (ước lượng)
   museum: { x: -376, z: 110, w: 54, d: 36, h: 9 },                // Bảo tàng Điêu khắc Chăm: tường vàng đất, mái ngói (ước lượng)
-  love: { z: -78, length: 38, width: 6 },                         // Cầu Tình Yêu + cá chép hóa rồng, nhô ra từ kè Đông (ước lượng)
+  love: { z: -78, length: 38, width: 6, railGap: 0.5 },           // Cầu Tình Yêu + cá chép hóa rồng, nhô ra từ kè Đông; railGap: m chừa thêm mỗi bên lối vào khi bỏ lan can kè trước cầu tàu (ước lượng)
   hotels: [{ x: 372, z: -420, w: 36, d: 34, floors: 22 }, { x: 372, z: -660, w: 34, d: 34, floors: 17 }, { x: 374, z: -880, w: 36, d: 36, floors: 25 }], // cụm khách sạn ven Trần Hưng Đạo (ước lượng)
   clearMargin: 4,                                                 // m — lề dọn nhà ngẫu nhiên quanh chân công trình
   heart: {
@@ -623,6 +623,7 @@ const strollBase = {
   radius: 0.35,        // m — bán kính hình tròn va chạm của nhân vật (ước lượng)
   stepMax: 0.35,       // m — bậc cao không quá số này thì tự bước lên (lề 0,25, dải phân cách 0,3), cộng sẵn vào cao độ vùng (ước lượng)
   lowMax: 1.0,         // m — vật cao hơn stepMax và thấp hơn số này là tường thấp, nhảy qua được (gờ chắn xe Cầu Rồng 0,9) (ước lượng)
+  reach: 2.5,          // m — tầm người trên mặt đứng: kết cấu cầu thấp hơn mức này thì chặn (thân rồng, chân tháp, dây văng; spec §4) (ước lượng)
   dtMax: 0.1,          // s — trần dt mỗi khung của chuyển động; khung dài hơn thì chia nhỏ (ước lượng)
   spawn: { x: -240, z: 17.4, spread: 2.5 },   // m — điểm xuất phát trên lề phía Nam Cầu Rồng gần bờ Tây; lệch theo x spread × (slot − 2) (ước lượng)
   spawnYaw: 0,         // rad — hướng ban đầu, 0 = về phía Đông dọc cầu (ước lượng)

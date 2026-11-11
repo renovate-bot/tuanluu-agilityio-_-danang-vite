@@ -10,6 +10,7 @@
    Bảng nguồn số (file : dòng của hình học đã đọc; (ước lượng) = số chọn ở đây, không có trong hình học):
    | Số | Giá trị | Nguồn |
    | Mép kè hai bờ | |x| = 262 | config.ts:22 (bankX) |
+   | Lan can kè ven sông | cột 0,28 m tại |x| = 263 → mặt trong (phía bờ) 263,14; bỏ ở chân cầu và trước Cầu Tình Yêu | promenade.ts:56-60 |
    | Mặt đất / mặt đường bờ | 2,5 / 2,6 m | config.ts:20-21 (landY, roadY) |
    | Cầu Rồng: mặt cầu dài | |x| ≤ 333 | config.ts:14 (length), deck.ts:17; deckY(±333) = roadY (profile.ts:7) |
    | Cầu Rồng: lan can | tim |z| = 18,65, dày 0,14 → mặt trong 18,58 | deck.ts:23 (hw − 0,1) |
@@ -32,7 +33,7 @@
    | Chân chữ A | từ (±15, +0,2) tới (0, +19), tiết diện 1,0 × 1,4 | swingSpan.ts:46; config.ts:176-177 |
    | Neo dây văng | x 20–59,2, đỉnh 25–36,5 trên cột | swingSpan.ts:58-62; config.ts:179-180 |
    | Hộp barie | (±68,35, ±4,6), 0,45 × 1,0 | signals.ts:10-17; config.ts:187 |
-   | Cầu Tình Yêu | x 224–262, z −78, rộng 6, mặt 3,0 m | landmarks.ts:61-62 |
+   | Cầu Tình Yêu | x 224–262, z −78, rộng 6, mặt 3,0 m; lan can kè bỏ ở |z + 78| < 3 + railGap | landmarks.ts:61-62; promenade.ts:55,60 |
    | Cầu Tình Yêu: lan can / khóa tình yêu | tim ±2,9, dày 0,12 / ±2,8 dày 0,06 → mặt trong 2,77 | landmarks.ts:64-65 |
    | Bệ tượng cá chép | 3,4 × 3,4 tại x 225,8, cao 1,2 | landmarks.ts:66-71 |
    | Bến du thuyền bờ Tây | x −254 ± …, z 104, trong lòng sông | promenade.ts:70-76 (không có vùng nào ở |x| < 262 ngoài cầu) |
@@ -46,7 +47,9 @@ export const ST_GATE_SWING = 'shSwing';
 
 const R = CONFIG.stroll.radius, BK = CONFIG.bankX, LAND = CONFIG.landY, ROAD = CONFIG.roadY;
 const BX = CONFIG.stroll.bounds;
-const REACH = 2.5;                         // m — tầm người trên mặt đứng: kết cấu thấp hơn mức này thì chặn (spec §4)
+const REACH = CONFIG.stroll.reach;
+const RF_RAIL = BK + 1 + 0.28 / 2;                                  // 263,14 — mặt phía bờ của cột lan can kè (promenade.ts:58-59, x = bankX + 1, cột 0,28 m)
+const BANK_IN = RF_RAIL + R;                                        // 263,49 — mép vùng bờ: tâm nhân vật không lấn qua lan can kè
 
 /* ----- Cầu Rồng (deck.ts) ----- */
 const DR_X = CONFIG.length / 2;                                     // 333 — hai đầu mặt cầu
@@ -115,7 +118,7 @@ function stBankY(x: number, z: number): number {
   return y;
 }
 function stLoveY(x: number): number {
-  const xr = BK + R - LV_RAMP;
+  const xr = BANK_IN - LV_RAMP;
   return x <= xr ? LV_DECK : LV_DECK + (LV_END - LV_DECK) * (x - xr) / LV_RAMP;
 }
 
@@ -133,8 +136,8 @@ export function stBuildZones(): StZone[] {
   /* Cầu Rồng: cả bề rộng giữa hai lan can */
   const drH = DR_RAIL_IN - R;                                       // 18,23
   add('dragon', -DR_X, DR_X, -drH, drH, stDragonY);
-  /* Cầu Tình Yêu: lối vào duy nhất là cạnh x = 262,35 chung với vùng bờ Đông */
-  add('love', LV_X0 + R, BK + R, LV.z - (LV_IN - R), LV.z + (LV_IN - R), stLoveY);
+  /* Cầu Tình Yêu: kéo vào bờ qua khe lan can kè (promenade.ts bỏ lan can ở |z − love.z| < width/2 + railGap); lối vào duy nhất là cạnh x = BANK_IN chung với vùng bờ Đông */
+  add('love', LV_X0 + R, BANK_IN, LV.z - (LV_IN - R), LV.z + (LV_IN - R), stLoveY);
   /* đầu cầu trên bờ: đường nối dài, cùng cao độ với vùng bờ */
   for (const [id, s] of [['dragonW', -1], ['dragonE', 1]] as [string, number][]) {
     add(id, s < 0 ? BX.x0 : DR_X, s < 0 ? -DR_X : BX.x1, -AX_SIDE.z1, AX_SIDE.z1, stBankY);
@@ -142,10 +145,10 @@ export function stBuildZones(): StZone[] {
   for (const [id, s] of [['shLandW', -1], ['shLandE', 1]] as [string, number][]) {
     add(id, s < 0 ? BX.x0 : SH_X, s < 0 ? -SH_X : BX.x1, SHZ - SH_LAND_HALF, SHZ + SH_LAND_HALF, stBankY);
   }
-  /* hai bờ: từ mép kè lùi radius ra tới hết khung; cắt quanh thân Cầu Rồng (|z| < 19,35) và thân Cầu sông Hàn (|dz| < 7,3) */
+  /* hai bờ: từ lan can kè lùi radius (cả chỗ không có lan can ở chân cầu: vùng bờ đã cắt quanh cầu) ra tới hết khung; cắt quanh thân Cầu Rồng (|z| < 19,35) và thân Cầu sông Hàn (|dz| < 7,3) */
   const drCut = DR_EDGE + R, shCut = SH_ABUT + R;
   for (const [id, s] of [['bankW', -1], ['bankE', 1]] as [string, number][]) {
-    const x0 = s < 0 ? BX.x0 : BK + R, x1 = s < 0 ? -(BK + R) : BX.x1;
+    const x0 = s < 0 ? BX.x0 : BANK_IN, x1 = s < 0 ? -BANK_IN : BX.x1;
     add(id, x0, x1, BX.z0, SHZ - shCut, stBankY);
     add(id, x0, x1, SHZ + shCut, -drCut, stBankY);
     add(id, x0, x1, drCut, BX.z1, stBankY);
