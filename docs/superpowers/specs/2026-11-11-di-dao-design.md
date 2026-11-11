@@ -121,6 +121,6 @@ Người dùng giao phần "làm thế nào"; các mục dưới đây là lựa
 
 - Thông báo chụp ảnh ở phần tử riêng `#stToast`, không dùng `#exMpNotice` (dùng chung thì ghi đè thông báo nhiều người).
 - Thêm dòng hướng dẫn `#stHint` trên máy tính (anh em của `#exHint`, hiện khi `body.explore.stroll`, ẩn trên cảm ứng).
-- Vùng bờ thụt vào ngoài lan can dải dạo (|x| 263,49) thay vì chạy tới mép kè 262, để không đi xuyên lan can; lan can dải dạo có một khe ở lối vào Cầu Tình Yêu (`CONFIG.riverfront.love.railGap`, R5 trong ledger). Dải 0,65 m sát nước không đi tới được.
+- Vùng bờ thụt vào ngoài lan can dải dạo (|x| 263,49) thay vì chạy tới mép kè 262, để không đi xuyên lan can; lan can dải dạo có một khe ở lối vào Cầu Tình Yêu (`CONFIG.riverfront.love.railGap`). Dải hẹp giữa lan can và mép nước không đi tới được.
 - `?explore=glider` vẫn bay một mình, không qua slot; test nhiều người vào dù lượn qua màn chọn → sảnh → Bay ngay (R1).
 - Danh sách người chơi (chế độ dù lượn) đổi tiêu đề thành "Đi dạo n/5 · Bay n/5".
