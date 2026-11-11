@@ -119,7 +119,7 @@ export function setupExplore(ctrl: SwingController): void {
   window.addEventListener('keydown', (e) => {
     if (!inGlider() && !stroll.active()) return;
     if (e.key === 'Escape') { explore.exit(); return; }   // Esc thoát kể cả khi đang focus ô chọn (bay dù và đi dạo)
-    if (watching || stroll.active()) return;   // xem: không lái; đi dạo: phím do stroll/index.ts ghi   // xem: không lái, không ghi phím
+    if (watching || stroll.active()) return;   // xem: không lái; đi dạo: phím do stroll/index.ts ghi
     if (e.ctrlKey || e.metaKey || e.altKey) return;   // phím tắt trình duyệt (Cmd+S...) không lái dù, tránh kẹt phím
     const t = e.target as HTMLElement | null;
     if (t && /^(SELECT|INPUT|TEXTAREA)$/.test(t.tagName)) return;   // phím trong ô chọn/nhập không lái dù

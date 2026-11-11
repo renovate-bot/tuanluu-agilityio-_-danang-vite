@@ -2,7 +2,8 @@
 //   Trang A `?test&explore=stroll`:
 //   Mục 1: vào chế độ (cam.mode, lớp body, bảng tham quan ẩn, điểm xuất phát, cao độ lề Cầu Rồng).
 //   Mục 2: cao độ chân khớp mặt cầu / mặt đất tại 12 điểm mẫu (tia thẳng xuống vào cảnh).
-//   Mục 3: oracle độc lập với bản đồ: 20 000 bước ngẫu nhiên, mỗi 20 bước 8 tia ngang × 3 cao độ vào tam giác thật của các lưới rắn.
+//   Mục 3: oracle độc lập với bản đồ: hơn 30 000 bước ngẫu nhiên (11 điểm xa nhà + 16 điểm sát tường nhà), mỗi 20 bước 8 tia ngang × 3 cao độ vào tam giác thật của các lưới rắn;
+//          mỗi bước tâm nhân vật không nằm trong hộp bao nhà (theo hình học), đếm bước gần nhà (không rỗng), đẩy thẳng vào một bức tường để chứng minh tia thấy tường.
 //   Mục 4: không ra ngoài mép kè trừ cầu / Cầu Tình Yêu, không thấp hơn mặt đất.
 //   Mục 5: camera sát tường nhà không chui vào nhà, không xuống dưới mặt đất.
 //   Mục 8: draw call của người đi dạo đúng 1.
@@ -151,11 +152,14 @@ try {
       /* --- 24 tia ngang dài R quanh (x, z) ở 3 cao độ trên mặt đứng --- */
       const ray = new Ray(), tgt = new T.Vector3(), seen = new Set();
       const DIRS = Array.from({ length: 8 }, (_, i) => [Math.cos(i * Math.PI / 4), Math.sin(i * Math.PI / 4)]);
-      const probe = (x, g, z) => {
-        seen.clear(); const hits = [];
-        for (let ix = Math.floor((x - R) / CELL); ix <= Math.floor((x + R) / CELL); ix++) for (let iz = Math.floor((z - R) / CELL); iz <= Math.floor((z + R) / CELL); iz++) {
+      const gather = (x, z, L) => {
+        seen.clear();
+        for (let ix = Math.floor((x - L) / CELL); ix <= Math.floor((x + L) / CELL); ix++) for (let iz = Math.floor((z - L) / CELL); iz <= Math.floor((z + L) / CELL); iz++) {
           const l = cells.get(key(ix, iz)); if (l) for (const t of l) seen.add(t);
         }
+      };
+      const probe = (x, g, z) => {
+        gather(x, z, R); const hits = [];
         if (!seen.size) return hits;
         for (const dh of [0.3, 1.0, 1.7]) for (const [dx, dz] of DIRS) {
           ray.origin.set(x, g + dh, z); ray.direction.set(dx, 0, dz);
@@ -166,27 +170,68 @@ try {
         }
         return hits;
       };
+      /* một tia ngang dài len từ (x, y, z) theo (dx, dz): khoảng cách tới tam giác gần nhất, hoặc null */
+      const castH = (x, y, z, dx, dz, len) => {
+        gather(x, z, len); let best = null;
+        ray.origin.set(x, y, z); ray.direction.set(dx, 0, dz);
+        for (const t of seen) {
+          const h = tri[t], hp = ray.intersectTriangle(h[0], h[1], h[2], false, tgt);
+          if (hp) { const d = hp.distanceTo(ray.origin); if (d <= len && (best === null || d < best)) best = d; }
+        }
+        return best;
+      };
+      /* khoảng cách mặt bằng từ (x, z) tới hộp nhà (0 nếu ở trong); trong hộp (đã thu 1 cm) = nhân vật nằm trong khối nhà */
+      const EPS = 0.01;
+      const boxDist = (b, x, z) => Math.hypot(Math.max(b.x0 - x, 0, x - b.x1), Math.max(b.z0 - z, 0, z - b.z1));
+      const inBox = (b, x, z) => x > b.x0 + EPS && x < b.x1 - EPS && z > b.z0 + EPS && z < b.z1 - EPS;
+      window.__st.boxes = boxes;   // mục 5 dùng lại hộp theo hình học
       /* --- 10 điểm xuất phát, 2 000 bước mỗi điểm --- */
       let seed = 20261111;
       const rnd = () => { seed = (seed + 0x6D2B79F5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
-      const starts = [[-240, 17.4], [0, -10], [-300, 60], [-320, -500], [-320, -1150], [-150, -1074.5], [30, -1083], [320, -1150], [240, -78], [340, -660]];
+      const starts = [[-240, 17.4], [0, -10], [-300, 60], [-320, -500], [-320, -1150], [-150, -1074.5], [30, -1083], [320, -1150], [240, -78], [340, -660], [150, -1074.5]];
       const badStart = [], fails = [], out4 = [], inp = { mx: 0, mz: 0, run: false, jump: false, camYaw: 0 };
       const BRIDGE = new Set(['shSwing', 'songHanW', 'songHanE', 'dragon', 'love']);
       let samples = 0, steps = 0, minY = Infinity, zonesSeen = new Set();
+      /* chứng minh oracle không rỗng: mỗi BƯỚC kiểm tâm nhân vật không nằm trong khối nhà, đo khoảng cách tới nhà gần nhất, đếm bước đứng im khi đang đẩy */
+      const inside = [], frozen = [];
+      let near = 0, touch = 0, minBoxD = Infinity, still = 0, px = 0, pz = 0, frozenN = 0;
       const s = S.stroll.state;
-      for (const [sx, sz] of starts) {
+      /* điểm xuất phát sát nhà: các nhà đi tới được lấy cách đều trong danh sách, đặt cách mặt tường 1,5 m, 1 000 bước mỗi điểm (đi ngẫu nhiên quanh nhà) */
+      const startsN = starts.map(([x, z]) => [x, z, 2000]);
+      let nearStarts = 0;
+      for (let bi = 0; bi < boxes.length && nearStarts < 16; bi++) {
+        const b = boxes[bi], mx = (b.x0 + b.x1) / 2, mz = (b.z0 + b.z1) / 2;
+        for (const [x, z] of [[b.x1 + 1.5, mz], [b.x0 - 1.5, mz], [mx, b.z1 + 1.5], [mx, b.z0 - 1.5]]) {
+          if (S.stValid(map, x, z, 0)) { startsN.push([x, z, 1000]); nearStarts++; break; }
+        }
+      }
+      let expectSteps = 0;
+      for (const [sx, sz, n] of startsN) {
         if (!S.stValid(map, sx, sz, 0)) { badStart.push(`${sx},${sz}`); continue; }
+        expectSteps += n;
         window.__st.put(sx, sz);
-        let left = 0;
-        for (let i = 0; i < 2000; i++) {
+        let left = 0; still = 0; px = s.x; pz = s.z;
+        for (let i = 0; i < n; i++) {
           inp.jump = false;
           if (left-- <= 0) {
             left = 10 + Math.floor(rnd() * 50);
             inp.mx = rnd() < 0.3 ? 0 : rnd() * 2 - 1; inp.mz = rnd() < 0.2 ? 0 : rnd() * 2 - 1; inp.run = rnd() < 0.5; inp.jump = rnd() < 0.4; inp.camYaw = rnd() * Math.PI * 2;
+            still = 0;
           }
           const dt = rnd() < 0.05 ? 0.1 : 1 / 30;
           S.stroll.step(dt, inp); steps++;
           if (s.y < minY) minY = s.y;
+          let dMin = Infinity;
+          for (const b of boxes) {
+            if (inBox(b, s.x, s.z)) { if (inside.length < 8) inside.push({ x: +s.x.toFixed(3), z: +s.z.toFixed(3), step: steps, box: [b.x0, b.x1, b.z0, b.z1].map((n) => +n.toFixed(2)) }); }
+            const d = boxDist(b, s.x, s.z); if (d < dMin) dMin = d;
+          }
+          if (dMin < minBoxD) minBoxD = dMin;
+          if (dMin <= 1.5) near++;
+          if (dMin <= R + 0.05) touch++;
+          /* đứng im ≥ 30 bước liền trong một đoạn đầu vào đang đẩy */
+          if (Math.hypot(inp.mx, inp.mz) > 0.3 && Math.hypot(s.x - px, s.z - pz) < 1e-5) { if (++still === 30) { frozenN++; if (frozen.length < 6) frozen.push({ x: +s.x.toFixed(2), z: +s.z.toFixed(2), boxD: +dMin.toFixed(2) }); } } else still = 0;
+          px = s.x; pz = s.z;
           if (i % 20 === 19) {
             samples++;
             const g = S.stGroundY(map, s.x, s.z), zn = window.__st.zoneAt(s.x, s.z);
@@ -198,12 +243,43 @@ try {
           }
         }
       }
-      return { tris: tri.length, counts, named, buildings: boxes.length, badStart, nFail: fails.length, fails: fails.filter(Boolean), samples, steps, out4, minY, landY: 2.5, zones: [...zonesSeen].sort() };
+      /* --- đẩy thẳng vào tường nhà đã biết: dừng cách tường ≈ bán kính, tia 1,0 m về phía tường phải thấy tường --- */
+      const wall = { tried: 0, ok: false };
+      for (const b of boxes) {
+        if (wall.tried >= 60) break;
+        const mz = (b.z0 + b.z1) / 2;
+        if (b.z1 - b.z0 < 6) continue;
+        for (const [sx0, face, dir] of [[b.x1 + 3, b.x1, -1], [b.x0 - 3, b.x0, 1]]) {
+          if (wall.ok) break;
+          let okLine = true;
+          for (let k = 0; k <= 5; k++) if (!S.stValid(map, sx0 + dir * k * 0.5, mz, 0)) okLine = false;   // đoạn đi thẳng vào tường (tới cách tường 0,5 m) hợp lệ
+          if (!okLine) continue;
+          wall.tried++;
+          window.__st.put(sx0, mz);
+          const w = { mx: 0, mz: 1, run: false, jump: false, camYaw: dir > 0 ? 0 : Math.PI };   // mz = 1: camYaw 0 → +X, π → −X; đi bộ
+          for (let i = 0; i < 90; i++) S.stroll.step(1 / 30, w);   // 3 s tới sát tường
+          for (let i = 0; i < 120; i++) S.stroll.step(1 / 240, w);   // bước nhỏ ≈ 0,01 m: dừng tại tường, không còn hụt cả một bước
+          const gap = dir > 0 ? face - s.x : s.x - face, g = S.stGroundY(map, s.x, s.z);
+          if (!(gap >= 0 && gap < 1.5) || Math.abs(s.z - mz) > 1) continue;   // bị chặn bởi thứ khác trước khi tới tường: thử nhà khác
+          const d = castH(s.x, g + 1.0, s.z, dir, 0, 1.0);
+          wall.ok = true; wall.gap = +gap.toFixed(3); wall.hit = d === null ? null : +d.toFixed(3); wall.box = [b.x0, b.x1, b.z0, b.z1].map((n) => +n.toFixed(2)); wall.dir = dir;
+          wall.inBox = inBox(b, s.x, s.z);
+        }
+        if (wall.ok) break;
+      }
+      return { tris: tri.length, counts, named, buildings: boxes.length, badStart, nFail: fails.length, fails: fails.filter(Boolean), samples, steps, out4, minY, landY: 2.5, zones: [...zonesSeen].sort(),
+        inside, near, touch, minBoxD, frozenN, frozen, wall, R, expectSteps, nearStarts };
     });
     console.log(`   oracle: ${r.tris} tam giác (${JSON.stringify(r.counts)}), ${r.buildings} nhà; vùng đã đi qua: ${r.zones.join(',')}`);
+    console.log(`   oracle: ${r.near} bước cách nhà ≤ 1,5 m, ${r.touch} bước sát tường (≤ R + 0,05), khoảng cách nhà gần nhất ${r.minBoxD.toFixed(3)} m; ${r.frozenN} đoạn đứng im ≥ 30 bước khi đang đẩy ${r.frozenN ? JSON.stringify(r.frozen) : ''}`);
     check(`3 có đủ lưới oracle ${JSON.stringify(r.named)}`, Object.values(r.named).every(Boolean) && r.buildings > 50);
-    check(`3 10 điểm xuất phát hợp lệ (lỗi: ${r.badStart.join(' ') || '-'})`, r.badStart.length === 0);
-    check(`3 ${r.steps} bước, ${r.samples} mẫu × 24 tia vào lưới rắn: ${r.nFail} mẫu trúng (= 0) ${r.nFail ? JSON.stringify(r.fails) : ''}`, r.nFail === 0 && r.steps === 20000);
+    check(`3 điểm xuất phát hợp lệ, gồm ${r.nearStarts} điểm sát nhà (lỗi: ${r.badStart.join(' ') || '-'})`, r.badStart.length === 0 && r.nearStarts >= 10);
+    check(`3 vùng đã đi qua gồm songHanE, shSwing, songHanW, dragon, love, bankE, bankW: ${r.zones.join(',')}`, ['songHanE', 'shSwing', 'songHanW', 'dragon', 'love', 'bankE', 'bankW'].every((z) => r.zones.includes(z)));
+    check(`3 mọi bước (${r.steps}): tâm nhân vật không nằm trong khối nhà (lọt: ${r.inside.length ? JSON.stringify(r.inside) : '-'})`, r.inside.length === 0);
+    check(`3 không rỗng: ${r.near} bước cách nhà ≤ 1,5 m (> 0)`, r.near > 0);
+    check(`3 chạm tường thật: đẩy thẳng vào nhà ${r.wall.ok ? `(hộp ${JSON.stringify(r.wall.box)}, hướng ${r.wall.dir > 0 ? '+X' : '−X'}, thử ${r.wall.tried})` : `không tìm được nhà (thử ${r.wall.tried})`}: cách tường ${r.wall.gap} m, tia 1,0 m trúng ở ${r.wall.hit} m (≤ R ${r.R} + 0,05), tâm không trong nhà ${!r.wall.inBox}`,
+      r.wall.ok && r.wall.hit !== null && r.wall.hit <= r.R + 0.05 && r.wall.gap <= r.R + 0.05 && !r.wall.inBox);
+    check(`3 ${r.steps} bước, ${r.samples} mẫu × 24 tia vào lưới rắn: ${r.nFail} mẫu trúng (= 0) ${r.nFail ? JSON.stringify(r.fails) : ''}`, r.nFail === 0 && r.steps === r.expectSteps);
     check(`4 mọi mẫu có |x| ≥ 261,65 hoặc trên cầu / Cầu Tình Yêu (lọt: ${r.out4.length ? JSON.stringify(r.out4) : '-'})`, r.out4.length === 0);
     check(`4 y thấp nhất ${r.minY.toFixed(3)} ≥ landY − 0,01`, r.minY >= 2.5 - 0.01);
   }
@@ -213,16 +289,7 @@ try {
     const r = await P.evaluate(() => {
       const a = window.__app, S = a.stroll, T = a.THREE, C = S.CONFIG_stroll, map = S.stroll.map, B = C.bounds, R = C.radius;
       const mi = new T.Matrix4(), mw = new T.Matrix4(), p = new T.Vector3(), q = new T.Quaternion(), sc = new T.Vector3();
-      const boxes = [];
-      a.scene.traverse((o) => {
-        if (!o.isInstancedMesh || !o.parent || !o.parent.isLOD || o.parent.levels[0]?.object !== o) return;
-        for (let i = 0; i < o.count; i++) {
-          o.getMatrixAt(i, mi); mi.decompose(p, q, sc); if (sc.x < 1e-6) continue;
-          mw.multiplyMatrices(o.matrixWorld, mi); p.set(0, 0, 0).applyMatrix4(mw);
-          if (p.x < B.x0 - 30 || p.x > B.x1 + 30 || p.z < B.z0 - 30 || p.z > B.z1 + 30) continue;
-          boxes.push({ x0: p.x - sc.x / 2, x1: p.x + sc.x / 2, z0: p.z - sc.z / 2, z1: p.z + sc.z / 2 });
-        }
-      });
+      const boxes = window.__st.boxes;   // hộp bao theo hình học thật, dựng ở mục 3
       const inside = (x, z) => boxes.some((b) => x > b.x0 + 1e-6 && x < b.x1 - 1e-6 && z > b.z0 + 1e-6 && z < b.z1 - 1e-6);
       const cases = [];
       const P5 = [C.cam.pitchMin, C.cam.pitch, C.cam.pitchMax];
@@ -268,7 +335,7 @@ try {
   {
     const SHX = await P.evaluate(() => {
       window.__st.put(5, -1077);
-      window.__frames = 0; const tick = () => { window.__frames++; requestAnimationFrame(tick); }; tick();
+      window.__frames = 0; const tick = () => { window.__frames++; window.__ftick = requestAnimationFrame(tick); }; tick();
       window.__app.songHan.ctrl.start(60);
       return window.__app.songHan.ctrl.cfg.fixedStart;
     });
@@ -296,6 +363,7 @@ try {
     await P.evaluate(() => clearInterval(window.__keepClosing));
     await frames(P, 2);
     const r3 = await walkIn();
+    await P.evaluate(() => cancelAnimationFrame(window.__ftick));
     check(`7 cầu đóng lại: vào lại được nhịp quay (|x| nhỏ nhất ${r3.minAx.toFixed(2)})`, r3.state === 'CLOSED' && r3.minAx < SHX - 5);
   }
 
