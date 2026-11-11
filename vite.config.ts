@@ -8,8 +8,9 @@ export default defineConfig({
     chunkSizeWarningLimit: 900,
     rollupOptions: {
       output: {
-        // Three.js tách riêng: đổi code cầu không làm trình duyệt tải lại thư viện
-        manualChunks: (id) => (id.includes('node_modules/three') ? 'three' : undefined)
+        // Three.js tách riêng: đổi code cầu không làm trình duyệt tải lại thư viện.
+        // Trừ GLTFLoader / SkeletonUtils: chỉ nạp bằng import() động khi có người đi dạo (explore/stroll/rig.ts), để Rollup tách chunk riêng, trang thường không tải
+        manualChunks: (id) => (id.includes('node_modules/three') && !/GLTFLoader|SkeletonUtils/.test(id) ? 'three' : undefined)
       }
     }
   }

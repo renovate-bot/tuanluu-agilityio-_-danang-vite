@@ -29,7 +29,7 @@ import { exWatchShow, exWatchHide, exWatchRender, exFlyNotice } from '../multi/w
 import type { SwingController } from '../../bridges/song-han/SwingController';
 
 const ST_SOLO_SLOT = -1;     // stCreate / stSpawn: đi một mình đứng giữa các điểm xuất phát
-const ST_SOLO_AVATAR = 0;    // instance nhân vật khi đi một mình (avatars.ts)
+const ST_SOLO_AVATAR = 0;    // slot nhân vật khi đi một mình (avatars.ts; mình luôn là mô hình 0)
 
 let map: StMap | null = null;
 let state: StState | null = null;
@@ -59,7 +59,7 @@ const isField = (t: EventTarget | null) => !!t && /^(SELECT|INPUT|TEXTAREA)$/.te
 function advance(dt: number, inp: StInput): void {
   if (ctrl) stSetGate(map!, ST_GATE_SWING, ctrl.state !== 'CLOSED');
   stStep(state!, inp, map!, dt);
-  stAvatars.setSelf(selfSlot, state);
+  stAvatars.setSelf(selfSlot, state, dt);   // dt cho mixer của nhân vật có xương
   stCamPlace(camera, controls.target, state!, camS, map!, dt);
   exNightStep(dt, false);
   const now = performance.now();

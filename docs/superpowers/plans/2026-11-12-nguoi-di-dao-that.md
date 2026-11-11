@@ -159,7 +159,7 @@ Quy tắc:
 - `explore/index.ts`: khi người dùng chọn thẻ Đi dạo ở màn chọn (trước sảnh) gọi `stAvatars.preload(0)`.
 - Nhãn tên: nếu chiều cao model (`height`) + 0,25 > `labelAbove` thì nâng `labelAbove` trong config cho mọi nhân vật không bị nhãn đè đầu.
 
-- [ ] **Step 1: Viết lại `tests/stroll-unit/avatars.test.ts`** (Node, không GPU; giả `stRigLoad` bằng cách cho `avatars.ts` nhận bộ nạp qua `stAvatars.__setLoader(fn)` chỉ dùng trong test):
+- [x] **Step 1: Viết lại `tests/stroll-unit/avatars.test.ts`** (Node, không GPU; giả `stRigLoad` bằng cách cho `avatars.ts` nhận bộ nạp qua `stAvatars.__setLoader(fn)` chỉ dùng trong test):
   - `'build trả Group tên stroll-people, gọi hai lần trả cùng một đối tượng'`;
   - `'setSelf khi chưa nạp: hình khối hiện, debug(slot).real === false, model 0'`;
   - `'nạp xong: real === true, hình khối của slot ẩn'`;
@@ -167,11 +167,11 @@ Quy tắc:
   - `'slot đổi chủ trong lúc đang nạp: kết quả cũ bị bỏ, nhóm không có con thừa'` (Review Focus 2);
   - `'người khác slot 0..4 dùng model 1,2,3,4,1; mình ở slot 3 dùng model 0'`;
   - `'clear() gỡ hết nhân vật thật khỏi nhóm'`.
-- [ ] **Step 2:** `npm run test:stroll:unit` → FAIL.
-- [ ] **Step 3:** Tách `blocky.ts` (mã InstancedMesh hiện có, bỏ dáng nhảy), viết `rig.ts`, viết lại `avatars.ts`, sửa `index.ts` / `explore/index.ts` / `main.ts`.
-- [ ] **Step 4:** `npm run typecheck; npm run test:stroll:unit; npm run test:multi:unit; npm run build` → PASS; trong `dist/assets` `GLTFLoader` nằm ở chunk riêng (không trong chunk vào chính: `grep -l GLTFLoader dist/assets/*.js` trả đúng file chunk phụ).
-- [ ] **Step 5: Xem bằng mắt.** `npm run dev`, mở `http://localhost:5173/?test&explore=stroll` bằng Playwright (mẫu `tests/lib.mjs`), chụp 4 ảnh vào `tests/screens/`: đứng, chạy bộ (W), chạy nhanh (Shift), chụp ảnh (P); thêm 1 ảnh ban đêm. **Mở ảnh xem**: nhân vật đứng trên mặt lề (không chìm, không lơ lửng), mặt hướng theo hướng đi, tay chân đúng dáng. Nhân vật đen kịt ban đêm → ghi vào **Ghi chú để báo**.
-- [ ] **Step 6:** Commit `feat(stroll): nhân vật đi dạo là mô hình có xương, hình khối làm hình tạm`.
+- [x] **Step 2:** `npm run test:stroll:unit` → FAIL.
+- [x] **Step 3:** Tách `blocky.ts` (mã InstancedMesh hiện có, bỏ dáng nhảy), viết `rig.ts`, viết lại `avatars.ts`, sửa `index.ts` / `explore/index.ts` / `main.ts`.
+- [x] **Step 4:** `npm run typecheck; npm run test:stroll:unit; npm run test:multi:unit; npm run build` → PASS; trong `dist/assets` `GLTFLoader` nằm ở chunk riêng (không trong chunk vào chính: `grep -l GLTFLoader dist/assets/*.js` trả đúng file chunk phụ).
+- [x] **Step 5: Xem bằng mắt.** `npm run dev`, mở `http://localhost:5173/?test&explore=stroll` bằng Playwright (mẫu `tests/lib.mjs`), chụp 4 ảnh vào `tests/screens/`: đứng, chạy bộ (W), chạy nhanh (Shift), chụp ảnh (P); thêm 1 ảnh ban đêm. **Mở ảnh xem**: nhân vật đứng trên mặt lề (không chìm, không lơ lửng), mặt hướng theo hướng đi, tay chân đúng dáng. Nhân vật đen kịt ban đêm → ghi vào **Ghi chú để báo**.
+- [x] **Step 6:** Commit `feat(stroll): nhân vật đi dạo là mô hình có xương, hình khối làm hình tạm`.
 
 ### Task 5: Kiểm tra trình duyệt
 
@@ -207,3 +207,7 @@ Quy tắc:
 _(người làm điền: nhân vật đã thay, mức nhường dung lượng, vùng không tới được khi bỏ nhảy, ảnh đêm, test chưa chạy…)_
 
 - Task 1: không thay nhân vật nào (5 nhân vật spec §4 đều đạt khi xem ảnh). Nhường dung lượng **mức 1**: ngón tay giữ tư thế trung bình của từng đoạn (không cử động ngón); mức 0 cho tổng 6,39 MB > 6 MB. Kết quả 5,79 MB, lớn nhất `p3` 1,42 MB. `Male_Adult_17` (p4) không có mảnh alpha nên chỉ 2 lưới. `idle` dài 5,6 s (dời điểm đầu, khép vòng 0,3 s; lệch vòng gốc nam 6,1°, nữ 4,7°). `photo` tua nhanh 1,67× (nam) / 1,92× (nữ) để còn 0,8 s; động tác giơ máy là tay không (Rocketbox không có máy ảnh).
+- Task 4: `GLTFLoader` / `SkeletonUtils` lúc đầu bị `manualChunks` của `vite.config.ts` gom vào chunk `three` (tải ở mọi trang); đã sửa `manualChunks` loại hai file này, nay ở chunk riêng `GLTFLoader-*.js` (45 kB) và `SkeletonUtils-*.js` (3,9 kB), chỉ tải khi có người đi dạo. Chunk `three` vẫn lớn thêm khoảng 61 kB (560,8 → 621,6 kB, gzip 161 kB; mốc trước là bản build 00:35 trước Task 1): các lớp three mà GLTFLoader / AnimationMixer cần (vật liệu vật lý, keyframe track, SkinnedMesh…) nay không còn bị tree-shake. Chunk `index` 581,8 → 586,9 kB. Cần `test:perf --strict` cuối nhánh để xem ảnh hưởng.
+- Task 4: ảnh `tests/screens/rig-*.png` (dist, SwiftShader, 960×540): đứng, đứng nhìn ngang, chạy bộ (W, 3,5 m/s → 100 % `jog`, tua 1,22), chạy nhanh (Shift, 10 m/s → `sprint`, tua 1,6), chụp ảnh, ban đêm. Mặt quay theo hướng đi, tay chân đúng dáng, giày chạm mặt lề (không chìm / lơ lửng ở ảnh đứng), tóc không thành mảng đặc. Ban đêm nhân vật **không** đen kịt (đèn cảnh + môi trường đủ sáng, áo đỏ vẫn rõ). Ảnh chạy chụp ngang nên gờ lan can che bàn chân. Chụp ảnh: hai tay giơ trước ngực, không có máy ảnh (Rocketbox không có), như ghi ở Task 1.
+- Task 4: `labelAbove` giữ 2,1 m (nhân vật cao nhất 1,83 m + 0,25 = 2,08 m).
+- Task 4: kết quả nạp không gắn trực tiếp vào slot (chỉ vào bộ đệm mô hình); bản sao chỉ tạo trong vòng khung cho slot đang hiện đúng mô hình lúc đó, nên không cần số thế hệ cho từng slot (Review Focus 2). Lần đầu hiện một nhân vật thật three biên dịch shader mới (MeshPhysicalMaterial do `KHR_materials_specular`), có thể khựng một khung.
