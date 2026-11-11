@@ -57,6 +57,7 @@ src/
     riverfront/      hai bờ sông: địa danh thật, mặt dựng LED trái tim + "DN", bảng quảng cáo, chi tiết dải đi bộ
     weather/         thời tiết: khí quyển 4 preset, mưa + mặt ướt, gió (cây, dây, thuyền), bão (chớp, đóng cầu, kịch bản 120 s), nắng hè, cây đổ, âm thanh
   explore/           tự khám phá bằng dù lượn: mô hình bay thuần, dù, camera bám, màn chọn phương tiện, điều phối
+    stroll/          đi dạo (camera sau lưng): bản đồ va chạm 2D thuần, vùng đi được, chuyển động, nhân vật, camera, cần gạt cảm ứng, chụp ảnh
     multi/           dù lượn nhiều người (5 chỗ): giao thức + thông số dùng chung với máy chủ, phiên, sảnh, dù người khác, nhãn, chế độ xem, rời máy
   views/             góc nhìn có sẵn, flyTo, Tour (đường cong + điểm dừng)
   audio/             nhạc, còi, tiếng xe; narration.ts phát giọng thuyết trình của Tour
