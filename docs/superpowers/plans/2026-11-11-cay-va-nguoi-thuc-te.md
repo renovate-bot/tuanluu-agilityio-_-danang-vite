@@ -70,7 +70,7 @@
   - `trFrondTexture(): THREE.CanvasTexture`, `trLeafTexture(): THREE.CanvasTexture` trong `textures.ts` (chỉ gọi trong trình duyệt). Texture tàu lá: nền trong suốt, sống lá và lá chét đủ dày để còn thấy khi mipmap (bản thử: nét 5,2 px trên bước 8,5 px), ô đặc trắng ở góc `[0, 0,06]²`.
   - `CONFIG.trees = { maxTris: { shadeCrown: 700, shadeTrunk: 150, palmCrown: 450, palmTrunk: 120, palmStatic: 260 }, shade: { blobs, branches, ... }, palm: { fronds, bend: 0.35 /* m lệch đỉnh thân, ước lượng */, crownScale: 0.42 /* tỉ lệ đều của tán dừa trên mỗi mét cao thân… */ } }` — người làm chọn tên trường con, nhưng `maxTris` và `palm.bend` đúng tên này.
 
-- [ ] **Bước 1: Viết test trước** `tests/trees-unit/shapes.test.ts` (mẫu: `tests/traffic-unit/shapes.test.ts`):
+- [x] **Bước 1: Viết test trước** `tests/trees-unit/shapes.test.ts` (mẫu: `tests/traffic-unit/shapes.test.ts`):
 
 ```ts
 const tris = (g: THREE.BufferGeometry) => (g.index ? g.index.count : g.getAttribute('position').count) / 3;
@@ -92,8 +92,8 @@ test('cây dừa tĩnh cao h, đứng trên y = 0, hai mặt', () => { /* bbox.m
 - [x] **Bước 2:** `npm run test:trees:unit` → LỖI (chưa có module).
 - [x] **Bước 3:** Viết `shapes.ts` và `CONFIG.trees`. Cụm lá: khối cầu thấp đa giác (ví dụ `IcosahedronGeometry(1, 1)` 80 tam giác) nhiễu nhẹ, pháp tuyến hướng tâm cụm để bóng mềm; sắp như bản thử (vành ngoài thấp, vành giữa, đỉnh) nhưng ít cụm hơn.
 - [x] **Bước 4:** Viết `textures.ts` (chép ý `leafTex`, `frondTex` của bản thử; không import trong test).
-- [ ] **Bước 5:** `npm run test:trees:unit` → mọi test ĐẠT. `npm run typecheck` → không lỗi.
-- [ ] **Bước 6:** Commit `feat(trees): hình học cây bóng mát và cây dừa`.
+- [x] **Bước 5:** `npm run test:trees:unit` → mọi test ĐẠT. `npm run typecheck` → không lỗi.
+- [x] **Bước 6:** Commit `feat(trees): hình học cây bóng mát và cây dừa`.
 
 ---
 
@@ -187,14 +187,14 @@ test('cây dừa tĩnh cao h, đứng trên y = 0, hai mặt', () => { /* bbox.m
     ```
     Dùng `rng(seed)` riêng. Tỉ lệ theo `CONFIG.people.mix` (sai số ±1 người). Người đi cùng luôn có `follow = i − 1`, và người `i − 1` phải là `'walk'` không đi cùng ai. `opts.run === false` → không ai `'run'`. Người `'stand'` có cờ chụp ảnh theo `mix.photo`. Trẻ em: `scale = childScale`, luôn là người đi cùng.
 
-- [ ] **Bước 1: Viết test trước.**
+- [x] **Bước 1: Viết test trước.**
   - `gait.test.ts`: đi bộ không trượt: `ppCadence('walk', v, s) · ppStride('walk', s) / 2π ≈ v` (sai số 1 %) với `v ∈ {1.05, 1.2, 1.35}`, `s ∈ {0.6, 1, 1.08}`; chạy ≈ 1,4 chu kỳ/giây ở `s = 1`; đứng = 0; `ppAngles('legL', 0.34, φ)` và `('legR', …)` lệch pha π; gối luôn ≤ 0 (gập về sau); biên độ hông khi đi ≤ 0,4 rad; khi chạy gối gập sâu nhất ≥ 1,5 rad; tay ngược dấu chân cùng bên ở `φ = π/2`.
   - `shapes.test.ts`: số đỉnh ≤ `CONFIG.people.maxVerts`; bbox: cao 1,6–1,9 (tính cả nón), `min.y` ≈ 0, rộng Z ≤ 0,7; đủ 7 giá trị `aPart`; mọi đỉnh `aSeg = 1` có `aPart ∈ 1..4`; đỉnh chân có `aPivot = PP_HIP`; không NaN.
   - `kinds.test.ts`: `ppAssignKinds(80, 1)` dài 80; cùng seed cho cùng kết quả; tỉ lệ từng kiểu trong ±2 người so với `mix`; mọi `follow ≥ 0` thỏa điều kiện trên; `{ run: false }` không có `'run'`; trẻ em luôn có `follow ≥ 0`.
 - [x] **Bước 2:** `npm run test:people:unit` → LỖI.
 - [x] **Bước 3:** Viết bốn file và `CONFIG.people` (hình và shader: xuất phát từ `personGeo`, `patchPerson` của bản thử; giảm số cạnh để ≤ 900 đỉnh).
 - [x] **Bước 4:** `npm run test:people:unit`, `npm run typecheck` → ĐẠT.
-- [ ] **Bước 5:** Commit `feat(people): hình học, dáng đi và vật liệu người đi bộ`.
+- [x] **Bước 5:** Commit `feat(people): hình học, dáng đi và vật liệu người đi bộ`.
 
 ---
 
@@ -252,7 +252,7 @@ test('cây dừa tĩnh cao h, đứng trên y = 0, hai mặt', () => { /* bbox.m
 - [x] **Bước 2:** Ghi `tests/KET-QUA.md`: mục mới cho D-028 gồm số tam giác từng lưới cây, số đỉnh người, số lưới (cây 6, người 3), kết quả các test đã chạy, và danh sách **chưa chạy** theo yêu cầu người dùng: `test:drawcalls`, so thời gian khung với `main`, `test:citynight -- --baseline` (mốc sẽ đổi vì cây đổi dáng), `test:tour`, `test:voice`, `test:sunwheel`, `test:mobile`, `test:explore`, `test:boats`, `test:traffic`, `test:multi*`; FPS GPU thật chưa đo.
 - [x] **Bước 3:** Cập nhật memory bank theo `.github/prompts/update-memory-bank.prompt.md`: D-028 trong `decisions.md`; hàng mới ở `progress.md`; `activeContext.md` có mục **"Cần người dùng quyết"** chép từ cuối file này.
 - [x] **Bước 4:** `npm run typecheck && npm run build` → ĐẠT. Commit `docs(trees-people): kết quả, README, memory bank (D-028)`.
-- [ ] **Bước 5:** `git push -u origin feature/cay-va-nguoi-thuc-te`; `gh pr create` (tiêu đề tiếng Việt, mô tả: tóm tắt, test đã chạy / chưa chạy, mục cần người dùng quyết; kết thúc bằng dòng `🤖 Generated with [Claude Code](https://claude.com/claude-code)`); `gh pr merge --merge`; về `main`, `git pull`.
+- [x] **Bước 5:** `git push -u origin feature/cay-va-nguoi-thuc-te`; `gh pr create` (tiêu đề tiếng Việt, mô tả: tóm tắt, test đã chạy / chưa chạy, mục cần người dùng quyết; kết thúc bằng dòng `🤖 Generated with [Claude Code](https://claude.com/claude-code)`); `gh pr merge --merge`; về `main`, `git pull`.
 
 ---
 
