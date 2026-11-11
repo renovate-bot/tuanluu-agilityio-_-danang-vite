@@ -1,6 +1,6 @@
 # Tối ưu thời gian vẽ trên GPU (bộ đèn theo trạng thái, tán cây bản thưa) — Thiết kế
 
-_2026-11-12 · Trạng thái: Đang làm · Quyết định: D-031 · Nhánh: `feature/toi-uu-hieu-nang`_
+_2026-11-12 · Trạng thái: Đã xong (PR #TBD); số đo ở `tests/KET-QUA.md` · Quyết định: D-031 · Nhánh: `feature/toi-uu-hieu-nang`_
 
 ## 1. Mục đích và lý do
 
