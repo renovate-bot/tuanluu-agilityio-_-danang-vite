@@ -9,14 +9,15 @@
    - Nhiều người (exMulti, phiên kind 'walk'): xuất phát theo slot đi dạo, gửi vị trí + dáng; hết chỗ thì chế độ xem (startWatching) đặt camera sau lưng người được xem.
      Đổi phiên như dù lượn: bị thu chỗ → xem; mất kết nối khi đang đi → đi tiếp một mình + thông báo; mất kết nối khi xem → thoát, màn chọn báo mất kết nối.
    - Rời máy: phím điều khiển, kéo chuột và chạm cảm ứng gọi exMulti.activity().
-   - Cảm ứng (touch.ts, #stHud): cần gạt ghi đè phím khi đang được giữ; vuốt nửa phải xoay camera; chạm Nhảy là một lần nhảy (như một lần bấm Space); 📷 gọi stPhoto (Task 9 điền).
+   - Cảm ứng (touch.ts, #stHud): cần gạt ghi đè phím khi đang được giữ; vuốt nửa phải xoay camera; chạm Nhảy là một lần nhảy (như một lần bấm Space); 📷 và phím P gọi stPhoto (photo.ts: chụp canvas sau lệnh vẽ chính).
    Mỗi khung không cấp phát (D-018). */
 import { scene, camera, controls, canvas } from '../../core/renderer';
 import { cam, keys } from '../../views/state';
 import { CONFIG } from '../../config';
 import { stSetGate, type StMap } from './map';
 import { ST_GATE_SWING, stBuildStaticMap } from './mapData';
-import { stCreate, stStep, type StState, type StInput } from './motion';
+import { stCreate, stStep, stPhotoPose, type StState, type StInput } from './motion';
+import { stPhotoRequest, stPhotoAfterRender, stPhotoLast } from './photo';
 import { stAvatars } from './avatars';
 import { stCollectRuntime } from './sceneData';
 import { stCamPlace, stCamDrag, type StCam } from './camera';
@@ -44,8 +45,15 @@ const _inp: StInput = { mx: 0, mz: 0, run: false, jump: false, camYaw: 0 };   //
 
 const active = () => cam.mode === 'stroll' && state !== null;
 const inMode = () => active() || watching;   // Esc và giao diện đi dạo áp cho cả chế độ xem
-/* Chụp ảnh (nút 📷, máy tính và cảm ứng): Task 9 điền. Hiện chưa làm gì */
-function stPhoto(): void { /* Task 9: chụp canvas, lưu file, chớp màn hình */ }
+/* Chụp ảnh (nút 📷, phím P): giơ tay (dáng 4, tới người khác qua gói vị trí kế tiếp), chớp màn hình, xếp yêu cầu chụp cho sau lệnh vẽ */
+let flashTimer = 0;
+function stPhoto(): void {
+  if (!active()) return;
+  stPhotoPose(state!);
+  const f = document.getElementById('stFlash');
+  if (f) { f.classList.add('on'); clearTimeout(flashTimer); flashTimer = window.setTimeout(() => f.classList.remove('on'), CONFIG.stroll.flashMs); }
+  stPhotoRequest();
+}
 const isField = (t: EventTarget | null) => !!t && /^(SELECT|INPUT|TEXTAREA)$/.test((t as HTMLElement).tagName || '');
 
 /* Một bước: cổng nhịp quay, chuyển động, nhân vật, camera, hiệu ứng đêm, người chơi khác */
@@ -135,6 +143,10 @@ export const stroll = {
     _inp.jump = jumpQueued; jumpQueued = false;
     advance(dt, _inp);
   },
+  photo: stPhoto,
+  /* Gọi ngay sau lệnh vẽ khung chính (main.ts): chụp canvas nếu có yêu cầu */
+  afterRender(): void { stPhotoAfterRender(canvas); },
+  get photoLast() { return stPhotoLast; },
   /* Cho test: như update nhưng nhận đầu vào trực tiếp */
   step(dt: number, inp: StInput): void {
     if (active()) advance(dt, inp);
@@ -150,6 +162,7 @@ export function setupStroll(c: SwingController, onExit: () => void): void {
     if (isField(e.target)) return;                    // gõ trong ô nhập / chọn không điều khiển nhân vật
     exMulti.activity();   // phím điều khiển (kể cả tự lặp) tính là còn đó
     const k = e.key.toLowerCase();
+    if (k === 'p') { if (!e.repeat) stPhoto(); return; }   // P chụp ảnh, không ghi vào keys
     if (k === ' ') { e.preventDefault(); if (!e.repeat) jumpQueued = true; }
     else if (k.startsWith('arrow')) e.preventDefault();
     keys.add(k);

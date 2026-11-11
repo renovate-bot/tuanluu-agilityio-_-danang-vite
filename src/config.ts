@@ -646,7 +646,8 @@ const strollBase = {
   cadenceMax: 1.5,     // lần nhịp chạy CONFIG.people.run.cadence — trần nhịp bước khi chạy 10 m/s, không đơn vị (ước lượng)
   pants: 0x1d1d1f,     // màu quần nhân vật đi dạo (hex sRGB), một màu tối cho mọi slot; áo theo multiParams.colors[slot] (ước lượng)
   photoHold: 1.2,      // s — thời gian nhân vật giơ tay chụp ảnh (ước lượng)
-  flashMs: 180         // ms — thời gian chớp màn hình khi chụp (ước lượng)
+  flashMs: 180,        // ms — thời gian chớp màn hình khi chụp (ước lượng)
+  photoUrlMs: 10000    // ms — thu hồi URL tạm của ảnh sau khi tải xong (ước lượng)
 };
 
 /* ------------------------- Tàu thuyền sông Hàn ------------------------- */

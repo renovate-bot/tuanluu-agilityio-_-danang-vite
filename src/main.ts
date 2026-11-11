@@ -154,7 +154,7 @@ function animate() {
   audio.update(dayNight.night, show.fireOn, show.waterOn, camera.position.distanceTo(mouthW)); pt = perf.lap('audio', pt);
   quality.update(now0);                                     // bậc chất lượng (tự hạ khi lag), bóng đổ, giới hạn pixelRatio khi mưa
   renderer.info.reset();
-  renderFrame(dayNight.night, dt); perf.lap('render', pt);   // gồm cả biên dịch shader lần đầu (đồng bộ trên luồng chính)
+  renderFrame(dayNight.night, dt); stroll.afterRender(); perf.lap('render', pt);   // gồm cả biên dịch shader lần đầu (đồng bộ trên luồng chính)
   frames++; const now = performance.now(); fpsT = (now - fpsLast) / 1000;
   if (fpsT >= 0.5) {
     fpsEl.textContent = String(Math.round(frames / fpsT)); fpsLast = now; callsEl.textContent = String(renderer.info.render.calls);

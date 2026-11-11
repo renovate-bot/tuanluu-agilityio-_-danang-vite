@@ -12,6 +12,7 @@
 //   Trang B `?test`: không có `stroll-people` trong cảnh.
 //   Mục 9 (Task 7): sảnh đi dạo qua màn chọn với máy chủ giả (routeWebSocket): chữ đi dạo, đổi ngôn ngữ ar / en đổi ngay, Quay lại → Dù lượn về chữ dù lượn,
 //          máy chủ cũ (lobby không walkers) → ngoại tuyến, Đi một mình.
+//   Mục 11 (Task 9): chụp ảnh: PNG đúng khung WebGL (tên, kích thước = canvas, 400 điểm mẫu), phím p, 5 lần bấm, đổi cỡ cửa sổ, bậc thấp, preserveDrawingBuffer = false.
 //   Mục 10 (Task 7): cả 9 file locale có đủ khóa st* và exWalk / exWalkDesc.
 //
 //   npm run build && npm run test:stroll
@@ -423,8 +424,87 @@ try {
     await frames(N.page, 3);
     const r = await N.page.evaluate(() => ({ obj: !!window.__app.scene.getObjectByName('stroll-people'), mode: window.__app.cam.mode, st: document.body.classList.contains('stroll'), act: window.__app.stroll?.stroll.active() }));
     check(`8 ?test không explore: không có stroll-people (${r.obj}), mode ${r.mode}, body.stroll ${r.st}, active ${r.act}`, !r.obj && r.mode === 'orbit' && !r.st && r.act === false);
+    const pdb = await N.page.evaluate(() => window.__app.renderer.getContextAttributes().preserveDrawingBuffer);
+    check(`11 góc nhìn cũ: preserveDrawingBuffer ${pdb} (= false)`, pdb === false);
     check('console sạch (trang ?test)', N.errors.length === 0);
     await N.page.close();
+  }
+
+  // Mục 11 (Task 9) — chụp ảnh: PNG đúng là khung WebGL vừa vẽ (Review Focus 5); Playwright bắt sự kiện download
+  {
+    const C = await openApp(browser, srv.url + '?explore=stroll');
+    const Q = C.page, got = [];
+    Q.on('download', (d) => got.push(d));
+    await frames(Q, 3);
+    const NAME = /^danang-\d{8}-\d{6}\.png$/;
+    /* mở file trong trang: kích thước, số màu khác nhau trong 400 điểm mẫu, có phải toàn đen không */
+    const analyse = async (d) => {
+      const buf = readFileSync(await d.path());
+      const r = await Q.evaluate(async (b64) => {
+        const bin = atob(b64), u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+        const bmp = await createImageBitmap(new Blob([u], { type: 'image/png' }));
+        const c = document.createElement('canvas'); c.width = bmp.width; c.height = bmp.height;
+        const g = c.getContext('2d'); g.drawImage(bmp, 0, 0);
+        const cols = new Set(); let lit = 0;
+        for (let iy = 0; iy < 20; iy++) for (let ix = 0; ix < 20; ix++) {
+          const px = g.getImageData(Math.min(bmp.width - 1, Math.floor((ix + 0.5) * bmp.width / 20)), Math.min(bmp.height - 1, Math.floor((iy + 0.5) * bmp.height / 20)), 1, 1).data;
+          cols.add(px[0] + ',' + px[1] + ',' + px[2]); if (px[0] + px[1] + px[2] > 12) lit++;
+        }
+        return { w: bmp.width, h: bmp.height, colors: cols.size, lit };
+      }, buf.toString('base64'));
+      return { name: d.suggestedFilename(), ...r };
+    };
+    const waitCount = async (n) => { const t0 = Date.now(); while (got.length < n && Date.now() - t0 < 240000) await Q.waitForTimeout(200); };
+    const valid = (a) => NAME.test(a.name) && a.colors >= 20 && a.lit > 0;
+    const cv = () => Q.evaluate(() => { const c = document.querySelector('canvas'); return { w: c.width, h: c.height }; });
+    // bấm #stPhoto: đúng 1 file
+    await Q.click('#stPhoto');
+    await waitCount(1);
+    const toast = await Q.evaluate(() => { const e = document.getElementById('exMpNotice'); return { hidden: e.hidden, text: e.textContent }; });   // đọc ngay: thông báo tự ẩn sau noticeMs (8 s), SwiftShader chậm
+    await frames(Q, 4);
+    const a1 = await analyse(got[0]), c1 = await cv();
+    check(`11 bấm #stPhoto: ${got.length} file (= 1) "${a1.name}", ${a1.w}×${a1.h} = canvas ${c1.w}×${c1.h}, ${a1.colors} màu / 400 điểm, sáng ${a1.lit}`, got.length === 1 && valid(a1) && a1.w === c1.w && a1.h === c1.h);
+    const last = await Q.evaluate(() => window.__app.stroll.stroll.photoLast);
+    check(`11 thông báo "${toast.text}" (stPhotoSaved)`, !toast.hidden && toast.text === 'Đã lưu ảnh');
+    check(`11 photoLast ${JSON.stringify(last)} khớp file`, !!last && last.name === a1.name && last.w === a1.w && last.h === a1.h && last.size > 1000);
+    // phím p: thêm đúng 1 file; pose 4 khi đứng yên rồi về 0
+    await Q.evaluate(() => document.activeElement && document.activeElement.blur());
+    await Q.keyboard.press('p');
+    const pose = await Q.evaluate(() => {
+      const S = window.__app.stroll.stroll, idle = { mx: 0, mz: 0, run: false, jump: false, camYaw: 0 }, hold = window.__app.stroll.CONFIG_stroll.photoHold;
+      S.step(0.016, idle); const p0 = S.state.pose;
+      let t = 0, p1 = p0; while (t < hold - 0.1) { S.step(0.05, idle); t += 0.05; p1 = S.state.pose; }
+      for (let i = 0; i < 6; i++) S.step(0.05, idle);
+      return { p0, p1, end: S.state.pose };
+    });
+    check(`11 phím p: pose ${pose.p0} → ${pose.p1} trong photoHold (= 4) → ${pose.end} (= 0)`, pose.p0 === 4 && pose.p1 === 4 && pose.end === 0);
+    await waitCount(2); await frames(Q, 4);
+    check(`11 phím p: thêm đúng 1 file (tổng ${got.length} = 2), tên hợp lệ`, got.length === 2 && NAME.test(got[1].suggestedFilename()));
+    // 5 lần bấm trong một khung
+    const n0 = got.length;
+    await Q.evaluate(() => { const b = document.getElementById('stPhoto'); for (let i = 0; i < 5; i++) b.click(); });
+    await waitCount(n0 + 1); await frames(Q, 6);
+    const many = got.slice(n0), am = [];
+    for (const d of many) am.push(await analyse(d));
+    check(`11 bấm 5 lần trong một khung: ${many.length} file (1..5), mỗi file hợp lệ (${am.map((a) => a.colors).join(',')} màu)`, many.length >= 1 && many.length <= 5 && am.every(valid));
+    // đổi kích thước rồi bấm ngay: kích thước file = canvas lúc chụp
+    const n1 = got.length;
+    await Q.setViewportSize({ width: 560, height: 315 });
+    await Q.evaluate(() => document.getElementById('stPhoto').click());
+    await waitCount(n1 + 1); await frames(Q, 6);
+    const ar = await analyse(got[n1]), lr = await Q.evaluate(() => window.__app.stroll.stroll.photoLast);
+    check(`11 đổi cỡ cửa sổ rồi bấm ngay: file ${ar.w}×${ar.h} = canvas lúc chụp ${lr.w}×${lr.h}, ${got.length - n1} file (= 1)`, got.length === n1 + 1 && valid(ar) && ar.w === lr.w && ar.h === lr.h);
+    // bậc chất lượng thấp nhất
+    const n2 = got.length;
+    await Q.evaluate(() => { const s = document.getElementById('qualitySel'); s.value = 'low'; s.dispatchEvent(new Event('change', { bubbles: true })); });
+    await frames(Q, 4);
+    await Q.evaluate(() => document.getElementById('stPhoto').click());
+    await waitCount(n2 + 1); await frames(Q, 4);
+    const aq = await analyse(got[n2]);
+    check(`11 chất lượng thấp: ${got.length - n2} file (= 1), ${aq.w}×${aq.h}, ${aq.colors} màu, hợp lệ`, got.length === n2 + 1 && valid(aq));
+    check('console sạch (chụp ảnh)', C.errors.length === 0);
+    if (C.errors.length) console.log(C.errors.join('\n'));
+    await Q.close();
   }
 
   // Mục 9 (Task 7) — sảnh đi dạo đổi ngôn ngữ; máy chủ giả bằng routeWebSocket (không cần wrangler): gửi lobby có walkers, rồi bản máy chủ cũ (không walkers)
