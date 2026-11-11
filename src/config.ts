@@ -611,6 +611,41 @@ const exploreBase = {
   }
 };
 
+/* ------------------------- Đi dạo nhiều người -------------------------
+   Chế độ đi bộ góc nhìn sau lưng (docs/superpowers/specs/2026-11-11-di-dao-design.md). Vùng đi được dựng ở explore/stroll/mapData.ts. Mọi số đều (ước lượng) */
+const strollBase = {
+  walk: 3.5,           // m/s — tốc độ đi, nhanh hơn người thật để đi được nhiều nơi (ước lượng)
+  run: 10,             // m/s — tốc độ chạy, giữ Shift / gạt hết cỡ: hết Cầu Rồng 666 m khoảng một phút (ước lượng)
+  accel: 30,           // m/s² — gia tốc tiến tới tốc độ đích và hãm lại (ước lượng)
+  turn: 12,            // 1/s — tốc độ nhân vật quay mặt về hướng đi (ước lượng)
+  jumpHeight: 1.2,     // m — độ cao nhảy của chân, đủ qua tường thấp lowMax (ước lượng)
+  gravity: 20,         // m/s² — gia tốc rơi khi nhảy, mạnh hơn 9,8 cho nhảy gọn (ước lượng)
+  radius: 0.35,        // m — bán kính hình tròn va chạm của nhân vật (ước lượng)
+  stepMax: 0.35,       // m — bậc cao không quá số này thì tự bước lên (lề 0,25, dải phân cách 0,3), cộng sẵn vào cao độ vùng (ước lượng)
+  lowMax: 1.0,         // m — vật cao hơn stepMax và thấp hơn số này là tường thấp, nhảy qua được (gờ chắn xe Cầu Rồng 0,9) (ước lượng)
+  dtMax: 0.1,          // s — trần dt mỗi khung của chuyển động; khung dài hơn thì chia nhỏ (ước lượng)
+  spawn: { x: -240, z: 17.4, spread: 2.5 },   // m — điểm xuất phát trên lề phía Nam Cầu Rồng gần bờ Tây; lệch theo x spread × (slot − 2) (ước lượng)
+  spawnYaw: 0,         // rad — hướng ban đầu, 0 = về phía Đông dọc cầu (ước lượng)
+  bounds: { x0: -400, x1: 400, z0: -1300, z1: 220 },   // m — khung chứa mọi vùng đi được, phải bằng multiParams.stroll.bounds (có test kiểm) (ước lượng)
+  cam: {
+    dist: 6,           // m — khoảng cách camera sau lưng nhân vật (ước lượng)
+    height: 2.2,       // m — camera cao hơn chân nhân vật (ước lượng)
+    look: 1.5,         // m — điểm nhìn cao hơn chân nhân vật, quanh ngực (ước lượng)
+    minDist: 1.2,      // m — khoảng cách nhỏ nhất khi bị vật cản kéo lại gần (ước lượng)
+    pitch: 0.25,       // rad — góc cúi ban đầu (ước lượng)
+    pitchMin: -0.15,   // rad — góc ngửa lên nhỏ nhất (ước lượng)
+    pitchMax: 1.0,     // rad — góc cúi xuống lớn nhất (ước lượng)
+    mouse: 0.005,      // rad/px — độ nhạy kéo chuột (ước lượng)
+    touch: 0.006,      // rad/px — độ nhạy vuốt màn hình (ước lượng)
+    lag: 0.12          // s — độ trễ camera bám theo nhân vật (ước lượng)
+  },
+  stick: { dead: 0.15, run: 0.8, size: 120 },   // cần gạt ảo: vùng chết (phần bán kính), từ mức này là chạy (phần bán kính), đường kính px (ước lượng)
+  labelAbove: 2.1,     // m — nhãn tên cao hơn chân người đi dạo (ước lượng)
+  cadenceMax: 1.5,     // lần nhịp chạy CONFIG.people.run.cadence — trần nhịp bước khi chạy 10 m/s, không đơn vị (ước lượng)
+  photoHold: 1.2,      // s — thời gian nhân vật giơ tay chụp ảnh (ước lượng)
+  flashMs: 180         // ms — thời gian chớp màn hình khi chụp (ước lượng)
+};
+
 /* ------------------------- Tàu thuyền sông Hàn ------------------------- */
 /* docs/superpowers/specs/2026-11-10-tau-thuyen-song-han-design.md — mọi số là ước lượng (không có số liệu công bố cho từng tàu) */
 export type BoatTypeId = 'A' | 'B' | 'C' | 'D' | 'E';
@@ -777,6 +812,7 @@ export const CONFIG = {
   weather: weatherBase,
   tourAll: tourAllBase,
   explore: { ...exploreBase, multi: multiParams },
+  stroll: strollBase,
   vehicles: vehiclesBase,
   trees: treesBase,
   people: peopleBase
