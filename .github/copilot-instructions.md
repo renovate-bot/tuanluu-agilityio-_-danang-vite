@@ -96,3 +96,9 @@ Quy ước: `docs/superpowers/` là nguồn sự thật cho "xây cái gì / the
 - Làm trên nhánh `feature/*`, không commit thẳng `main`. Commit theo từng giai đoạn đã kiểm tra.
 - Không commit file của tính năng khác đang làm dở.
 - Commit `public/voice/` khi đổi lời thuyết minh. Không commit `dist/`, `tests/screens/`.
+- **Khi người dùng nói "tạo pull request và merge vào main" (hoặc tương đương), tự động cập nhật các file AI tương ứng trước khi mở PR, không cần hỏi lại**, rồi commit chúng vào chính nhánh đó:
+  - `memory-bank/activeContext.md` (trạng thái, bước tiếp theo, việc đã/chưa chạy test) và `progress.md` (dòng tính năng, số PR, mục Còn thiếu); `decisions.md` nếu có quyết định mới; `systemPatterns.md` nếu có quy ước / cạm bẫy mới.
+  - `instructions/*.instructions.md` của vùng code đã sửa (theo `applyTo`) khi có quy tắc hay cạm bẫy mới; file này (`copilot-instructions.md`) khi đổi lệnh, bất biến hoặc quy trình.
+  - Trạng thái spec / plan trong `docs/superpowers/` của tính năng; README mục **Cấu trúc** khi thêm thư mục.
+  - Biết số PR sau khi mở thì ghi số đó vào memory bank (commit thêm trên nhánh) trước khi merge. Chỉ ghi điều có thật: test nào đã chạy / chưa chạy, đã deploy hay chưa.
+  - Deploy (`npm --prefix server/multi run deploy`) vẫn phải hỏi riêng; câu "tạo PR và merge" không bao gồm deploy.
