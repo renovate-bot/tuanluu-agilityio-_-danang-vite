@@ -310,6 +310,10 @@ body.ex-watching #exMpInvite:not([hidden]){display:flex;align-items:center;gap:1
 body.explore .views,body.explore .specs,body.explore #tourCaption,body.explore #wxScenario,body.explore #hint,body.explore #swRideHint,body.explore #swStormNote,body.explore #hrLabels{display:none!important;}
 body.explore h1,body.explore .eyebrow,body.explore #btnShadow,body.explore .audio-row,body.explore .slider,body.explore .weather-row,body.explore .donate{display:none!important;}
 body.explore:not(.ex-test) .stats{display:none;}   /* HUD giữ khi URL có ?test để test đo draw call */
+/* Đi dạo: dòng hướng dẫn và đồng hồ là của dù lượn nên ẩn; kéo chuột trên cảnh để xoay camera */
+body.explore.stroll #exHint,body.explore.stroll #exSpeed{display:none;}
+body.stroll #scene{cursor:grab;}
+body.stroll #scene:active{cursor:grabbing;}
 body.compact #exHint{top:calc(64px + env(safe-area-inset-top,0px));}
 body.compact #btnExExit{top:calc(8px + env(safe-area-inset-top,0px));inset-inline-end:calc(8px + env(safe-area-inset-right,0px));min-height:40px;}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important;}}

@@ -204,8 +204,8 @@ try {
     await frames(G.page, 2);
     const e3 = await G.page.evaluate(() => { const a = window.__app, s = a.explore.state, t = a.controls.target; const fx = Math.cos(s.yaw), fz = -Math.sin(s.yaw); return Math.hypot(t.x - (s.pos.x + fx * 30), t.y - (s.pos.y - 4), t.z - (s.pos.z + fz * 30)); });
     check(`3e controls.target bám pos + forward·30 (lệch ${e3.toFixed(3)} m)`, e3 < 1);
-    // 3f Esc → tải lại, bỏ tham số explore
-    await G.page.evaluate(() => { window.__reloadMark = 1; });
+    // 3f Esc → tải lại, bỏ tham số explore (3d mở tờ Cài đặt bằng reveal; tờ còn mở thì Esc đầu chỉ đóng tờ, D-025)
+    await G.page.evaluate(() => { window.__app.ui.closeSheets(); window.__reloadMark = 1; });
     await G.page.keyboard.press('Escape');
     await G.page.waitForFunction(() => !window.__reloadMark, null, { timeout: 240000 });   // dấu hiệu trên window mất = trang tải lại thật
     await G.page.waitForURL((u) => !u.href.includes('explore='), { timeout: 240000, waitUntil: 'commit' });   // chỉ cần điều hướng bắt đầu; tải lại bằng SwiftShader rất chậm

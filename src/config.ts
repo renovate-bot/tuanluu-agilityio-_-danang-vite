@@ -633,6 +633,7 @@ const strollBase = {
     height: 2.2,       // m — camera cao hơn chân nhân vật (ước lượng)
     look: 1.5,         // m — điểm nhìn cao hơn chân nhân vật, quanh ngực (ước lượng)
     minDist: 1.2,      // m — khoảng cách nhỏ nhất khi bị vật cản kéo lại gần (ước lượng)
+    gap: 0.25,         // m — camera dừng cách tường / mép vùng chừng này khi bị kéo lại gần, tránh mặt phẳng gần cắt vào tường (ước lượng)
     pitch: 0.25,       // rad — góc cúi ban đầu (ước lượng)
     pitchMin: -0.15,   // rad — góc ngửa lên nhỏ nhất (ước lượng)
     pitchMax: 1.0,     // rad — góc cúi xuống lớn nhất (ước lượng)

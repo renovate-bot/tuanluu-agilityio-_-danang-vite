@@ -12,11 +12,12 @@ export const exNight = { enabled: true, rest: 0, show };
 let ctrl: SwingController | null = null;
 export function exNightBind(c: SwingController): void { ctrl = c; }
 
-/* Gọi mỗi bước bay */
-export function exNightStep(dt: number): void {
+/* Gọi mỗi bước bay / đi dạo; swing = false (đi dạo): chỉ phun lửa / nước, không tự quay và không tăng tốc Cầu sông Hàn (spec đi dạo §3 mục 13) */
+export function exNightStep(dt: number, swing = true): void {
   if (!exNight.enabled || !ctrl) return;
   const C = CONFIG.explore.nightShows, night = dayNight.target > 0.5;
   if (show.on !== night) { show.on = night; show.t = 0; }   // đổi trời: bắt đầu lại từ lần phun đầu
+  if (!swing) return;
   if (ctrl.state !== 'CLOSED') {                            // đang quay (cả khi đã sang ngày): đi nốt tới khi đóng
     ctrl.speed = C.swingSpeed;
     if (ctrl.state === 'OPEN') ctrl.requestClose();

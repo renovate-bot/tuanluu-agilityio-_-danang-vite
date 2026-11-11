@@ -11,7 +11,7 @@ export const MOUTH_LOCAL = new THREE.Vector3(13.2, -2.6, 0);
 type T3 = [number, number, number];
 
 export function buildDragonHead() {
-  headGroup = new THREE.Group();
+  headGroup = new THREE.Group(); headGroup.name = 'dragon-head';   // tên cho test đi dạo chọn lưới rắn (tests/stroll-check.mjs)
   const end = spine.getPointAt(1);
   headGroup.position.copy(end).add(new THREE.Vector3(3.2, 0.9, 0));
   headGroup.rotation.z = 0.06;

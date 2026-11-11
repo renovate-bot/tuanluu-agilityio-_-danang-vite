@@ -31,7 +31,8 @@
     "test:trees:unit": "tsx --test tests/trees-unit/*.test.ts",
     "test:people:unit": "tsx --test tests/people-unit/*.test.ts",
     "test:people": "node tests/people-check.mjs",
-    "test:stroll:unit": "tsx --test tests/stroll-unit/*.test.ts"
+    "test:stroll:unit": "tsx --test tests/stroll-unit/*.test.ts",
+    "test:stroll": "node tests/stroll-check.mjs"
   },
   "dependencies": {
     "three": "^0.165.0"
