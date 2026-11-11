@@ -98,6 +98,8 @@ type Warm = { objs: THREE.Object3D[]; clips: Clip[]; ci: number; sets: { set: Li
   pending: Ready[]; pi: number; phase: number; scene: THREE.Scene; proxy: THREE.Object3D; clipScene: THREE.Scene; clipMesh: THREE.Mesh; clipRT: THREE.WebGLRenderTarget;
   draw: THREE.Scene; kids: THREE.Object3D[]; saved: Uint8Array; rts: THREE.WebGLRenderTarget[] };
 let warm: Warm | null = null, warmDone = false;
+/* Còn đang hâm nền bộ đèn không (quality.update bỏ khung dài do biên dịch khỏi trung bình). Chế độ khác 'bg' không bao giờ hâm */
+export const lightsWarming = () => lightState.mode === 'bg' && !warmDone;
 
 /* Số mặt phẳng cắt nằm trong program key (numClippingPlanes / numClipIntersection) nhưng compile() không tự đặt: nó dùng trạng thái cắt còn lại
    từ vật liệu vẽ sau cùng (WebGLClipping.setState chỉ chạy trong setProgram lúc vẽ). Vẽ sau cùng của khung thường là vật liệu bị mặt cắt Hầm cắt

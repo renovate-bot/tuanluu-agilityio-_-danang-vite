@@ -13,6 +13,7 @@ export const device = {
   phone: !q.has('test') && coarse && small,                                                     // màn cảm ứng nhỏ: điện thoại / máy tính bảng nhỏ
   weak: !q.has('test') && ((nav.deviceMemory ?? 8) <= 4 || (navigator.hardwareConcurrency ?? 8) <= 4),
   /* Bộ đèn ngày / đêm (D-031, core/lights.ts): 'bg' biên dịch nền sau khung đầu, 'sync' biên dịch cả ba bộ trước khung đầu, 'off' luôn bộ đủ.
-     ?test mặc định 'off' (bảng draw call chuẩn, mọi test cũ giữ nguyên); ?test&lightsets=sync | bg để thử */
-  lightSets: (!q.has('test') ? 'bg' : q.get('lightsets') === 'sync' ? 'sync' : q.get('lightsets') === 'bg' ? 'bg' : 'off') as 'off' | 'sync' | 'bg'
+     ?lightsets=off | sync | bg có tác dụng cả khi không có ?test (người dùng tắt được bằng ?lightsets=off).
+     Mặc định: không ?test là 'bg'; ?test là 'off' (bảng draw call chuẩn, mọi test cũ giữ nguyên) */
+  lightSets: ((l) => l === 'off' || l === 'sync' || l === 'bg' ? l : q.has('test') ? 'off' : 'bg')(q.get('lightsets')) as 'off' | 'sync' | 'bg'
 };
