@@ -4,6 +4,7 @@ import { scene } from './renderer';
 import { rng } from '../common/math';
 import { CONFIG } from '../config';
 import { shared } from './shared';
+import { passLodEnter, passLodLeave } from './passLod';
 
 /* ============================ Mặt nước sông Hàn ============================ */
 export let water: Water;
@@ -73,7 +74,7 @@ export function buildWater() {
     const every = reflectState.every;
     if (every > 0) {
       if (mirror.value !== mirrorTex) mirror.value = mirrorTex;
-      if (every === 1 || n++ % every === 0) draw.apply(this, args);
+      if (every === 1 || n++ % every === 0) { passLodEnter(); try { draw.apply(this, args); } finally { passLodLeave(); } }   // lượt gương vẽ tán cây bản thưa (passLod.ts)
       return;
     }
     if (mirror.value !== flatTex) mirror.value = flatTex;
