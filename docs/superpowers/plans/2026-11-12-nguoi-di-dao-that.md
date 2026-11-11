@@ -52,9 +52,9 @@
 
 Bảng nhân vật và đoạn: spec §4, §5. Commit Rocketbox ghim: `0943055db6ec570bcef9f2c8b41c9e5467c808f9`; tải từ `https://raw.githubusercontent.com/microsoft/Microsoft-Rocketbox/<commit>/<đường dẫn>`.
 
-- [ ] **Step 1: Viết test `tests/stroll-unit/glb.test.ts`** (đọc phần JSON của GLB bằng `fs`, không cần three): với `k` = 0..4 kiểm file tồn tại, `size ≤ 1.5 * 1024 * 1024`, tổng ≤ 6 MB, tên animation sắp xếp bằng `['idle','jog','photo','sprint','walk']`, `speed` của `walk` trong (0,5; 2,5), `jog` trong (2; 5), `sprint` trong (4; 8) và `walk < jog < sprint`, có đúng 1 skin với ≥ 50 khớp, không có `KHR_draco_mesh_compression` / `EXT_meshopt_compression` trong `extensionsUsed`, `height` trong (1,5; 1,95); `LICENSE-Rocketbox.txt` tồn tại và chứa `MIT`.
-- [ ] **Step 2:** `npm run test:stroll:unit` → FAIL (chưa có file).
-- [ ] **Step 3: Viết `scripts/people/convert.py`.** Đầu file: cách chạy, Blender đã thử, commit ghim, bảng nhân vật / đoạn. Tải nguồn vào `scripts/people/.cache/` (bỏ qua file đã có). Lõi gắn chuyển động **đã chạy được ở bản thử**, giữ đúng cách này:
+- [x] **Step 1: Viết test `tests/stroll-unit/glb.test.ts`** (đọc phần JSON của GLB bằng `fs`, không cần three): với `k` = 0..4 kiểm file tồn tại, `size ≤ 1.5 * 1024 * 1024`, tổng ≤ 6 MB, tên animation sắp xếp bằng `['idle','jog','photo','sprint','walk']`, `speed` của `walk` trong (0,5; 2,5), `jog` trong (2; 5), `sprint` trong (4; 8) và `walk < jog < sprint`, có đúng 1 skin với ≥ 50 khớp, không có `KHR_draco_mesh_compression` / `EXT_meshopt_compression` trong `extensionsUsed`, `height` trong (1,5; 1,95); `LICENSE-Rocketbox.txt` tồn tại và chứa `MIT`.
+- [x] **Step 2:** `npm run test:stroll:unit` → FAIL (chưa có file).
+- [x] **Step 3: Viết `scripts/people/convert.py`.** Đầu file: cách chạy, Blender đã thử, commit ghim, bảng nhân vật / đoạn. Tải nguồn vào `scripts/people/.cache/` (bỏ qua file đã có). Lõi gắn chuyển động **đã chạy được ở bản thử**, giữ đúng cách này:
 
 ```python
 # với mỗi đoạn: nhập FBX chuyển động -> bộ xương nguồn `src`; `arm` là bộ xương nhân vật đã nhập trước
@@ -83,10 +83,10 @@ for fc in act.fcurves:
 ```
 
   Số đo bản thử với `Male_Adult_10`: 80 xương, 6 732 tam giác, 3 vật liệu (`*_body`, `*_head`, `*_opacity`); `m_walk_cool_01` 1,05 m/s (chu kỳ 1,267 s), `m_run_fast_01` 5,84 m/s (0,6 s); bộ xương nhân vật sau khi nhập có scale 0,01 và quay −90° quanh Z, hướng trôi là −Y của Blender (tức mặt hướng −Y) — phải áp biến đổi và quay để mặt hướng **+X của glTF** sau `export_yup`. Phần còn lại theo spec §7: texture màu thân 1024 / đầu 512 JPEG ~80, bỏ normal + specular, mảnh `opacity` dùng PNG alpha nhỏ + `alphaMode MASK`, 30 khung/giây, xóa đường cong xương mặt, cắt `idle` ~6 s và `photo` chỉ phần giơ máy ≤ 0,8 s, ghi `extras.speed` (custom property trên action + `export_extras=True`) và `height`. Xuất `export_animation_mode='NLA_TRACKS'`, mỗi track tên theo đoạn. Cuối script in bảng (tam giác, xương, byte, thời lượng, speed) và xuất ảnh 4 khung mỗi đoạn vào `scripts/people/.cache/preview/`.
-- [ ] **Step 4:** Chạy `npm run gen:people` (`"gen:people": "\"C:/Program Files/Blender Foundation/Blender 4.5/blender.exe\" -b --python scripts/people/convert.py"`; script đọc `BLENDER` không cần thiết, đường dẫn này ghi ở đầu file để máy khác sửa). **Mở từng ảnh preview bằng công cụ đọc ảnh**: mỗi nhân vật ở `walk`, `jog`, `sprint`, `photo` phải có tay chân đúng dáng (không chữ T, không vặn), texture đúng, tóc không thành mảng đặc. Nhân vật hỏng → thay theo spec §4 và ghi vào **Ghi chú để báo**.
-- [ ] **Step 5:** Chép `LICENSE.md` của Rocketbox vào `public/people/LICENSE-Rocketbox.txt` (thêm 2 dòng đầu: nguồn + commit).
-- [ ] **Step 6:** `npm run test:stroll:unit` → `glb.test.ts` PASS. Vượt trần thì nhường theo thứ tự spec §7, ghi lại mức đã nhường.
-- [ ] **Step 7:** Commit `feat(stroll): script chuyển Rocketbox sang glb và 5 nhân vật có xương`.
+- [x] **Step 4:** Chạy `npm run gen:people` (`"gen:people": "\"C:/Program Files/Blender Foundation/Blender 4.5/blender.exe\" -b --python scripts/people/convert.py"`; script đọc `BLENDER` không cần thiết, đường dẫn này ghi ở đầu file để máy khác sửa). **Mở từng ảnh preview bằng công cụ đọc ảnh**: mỗi nhân vật ở `walk`, `jog`, `sprint`, `photo` phải có tay chân đúng dáng (không chữ T, không vặn), texture đúng, tóc không thành mảng đặc. Nhân vật hỏng → thay theo spec §4 và ghi vào **Ghi chú để báo**.
+- [x] **Step 5:** Chép `LICENSE.md` của Rocketbox vào `public/people/LICENSE-Rocketbox.txt` (thêm 2 dòng đầu: nguồn + commit).
+- [x] **Step 6:** `npm run test:stroll:unit` → `glb.test.ts` PASS. Vượt trần thì nhường theo thứ tự spec §7, ghi lại mức đã nhường.
+- [x] **Step 7:** Commit `feat(stroll): script chuyển Rocketbox sang glb và 5 nhân vật có xương`.
 
 ### Task 2: Bỏ nhảy
 
@@ -97,12 +97,12 @@ for fc in act.fcurves:
 **Interfaces:**
 - Produces: `StInput = { mx, mz, run, camYaw }` (không còn `jump`); `ST_POSE_FALL = 3` thay `ST_POSE_JUMP` (cùng giá trị); `StTouchHandlers = { look, photo, activity }`; `PP_FLAG = { hat: 1, pack: 2, photo: 4 }`; `ppAngles(part, amp, phase)` (bỏ tham số `jump`).
 
-- [ ] **Step 1: Sửa test trước.** `motion.test.ts`: bỏ các test nhảy; thêm `'bước khỏi bậc cao hơn stepMax thì rơi, dáng ST_POSE_FALL, chạm đất hết rơi'` và `'chạy thẳng vào gờ chắn xe Cầu Rồng 0,9 m: không qua'` (dùng bản đồ thật `stBuildStaticMap()`, từ điểm xuất phát chạy theo −Z 3 s, khẳng định `z` không vượt mép trong của gờ). `mapData.test.ts`: bỏ khẳng định "nhảy cao 1,2 m phải qua gờ"; thêm test Cầu sông Hàn: từ lề đi bộ tới được lòng đường mà không rời đất, **hoặc** nếu bản đồ không có lối thì test khẳng định điều ngược lại và ghi vào **Ghi chú để báo** (không sửa bản đồ). `keys.test.ts` / `touch.test.ts`: bỏ `jump`; thêm `'Space không sinh đầu vào nào'`. `avatars.test.ts`: bỏ phần cờ nhảy (file này Task 4 viết lại). `gait.test.ts`: bỏ test `jump`.
-- [ ] **Step 2:** `npm run test:stroll:unit; npm run test:people:unit` → FAIL / lỗi kiểu.
-- [ ] **Step 3: Gỡ mã.** Theo spec §6. Trong `index.ts`: bỏ `jumpQueued` và nhánh `k === ' '`, nhưng **vẫn** `preventDefault` cho Space ở keydown / keyup khi đang đi dạo và mục tiêu không phải ô nhập (Review Focus 5: không cuộn trang, không bấm nút đang focus) và không thêm `' '` vào `keys`. `motion.ts`: bỏ bước 3 (nhảy), giữ rơi; `feet` vẫn tính như cũ. `material.ts` / `gait.ts` / `kinds.ts` / `config.ts`: xóa cờ 8 và `CONFIG.people.jump`. Chú thích đầu các file sửa cho khớp.
-- [ ] **Step 4: i18n.** Xóa khóa `stJump` ở 9 file; `stHint` bỏ đoạn Space (vi: `"W A S D: đi · giữ Shift: chạy · kéo chuột: xoay camera · P: chụp ảnh · Esc: thoát"`; 8 ngôn ngữ còn lại: xóa đúng mục Space cùng dấu ngăn của nó, không dịch lại phần khác).
-- [ ] **Step 5:** `npm run typecheck; npm run test:stroll:unit; npm run test:people:unit; npm run test:multi:unit` → PASS. `grep -rn -i "jump\|stJump" src index.html` chỉ còn kết quả không liên quan (nếu có thì giải thích trong commit).
-- [ ] **Step 6:** Commit `feat(stroll): bỏ tính năng nhảy, dáng 3 thành rơi`.
+- [x] **Step 1: Sửa test trước.** `motion.test.ts`: bỏ các test nhảy; thêm `'bước khỏi bậc cao hơn stepMax thì rơi, dáng ST_POSE_FALL, chạm đất hết rơi'` và `'chạy thẳng vào gờ chắn xe Cầu Rồng 0,9 m: không qua'` (dùng bản đồ thật `stBuildStaticMap()`, từ điểm xuất phát chạy theo −Z 3 s, khẳng định `z` không vượt mép trong của gờ). `mapData.test.ts`: bỏ khẳng định "nhảy cao 1,2 m phải qua gờ"; thêm test Cầu sông Hàn: từ lề đi bộ tới được lòng đường mà không rời đất, **hoặc** nếu bản đồ không có lối thì test khẳng định điều ngược lại và ghi vào **Ghi chú để báo** (không sửa bản đồ). `keys.test.ts` / `touch.test.ts`: bỏ `jump`; thêm `'Space không sinh đầu vào nào'`. `avatars.test.ts`: bỏ phần cờ nhảy (file này Task 4 viết lại). `gait.test.ts`: bỏ test `jump`.
+- [x] **Step 2:** `npm run test:stroll:unit; npm run test:people:unit` → FAIL / lỗi kiểu.
+- [x] **Step 3: Gỡ mã.** Theo spec §6. Trong `index.ts`: bỏ `jumpQueued` và nhánh `k === ' '`, nhưng **vẫn** `preventDefault` cho Space ở keydown / keyup khi đang đi dạo và mục tiêu không phải ô nhập (Review Focus 5: không cuộn trang, không bấm nút đang focus) và không thêm `' '` vào `keys`. `motion.ts`: bỏ bước 3 (nhảy), giữ rơi; `feet` vẫn tính như cũ. `material.ts` / `gait.ts` / `kinds.ts` / `config.ts`: xóa cờ 8 và `CONFIG.people.jump`. Chú thích đầu các file sửa cho khớp.
+- [x] **Step 4: i18n.** Xóa khóa `stJump` ở 9 file; `stHint` bỏ đoạn Space (vi: `"W A S D: đi · giữ Shift: chạy · kéo chuột: xoay camera · P: chụp ảnh · Esc: thoát"`; 8 ngôn ngữ còn lại: xóa đúng mục Space cùng dấu ngăn của nó, không dịch lại phần khác).
+- [x] **Step 5:** `npm run typecheck; npm run test:stroll:unit; npm run test:people:unit; npm run test:multi:unit` → PASS. `grep -rn -i "jump\|stJump" src index.html` chỉ còn kết quả không liên quan (nếu có thì giải thích trong commit).
+- [x] **Step 6:** Commit `feat(stroll): bỏ tính năng nhảy, dáng 3 thành rơi`.
 
 ### Task 3: Hàm chọn đoạn và quy tắc nhân vật (thuần)
 
@@ -119,7 +119,7 @@ for fc in act.fcurves:
   - `export function stClipMix(pose: number, speed: number, natural: ArrayLike<number> /* speed tự nhiên theo ST_CLIPS */, out: StClipMix): void` — không cấp phát.
   - `export function stModelFor(slot: number, isSelf: boolean): number` — mình → 0; người khác → `1 + (((slot % 4) + 4) % 4)`.
 
-- [ ] **Step 1: Viết `anim.test.ts`** với `natural = [0, 1.05, 3.0, 5.84, 0]`:
+- [x] **Step 1: Viết `anim.test.ts`** với `natural = [0, 1.05, 3.0, 5.84, 0]`:
   - đứng (`pose` 0) → `idle` = 1, `loco` false;
   - `pose` 1, `v` 1,0 → `walk` = 1, `rate` ≈ 0,952;
   - `pose` 1, `v` 3,5 → `jog` = 1, `rate` ≈ 1,167;
@@ -130,10 +130,10 @@ for fc in act.fcurves:
   - `pose` 4 → `photo` = 1; `pose` 3, `v` 0 → `idle`; `pose` 3, `v` 6 → như chạy ở 6 m/s; `pose` 7 hoặc `NaN` → `idle` (Review Focus 4);
   - mọi trường hợp: tổng `w` = 1 ± 1e-6, không âm;
   - `stModelFor`: (2, true) → 0; người khác slot 0..4 → 1, 2, 3, 4, 1; slot −1 → trong 1..4.
-- [ ] **Step 2:** `npm run test:stroll:unit` → FAIL.
-- [ ] **Step 3:** Viết `anim.ts` và thêm `CONFIG.stroll.anim` (chú thích từng số, đơn vị, `(ước lượng)`).
-- [ ] **Step 4:** `npm run typecheck; npm run test:stroll:unit` → PASS.
-- [ ] **Step 5:** Commit `feat(stroll): chọn và trộn đoạn chuyển động theo dáng và tốc độ`.
+- [x] **Step 2:** `npm run test:stroll:unit` → FAIL.
+- [x] **Step 3:** Viết `anim.ts` và thêm `CONFIG.stroll.anim` (chú thích từng số, đơn vị, `(ước lượng)`).
+- [x] **Step 4:** `npm run typecheck; npm run test:stroll:unit` → PASS.
+- [x] **Step 5:** Commit `feat(stroll): chọn và trộn đoạn chuyển động theo dáng và tốc độ`.
 
 ### Task 4: Nhân vật có xương trong `stAvatars`
 
@@ -197,8 +197,8 @@ Quy tắc:
 **Files:**
 - Modify: `.github/memory-bank/activeContext.md`, `progress.md`, `decisions.md` (D-030), `systemPatterns.md` (cạm bẫy: tư thế gốc file chuyển động Rocketbox khác file nhân vật; Blender 4.5 action slot; nạp động GLTFLoader), `.github/copilot-instructions.md` (§3 mục 5: ngoại lệ hình người D-030; §5: `gen:people`), `README.md` (mục Cấu trúc: `public/people/`, `scripts/people/`; ghi nguồn Rocketbox MIT), spec (trạng thái), plan này (đánh dấu ô, số đo thật, **Ghi chú để báo**)
 
-- [ ] **Step 1:** Cập nhật các file trên; chỉ ghi điều có thật (test nào đã chạy / chưa chạy, không deploy).
-- [ ] **Step 2:** `npm run typecheck` → PASS. Commit `docs(stroll): D-030, memory bank, hướng dẫn agent`.
+- [x] **Step 1:** Cập nhật các file trên; chỉ ghi điều có thật (test nào đã chạy / chưa chạy, không deploy).
+- [x] **Step 2:** `npm run typecheck` → PASS. Commit `docs(stroll): D-030, memory bank, hướng dẫn agent`.
 
 ---
 

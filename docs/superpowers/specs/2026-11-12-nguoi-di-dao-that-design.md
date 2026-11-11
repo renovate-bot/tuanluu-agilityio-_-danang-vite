@@ -1,6 +1,6 @@
 # Người đi dạo dạng người thật (mô hình có xương, đi và chạy thu từ người thật) — thiết kế
 
-_2026-11-12 · Trạng thái: Đang làm · Quyết định: D-030 · Nhánh: `feature/nguoi-di-dao-that`_
+_2026-11-12 · Trạng thái: Đã xây (nhánh chưa merge; test trình duyệt đang chạy, xem memory bank) · Quyết định: D-030 · Nhánh: `feature/nguoi-di-dao-that`_
 
 ## 1. Ý định
 
@@ -202,3 +202,9 @@ Xóa: `CONFIG.stroll.jumpHeight`, `CONFIG.stroll.cadenceMax` (nếu hình tạm 
 ## 11. Việc để người làm tự quyết
 
 Tên hàm / file bên trong `src/explore/stroll/`, cách cắt `idle` và `photo`, có gộp vật liệu hay không, cỡ texture cụ thể miễn đạt trần dung lượng, cách đồng pha hai đoạn, tên xương dùng trong test, thay nhân vật 1–4 nếu bản chọn hỏng.
+
+## 12. Số đo thật sau khi xây (2026-11-12)
+
+- 5 file glb: 1 106 536 / 1 191 780 / 1 210 332 / 1 423 620 / 853 588 byte, tổng 5,79 MB (trong trần 6 MB); nhường dung lượng mức 1 (ngón tay giữ tư thế trung bình); không thay nhân vật nào so với §4.
+- Chunk: GLTFLoader 45 kB và SkeletonUtils 3,9 kB tách riêng; `three` 560,8 → 621,6 kB, `index` 581,8 → 586,9 kB.
+- Test không trình duyệt tại `eb61432`: `test:stroll:unit` 84/84, `test:multi:unit` 63/63, `test:people:unit` 19/19. Quyết định và hệ quả: D-030.
