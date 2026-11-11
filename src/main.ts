@@ -7,7 +7,7 @@ import * as THREE from 'three';
 import { initI18n } from './i18n';
 import { renderer, scene, camera, controls } from './core/renderer';
 import { shared, windFx } from './core/shared';
-import { buildLights } from './core/lights';
+import { buildLights, stepLights, lightState } from './core/lights';
 import { buildSky, shadowCenter } from './core/sky';
 import { buildWater, water, reflectState } from './core/water';
 import { applyNight, stepNight, dayNight } from './core/dayNight';
@@ -120,7 +120,7 @@ const multiTest = {
 };
 if (query.has('test')) {
   perf.on = query.has('perf');
-  (window as unknown as { __app: unknown }).__app = { reflectState, renderer, scene, camera, controls, cam, shared, songHan, hr: hanTunnel, sunWheel, riverfront, weather, hrDrive, swRide, windFx, THREE: TEST_THREE, dayNight, tours: TOURS, tour, narration, audio, perf, quality, ui: { ...ui, ui: compactState, openSheet, closeSheets, reveal }, explore, keys, multi: multiTest, exFlight: { exCreate, exStep, exInputFromKeys, exBuildGlider, exPlaceGlider, exChase, CONFIG_explore: CONFIG.explore }, boats: boatsTest, traffic: trafficTest, trees: treesTest, people: peopleTest,
+  (window as unknown as { __app: unknown }).__app = { reflectState, renderer, scene, camera, controls, cam, shared, songHan, hr: hanTunnel, sunWheel, riverfront, weather, hrDrive, swRide, windFx, THREE: TEST_THREE, dayNight, lights: lightState, tours: TOURS, tour, narration, audio, perf, quality, ui: { ...ui, ui: compactState, openSheet, closeSheets, reveal }, explore, keys, multi: multiTest, exFlight: { exCreate, exStep, exInputFromKeys, exBuildGlider, exPlaceGlider, exChase, CONFIG_explore: CONFIG.explore }, boats: boatsTest, traffic: trafficTest, trees: treesTest, people: peopleTest,
     stroll: { stroll, stValid, stGroundY, stMove, stCamPlace, CONFIG_stroll: CONFIG.stroll, avatars: stAvatars } };
 }
 
@@ -152,6 +152,7 @@ function animate() {
   updateRiverfront(dt, time); pt = perf.lap('riverfront', pt);
   audio.setSwingDistance(camera.position.distanceTo(songHan.center));
   audio.update(dayNight.night, show.fireOn, show.waterOn, camera.position.distanceTo(mouthW)); pt = perf.lap('audio', pt);
+  stepLights();                                             // bộ đèn ngày / đêm / đủ (D-031): sau mọi chỗ ghi cường độ đèn, trước khi vẽ
   quality.update(now0);                                     // bậc chất lượng (tự hạ khi lag), bóng đổ, giới hạn pixelRatio khi mưa
   renderer.info.reset();
   renderFrame(dayNight.night, dt); stroll.afterRender(); perf.lap('render', pt);   // gồm cả biên dịch shader lần đầu (đồng bộ trên luồng chính)

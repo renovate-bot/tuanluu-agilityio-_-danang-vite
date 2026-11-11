@@ -3,7 +3,7 @@
 //  2. Giật khựng: với mỗi thao tác (đêm lần đầu, bóng đổ, bay tới công trình lần đầu, mặt cắt Hầm, mưa) ghi số program tăng thêm,
 //     thời gian render dài nhất (gồm biên dịch shader đồng bộ) so với render thường ngay trước đó, khung dài nhất.
 //  3. CPU mỗi khung: ms trung bình từng bước (night, weather, effects, traffic, …, render) ở 5 góc nhìn, ban ngày.
-//  4. Chất lượng hình (GĐ3): ?test mặc định bậc 0 (Cao); Thấp / Trung bình không thêm draw call so với Cao (ngày, đêm); đổi bậc không thêm program;
+//  4. Chất lượng hình (GĐ3), bộ đèn (D-031: ngày 'day', đêm 'night'; phun lửa ban ngày 'full' ở mục 2): ?test mặc định bậc 0 (Cao); Thấp / Trung bình không thêm draw call so với Cao (ngày, đêm); đổi bậc không thêm program;
 //     chế độ Tự động hạ bậc khi giả lập khung chậm (quality.simulateMs) và nâng lại khi khung nhanh.
 //  Kết quả in ra và ghi vào tests/screens/perf/<nhãn>.json; --compare=<file.json> in chênh lệch so với lần đo trước.
 //  --strict (từ GĐ1): mọi thao tác ở mục 2 không được thêm program và render dài nhất ≤ CONFIG.perf.maxHitchMs.
@@ -51,6 +51,13 @@ try {
   await hitch('về ngày', () => setNight(0));
   await hitch('đêm lần 2', () => setNight(1));
   await setNight(0); await frames(page, 3);
+  // Rồng phun lửa ban ngày: fireLight sáng ⇒ bộ đèn 'full' (D-031) phải đã biên dịch trước. Nút #btnShow tự chuyển sang đêm (setupUI.ts) nên đặt lại ngày ngay;
+  // lửa phun ngay khi bật (show.t = 0). Tắt rồi chờ lửa tắt hẳn (cường độ giảm 1500/s) ⇒ về 'day'
+  const lightSet = () => page.evaluate(() => window.__app.lights.set);
+  await hitch('phun lửa ban ngày', async () => { await click('#btnShow'); await setNight(0); });
+  const fireSet = await lightSet();
+  check(fireSet === 'full', `phun lửa ban ngày: bộ đèn phải là 'full' (đang '${fireSet}')`);
+  await click('#btnShow'); await setNight(0); await frames(page, 30);
   await hitch('tắt bóng đổ', () => click('#btnShadow'));
   await hitch('bật bóng đổ', () => click('#btnShadow'));
   await hitch('bay tới Thuận Phước', () => pickView(page, 'tp', 'tpBay'));
@@ -78,7 +85,11 @@ try {
     await pickView(page, 'dragon', 'overview');
     const maxCalls = () => page.evaluate(() => new Promise((ok) => { let n = 0, m = 0; const f = () => { m = Math.max(m, window.__app.renderer.info.render.calls); (++n >= 6 ? ok(m) : requestAnimationFrame(f)); }; requestAnimationFrame(f); }));
     for (const night of [0, 1]) {
-      await setNight(night); const o = {};
+      await setNight(night); await frames(page, 6); const o = {};
+      // Bộ đèn (D-031): ngày chỉ sun; đêm 1 ẩn sun (không lượt bóng), hiện moon + 7 PointLight
+      const set = await page.evaluate(() => window.__app.lights.set);
+      res.quality[night ? 'đèn đêm' : 'đèn ngày'] = set;
+      check(set === (night ? 'night' : 'day'), `bộ đèn ${night ? 'đêm' : 'ngày'} phải là '${night ? 'night' : 'day'}' (đang '${set}')`);
       for (const m of ['high', 'medium', 'low']) { await setQ(m); await frames(page, 3); o[m] = await maxCalls(); }
       res.quality[night ? 'đêm' : 'ngày'] = o;
       check(o.medium <= o.high && o.low <= o.high, `overview ${night ? 'đêm' : 'ngày'}: draw call Trung bình ${o.medium} / Thấp ${o.low} phải ≤ Cao ${o.high}`);
