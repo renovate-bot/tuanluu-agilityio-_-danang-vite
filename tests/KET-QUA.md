@@ -4,6 +4,59 @@ Chromium + SwiftShader, khung 480×270. Draw call = renderer.info.render.calls (
 
 Khung test mặc định 480×270 khớp `(max-height: 500px)` nên cả bộ test chạy ở chế độ gọn (không blur): draw call không đổi; số hitch của `test:perf` không so sát được với mốc D-018 (đo khi còn blur).
 
+## Tối ưu thời gian vẽ trên GPU (2026-11-12, nhánh `feature/toi-uu-hieu-nang`, D-031)
+
+Lần đầu đo trên GPU thật: Intel Arc, Chromium headless ANGLE D3D11, 1920×1080, pixelRatio 1, bậc chất lượng 0, góc mặc định Cầu Rồng, bộ đếm `EXT_disjoint_timer_query_webgl2`. Mốc là bản build `main` `a309fa8`.
+
+| Phép đo (ms GPU mỗi khung, trung vị) | Ngày | Đêm |
+|---|---|---|
+| `main` `a309fa8` | 19,2–19,6 (269 lệnh vẽ, 5 070 520 tam giác) | 18,9–20,5 (287 lệnh vẽ) |
+| Nhánh, bộ đèn thật (`npm run test:gpu`, `?perf&lightsets=bg`, sau khi hâm xong) | 14,0 (bộ `day`, 269 lệnh vẽ, 4 216 120 tam giác) | 14,06 (bộ `night`, 221 lệnh vẽ, 2 942 022 tam giác) |
+| Nhánh, ép bộ `full` (cùng lần chạy) | 18,46 | 18,84 (287 lệnh vẽ) |
+
+Lần chạy `test:gpu` trên có một phiên khác đang chạy test SwiftShader cùng máy (số có nhiễu). Vòng `requestAnimationFrame` của `main` đo được 34,9 ms/khung (30 FPS) vì GPU vượt 16,7 ms; CPU các bước cập nhật ≈ 0,8 ms. Chưa đo lại vòng rAF trên nhánh.
+
+Hâm nền hai bộ đèn `day`, `night` (bản không `?test`): khung đầu 18,6 s với 185 program (174 sau prewarm, như trước); `day` sẵn sàng ở 29,1 s, `night` ở 63,5 s; trong lúc hâm 2 892 khung, khung dài nhất 200 ms, 9 khung > 100 ms; cuối cùng ≈ 454 program; chuyển ngày ↔ đêm sau khi sẵn sàng: +0 program. Phương án biên dịch cả ba bộ trước khung đầu đã thử và bỏ: 174 → 490 program, màn hình chờ 10–16 s → 26–36 s.
+
+| Lệnh | Kết quả |
+|---|---|
+| `typecheck`, `build` (bản `113b313`) | đạt |
+| `test:trees:unit` | 9/9 đạt (thêm kiểm bản thưa: 160 tam giác, hộp bao lệch ≤ 0,12) |
+| `test:gpu` | chạy được, số ở bảng trên; không lỗi console |
+| `test:trees` (bản `113b313`, 14 phút) | Tất cả ĐẠT: vị trí khớp mốc, chuỗi `rand()` giữ nguyên, dọn cây 26 / 2 / 0, cây đổ dựng lại trùng ma trận, bão `treeLean` 0,03, hầm 56 016 tam giác, không lỗi console |
+| `test:drawcalls` (bản `113b313`, 39 phút) | exit 0; bảng bên dưới. `?test` giữ bộ `full` nên đây là số của bộ `full` |
+| `test:weather` (bản `113b313`) | ĐẠT (`weather-check: đạt`, exit 0) |
+| `test:perf -- --strict` (bản `113b313`, mở `?perf&lightsets=sync`) | đạt (`perf-check: đạt`): +0 program ở cả 18 thao tác (gồm đêm lần đầu, về ngày, phun lửa ban ngày, ba bậc chất lượng ban đêm), render dài nhất ≤ 19 ms; khung đầu 32 706 ms với 490 program (chế độ `sync` biên dịch cả ba bộ trước khung đầu, không phải mặc định); bộ đèn ngày `day`, đêm `night`; draw call overview Cao / Trung bình / Thấp: ngày 269 / 269 / 111, đêm 221 / 221 / 112; render TB overview 9,1 · head 8,5 · hrOverview 7,7 · swOverview 5,4 · tpBay 8,0 ms (SwiftShader) |
+| `test:citynight`, `test:tour`, `test:voice`, `test:tunnel`, `test:riverfront`, `test:sunwheel`, `test:mobile`, `test:explore`, `test:boats`, `test:traffic`, `test:people`, `test:stroll`, `test:multi*` | **chưa chạy**. `test:citynight` cần mốc `-- --baseline` trên bản chưa sửa, chưa có mốc sau D-027 / D-028 |
+
+Chưa kiểm: điện thoại thật và trình duyệt không có `KHR_parallel_shader_compile` (ở lại bộ `full`); bậc chất lượng Thấp / `shadowEvery > 1` và bão khi đang ở bộ `day` / `night` (chỉ đọc mã); việc bỏ khung dài khỏi trung bình Tự động khi đang hâm (chỉ đọc mã); bóng và ảnh phản chiếu của tán bản thưa mới xem ở ảnh toàn cảnh, chưa xem cận.
+
+### Draw call `now` (SwiftShader 480×270, `?test` ⇒ bộ `full`, bản `113b313`)
+
+Bảng đầu tiên đo sau D-026 … D-029 (bảng 2026-10-24 bên dưới là trước tàu, xe, cây, người). Không có lần đo `main` cùng điều kiện để so từng góc; ở góc `overview` số trùng `main` `a309fa8` đo trên GPU thật (269 / 287). Ở bản không `?test`, ban đêm bộ `night` bỏ lượt bóng nên ít hơn cột "đêm" (góc mặc định 221 thay vì 287); chưa đo từng góc. Các cột "ngày" từ `rfBank` tới `swFromTTL` thực ra đo ban đêm (lỗi `tests/drawcalls.mjs` đã biết).
+
+| Góc | Ngày | Đêm | Góc | Ngày | Đêm |
+|---|---|---|---|---|---|
+| overview | 269 | 287 | hrCutaway | 332 | 354 |
+| head | 289 | 304 | hrPortalW | 142 | 161 |
+| tail | 220 | 240 | hrPortalE | 184 | 200 |
+| drive | 200 | 220 | hrDrive | 189 | 205 |
+| bird | 253 | 275 | hrGallery | 151 | 174 |
+| walk | 200 | 219 | rfHearts | 245 | 244 |
+| tpBay | 262 | 277 | rfBank | 174 | 174 |
+| tpWater | 103 | 118 | wxRiverMouth | 263 | 263 |
+| tpDrive | 111 | 125 | wxTtlStays | 148 | 148 |
+| tpBoth | 268 | 295 | wxStreet | 258 | 258 |
+| ttlOverview | 225 | 241 | swOverview | 165 | 165 |
+| ttlBase | 116 | 131 | swFront | 288 | 288 |
+| ttlDeck | 133 | 148 | swBase | 219 | 219 |
+| ttlBoth | 231 | 245 | swFromTTL | 113 | 113 |
+| shOverview | 257 | 296 | swNight | 267 | 282 |
+| shTop | 188 | 227 | swTop | 105 | 120 |
+| shBank | 215 | 254 | swRide | 269 | 284 |
+| shDeck | 185 | 224 | swTour | 173 | 189 |
+| hrOverview | 252 | 274 | | | |
+
 ## Cây và người thực tế hơn (2026-11-11, nhánh `feature/cay-va-nguoi-thuc-te`, D-028)
 
 Cây bóng mát (thân + cành, tán cụm lá) và cây dừa (thân cong, tàu lá có alphaTest) thay quả cầu và nón; người đi bộ có tay chân (đi, chạy, đứng lan can, đi cùng, trẻ em, nón lá, ba lô, chụp ảnh). Cây: 6 lưới `InstancedMesh` (khu phố 4: `trees-shade-trunk` / `trees-shade-crown` 890 instance, `trees-palm-trunk` / `trees-palm-crown` 246; Thuận Phước 2: `tp-trees-trunk` / `tp-trees-crown` 128) cộng 224 cây dừa tĩnh gộp vào `hr-concrete` của Hầm (0 lưới riêng). Tam giác mỗi cây: thân bóng mát 150, tán 640, thân dừa 120, tán dừa 396, dừa tĩnh 180 (hầm: `hr-concrete` 25 104 → 56 016). Người: 853 đỉnh / người (trần 900), 1 174 tam giác, 3 lưới (`ttl-people`, `sh-people`, `dragon-people` mới, 70 người), mỗi hệ 1 lệnh vẽ, Cầu Rồng +1 lệnh vẽ, người không đổ bóng.

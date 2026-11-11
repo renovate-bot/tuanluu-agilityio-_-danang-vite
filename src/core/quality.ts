@@ -4,6 +4,7 @@ import { sun, setShadowQuality, stepShadows } from './lights';
 import { reflectState } from './water';
 import { clouds } from './sky';
 import { bloomState, setPixelRatio, onResize } from './postprocessing';
+import { lightsWarming } from './prewarm';
 import { rainShowing } from '../environment/weather/rain';
 
 /* =====================================================================
@@ -69,7 +70,7 @@ export const quality = {
     this.apply();   // mưa bật/tắt đổi giới hạn pixelRatio
     stepShadows();
     const A = this.adapt, ms = this.simulateMs || dtMs;
-    if (this.mode !== 'auto' || (device.test && !this.simulateMs) || !ms || ms > A.ignoreMs || document.hidden) return;
+    if (this.mode !== 'auto' || (device.test && !this.simulateMs) || !ms || ms > (lightsWarming() ? Math.min(A.ignoreMs, P.lightWarmIgnoreMs) : A.ignoreMs) || document.hidden) return;
     winSum += ms; winN++; winT += ms / 1000;
     if (winT < A.window) return;
     const avg = winSum / winN, sinceChange = (now - lastChange) / 1000;

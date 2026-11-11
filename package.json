@@ -18,6 +18,7 @@
     "test:mobile": "node tests/mobile-check.mjs",
     "test:sunwheel": "node tests/sunwheel-check.mjs",
     "test:perf": "node tests/perf-check.mjs",
+    "test:gpu": "node tests/gpu-time.mjs",
     "test:explore": "node tests/explore-check.mjs",
     "test:citynight": "node tests/citynight-check.mjs",
     "test:multi": "node tests/multi-check.mjs",

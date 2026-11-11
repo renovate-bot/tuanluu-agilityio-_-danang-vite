@@ -5,7 +5,8 @@ import { MAT } from '../core/materials';
 import { rand } from '../common/math';
 import { shadowed } from '../common/geometry';
 import { deckY } from '../bridges/dragon/profile';
-import { trShadeTrunkGeo, trShadeCrownGeo, trPalmTrunkGeo, trPalmCrownGeo, trYaw } from '../common/trees/shapes';
+import { passLodAdd, passLodInfo } from '../core/passLod';
+import { trShadeTrunkGeo, trShadeCrownLodGeo, trPalmTrunkGeo, trPalmCrownGeo, trYaw } from '../common/trees/shapes';
 
 /* ============================ Cây xanh & đèn đường ============================ */
 export function buildTrees() {
@@ -28,7 +29,8 @@ export function buildTrees() {
   const T = CONFIG.trees, wk = T.palm.trunkWidth, bendX = T.palm.bend * wk;
   // Cây bóng mát (G1): thân + cành chuẩn hóa (đầu cành cao nhất = tâm tán), tán cụm lá giữ đúng tâm / tỉ lệ quả cầu cũ (fallen.ts, promenade.ts, dọn cây đọc ma trận tán)
   const t1 = new THREE.InstancedMesh(trShadeTrunkGeo(), MAT.trunk, round.length);
-  const c1 = new THREE.InstancedMesh(trShadeCrownGeo(), MAT.leaf, round.length);
+  const crownLod = trShadeCrownLodGeo();   // hình học gộp [đầy đủ | thưa]: lượt bóng / phản chiếu vẽ bản thưa (src/core/passLod.ts)
+  const c1 = new THREE.InstancedMesh(crownLod.geo, MAT.leaf, round.length);
   round.forEach(([x, z], i) => {
     const h = 3 + rand() * 2.5, r = 2.4 + rand() * 1.8;
     q.setFromAxisAngle(THREE.Object3D.DEFAULT_UP, trYaw(i, T.shade.seed + 2));
@@ -45,6 +47,7 @@ export function buildTrees() {
     m.compose(v.set(x, CONFIG.landY, z), q, s.set(wk, h, wk)); t2.setMatrixAt(i, m);
     m.compose(v.set(x + bendX * Math.cos(yaw), CONFIG.landY + h, z - bendX * Math.sin(yaw)), q, s.setScalar(T.palm.crownScale * h)); c2.setMatrixAt(i, m);
   });
+  passLodAdd(c1, crownLod.fullCount, crownLod.lodCount);
   t1.name = 'trees-shade-trunk'; c1.name = 'trees-shade-crown'; t2.name = 'trees-palm-trunk'; c2.name = 'trees-palm-crown';
   scene.add(shadowed(t1, true, false), shadowed(c1, true, false), shadowed(t2, true, false), shadowed(c2, true, false));
 }
@@ -54,7 +57,10 @@ const TR_NAMES = ['trees-shade-trunk', 'trees-shade-crown', 'trees-palm-trunk', 
 const trMesh = (name: string) => scene.getObjectByName(name) as THREE.InstancedMesh | undefined;
 export const treesTest = {
   maxTris: CONFIG.trees.maxTris,
-  meshes: () => TR_NAMES.map(trMesh).filter((o): o is THREE.InstancedMesh => !!o && o.isInstancedMesh).map((o) => ({ name: o.name, count: o.count, tris: (o.geometry.index ? o.geometry.index.count : o.geometry.getAttribute('position').count) / 3 })),
+  meshes: () => TR_NAMES.map(trMesh).filter((o): o is THREE.InstancedMesh => !!o && o.isInstancedMesh).map((o) => {
+    const g = o.geometry, lod = passLodInfo(g);   // tris = bản đầy đủ (lượt chính), lodTris = bản thưa (lượt bóng / phản chiếu; 0 nếu lưới không có)
+    return { name: o.name, count: o.count, tris: lod ? lod.full / 3 : (g.index ? g.index.count : g.getAttribute('position').count) / 3, lodTris: lod ? lod.lod / 3 : 0 };
+  }),
   positions(name: string): number[] {
     const o = trMesh(name), out: number[] = [], m = new THREE.Matrix4();
     if (!o) return out;

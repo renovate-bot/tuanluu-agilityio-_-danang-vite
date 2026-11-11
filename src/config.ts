@@ -535,6 +535,9 @@ const cityNightBase = {
 
 const perfBase = {
   hudSamples: 240,    // số khung giữ trong vòng mẫu để tính trung bình / p95 / max trên HUD (≈ 4 s ở 60 FPS)
+  lightWarmMs: 3,     // ms — ngân sách mỗi khung cho phần đồng bộ (trên luồng chính) của biên dịch nền hai bộ đèn ngày / đêm (D-031) (ước lượng)
+  lightWarmIgnoreMs: 50,   // ms — trong lúc hâm nền bộ đèn, khung dài hơn số này (biên dịch, đo 50–250 ms) bị bỏ khỏi trung bình của chế độ Tự động: không hạ bậc oan (ước lượng)
+  lightWarmPrograms: 2,   // số program tối đa đang biên dịch dở khi biên dịch nền: dồn nhiều thì tiến trình GPU chặn khung (ước lượng, chọn theo đo)
   maxHitchMs: 150,    // ms — khung dài nhất cho phép khi đổi trạng thái (đêm, mặt cắt, bóng, bay tới công trình) (ước lượng, theo weather.perf.maxFrameMs)
   /* Bậc chất lượng, tốt → nhẹ. Chế độ Tự động đi lên/xuống theo thang này; chọn tay Cao/Trung bình/Thấp nhảy tới bậc `manual`.
      ratio: pixelRatio tối đa (không vượt devicePixelRatio); shadow: cạnh shadow map (px), 0 = tắt bóng; shadowEvery / reflectEvery: vẽ lại bóng / phản chiếu nước
@@ -745,6 +748,7 @@ const treesBase = {
     fork: 0.5,                             // cao độ chỗ tách cành, phần của chiều cao thân tới đầu cành cao nhất (ước lượng)
     reach: 0.7,                            // bán kính ngang đầu cành, phần của bán kính tán (ước lượng)
     sides: 5,                              // số cạnh mặt cắt thân và cành (ước lượng; ít cạnh vì cành bị tán che phần lớn)
+    lodDetail: 0,                          // mức chia khối 20 mặt của bản tán thưa dùng ở lượt bóng và lượt phản chiếu mặt nước (0 = 20 mặt, tán 8 cụm = 160 tam giác; lượt chính vẫn mức 1 = 640) (ước lượng)
     seed: 4801                             // hạt sinh ngẫu nhiên riêng cho nhiễu cụm lá và hướng cành (rng riêng, không đụng rand())
   },
   palm: {

@@ -5,7 +5,8 @@ import { MAT } from '../../core/materials';
 import { rng } from '../../common/math';
 import { shadowed, zPlane } from '../../common/geometry';
 import { TP } from './profile';
-import { trShadeTrunkGeo, trShadeCrownGeo, trYaw } from '../../common/trees/shapes';
+import { passLodAdd } from '../../core/passLod';
+import { trShadeTrunkGeo, trShadeCrownLodGeo, trYaw } from '../../common/trees/shapes';
 import type { ThuanPhuocBridge } from './ThuanPhuocBridge';
 
 /* Mở rộng địa hình cửa sông quanh cầu: bờ đất, kè, đường ven sông, nhà, cây.
@@ -67,7 +68,8 @@ export function tpBuildSite(bridge: ThuanPhuocBridge) {
   }
   // cây bóng mát (G1), cùng quy ước ma trận với environment/trees.ts: thân (r, h + 0,6r, r), tán giữ tâm / tỉ lệ cũ, xoay theo chỉ số
   const trunks = new THREE.InstancedMesh(trShadeTrunkGeo(), MAT.trunk, trees.length);
-  const crowns = new THREE.InstancedMesh(trShadeCrownGeo(), MAT.leaf, trees.length);
+  const crownLod = trShadeCrownLodGeo();   // hình học gộp [đầy đủ | thưa] cho lượt bóng / phản chiếu (src/core/passLod.ts)
+  const crowns = new THREE.InstancedMesh(crownLod.geo, MAT.leaf, trees.length);
   trees.forEach(([x, z], i) => {
     const h = 3 + rnd() * 2.5, r = 2.4 + rnd() * 1.8;
     q.setFromAxisAngle(THREE.Object3D.DEFAULT_UP, trYaw(i, CONFIG.trees.shade.seed + 3));
@@ -75,6 +77,7 @@ export function tpBuildSite(bridge: ThuanPhuocBridge) {
     crowns.setMatrixAt(i, m.compose(v.set(x, Y + h + r * 0.6, z), q, sc.set(r, r * 0.85, r)));
     crowns.setColorAt(i, col.setHSL(0.27 + rnd() * 0.06, 0.45, 0.35 + rnd() * 0.12));
   });
+  passLodAdd(crowns, crownLod.fullCount, crownLod.lodCount);
   trunks.name = 'tp-trees-trunk'; crowns.name = 'tp-trees-crown';
   trunks.castShadow = crowns.castShadow = true;
   bridge.details.add(trunks, crowns);
