@@ -4,7 +4,7 @@ import { SkyRoom } from './room';
 import type { Out } from './room';
 
 interface Env { SKY: DurableObjectNamespace; ALLOWED_ORIGINS: string }
-interface Att { id: string; slot: number; name: string; seen?: number }   // seen: giờ có tin cuối của người giữ slot, ghi thưa (mỗi heartbeatMs) để sống sót qua hibernation
+interface Att { id: string; slot: number; name: string; seen?: number; kind?: 'walk' }   // seen: giờ có tin cuối của người giữ slot, ghi thưa (mỗi heartbeatMs) để sống sót qua hibernation; kind: 'walk' = slot nằm ở nhóm đi dạo, không có = nhóm bay
 
 // So khớp scheme + hostname, bỏ cổng
 function originKey(o: string): string | null {
@@ -34,6 +34,7 @@ export default {
 export class SkyObject implements DurableObject {
   private room = new SkyRoom();
   private names = new Map<number, string>();
+  private walkNames = new Map<number, string>();   // tên người đi dạo theo slot, lấy từ walkers của lobby
   private armed: boolean | null = null;   // đã đặt alarm chưa; null = chưa biết (vừa dựng hoặc vừa thức dậy): hỏi storage một lần
 
   constructor(private state: DurableObjectState, _env: Env) {
@@ -92,16 +93,24 @@ export class SkyObject implements DurableObject {
         if (!a || (o.to !== 'all' && o.to !== a.id)) continue;
         try { ws.send(text); } catch { /* socket đã đóng */ }
       }
-      if (o.msg.t === 'lobby') this.names = new Map(o.msg.flyers.map(f => [f.slot, f.name]));
+      if (o.msg.t === 'lobby') {
+        this.names = new Map(o.msg.flyers.map(f => [f.slot, f.name]));
+        this.walkNames = new Map((o.msg.walkers ?? []).map(f => [f.slot, f.name]));
+      }
     }
     for (const ws of socks) {
       const a = ws.deserializeAttachment() as Att | null;
       if (!a) continue;
-      const slot = this.room.slotOf(a.id);
-      const name = slot >= 0 ? (this.names.get(slot) ?? a.name) : '';
+      const kind = this.room.kindOf(a.id);
+      const walk = kind === 'walk';
+      const slot = walk ? this.room.walkSlotOf(a.id) : this.room.slotOf(a.id);
+      const name = slot >= 0 ? ((walk ? this.walkNames : this.names).get(slot) ?? a.name) : '';
       const seen = this.room.seenOf(a.id);
       const stale = slot >= 0 && !(seen - (a.seen ?? -Infinity) < P.heartbeatMs);
-      if (slot !== a.slot || name !== a.name || stale) ws.serializeAttachment(slot >= 0 ? { id: a.id, slot, name, seen } : { id: a.id, slot, name } as Att);
+      if (slot !== a.slot || name !== a.name || (a.kind === 'walk') !== walk || stale) {
+        const next: Att = slot < 0 ? { id: a.id, slot, name } : walk ? { id: a.id, slot, name, seen, kind: 'walk' } : { id: a.id, slot, name, seen };
+        ws.serializeAttachment(next);
+      }
     }
   }
 

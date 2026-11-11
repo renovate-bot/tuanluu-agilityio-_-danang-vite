@@ -60,6 +60,22 @@ try {
   const lob = last(stay, 'lobby');
   ok(lob && lob.flyers.length === 4, `đóng một kết nối: lobby còn ${lob ? lob.flyers.length : '?'} tên`);
 
+  // Nhóm đi dạo: sau khi mọi người bay rời đi, một kết nối join kind 'walk' nhận joined kind walk, lobby có walkers 1 / flyers 0
+  cs.forEach(c => { try { c.ws.close(); } catch {} });
+  await sleep(1000);
+  const wk = client(); await wk.opened;
+  await sleep(300);
+  wk.send({ t: 'join', name: 'Di', kind: 'walk' });
+  await sleep(800);
+  const wj = last(wk, 'joined'), wl = last(wk, 'lobby');
+  ok(wj && wj.kind === 'walk' && wj.slot === 0, 'join kind walk nhận joined kind walk slot 0');
+  ok(wl && wl.walkers && wl.walkers.length === 1 && wl.flyers.length === 0, `lobby sau đó: walkers ${wl && wl.walkers ? wl.walkers.length : '?'}, flyers ${wl ? wl.flyers.length : '?'}`);
+  wk.send({ t: 'pos', x: 9999, y: 3, z: 0, yaw: 0, pose: 2, ts: 5 });
+  await sleep(500);
+  const wp = last(wk, 'pos');
+  ok(wp && Array.isArray(wp.f) && wp.w && wp.w[0][1] === 400 && wp.w[0][5] === 2, 'pos đi dạo: f mảng, w kẹp x = 400, pose 2');
+  wk.ws.close();
+
   ok(await upgradeStatus('https://evil.example') === 403, 'Origin lạ -> 403');
   ok(await upgradeStatus(null) === 403, 'không có Origin -> 403');
   ok(await upgradeStatus('http://localhost:5173') === 101, 'Origin http://localhost:5173 -> 101');

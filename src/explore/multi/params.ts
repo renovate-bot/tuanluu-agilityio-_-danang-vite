@@ -30,5 +30,12 @@ export const multiParams = {
   bankMax: 0.45,         // rad — góc nghiêng tối đa, phải bằng CONFIG.explore.bankMax (máy chủ kẹp bank nhận được)
   clockRelax: 0.01,      // phần chênh được nhận thêm mỗi mẫu khi độ lệch giờ người gửi → giờ khách tăng (mạng chậm đi), không đơn vị (ước lượng)
   clockWarmup: 4,        // số mẫu đầu của một người được nhận thẳng độ lệch nhỏ nhất (gói đầu có thể trễ vì khung hình chậm), ≈ 0,8 s ở 5 lần/s (ước lượng)
-  clockSlewMs: 4         // ms tối đa độ lệch giờ người gửi → giờ khách được giảm mỗi mẫu (gói nhanh hơn tới), giữ dù không vọt (ước lượng)
+  stroll: {              // chế độ đi dạo: nhóm slot riêng với nhóm bay; khung kẹp của máy chủ (Task 3 chỉnh bounds nếu vùng đi được đổi, có test giữ hai nơi bằng nhau)
+    slots: 5,            // số chỗ đi dạo cùng lúc, tách khỏi 5 chỗ bay (theo thiết kế)
+    bounds: { x0: -400, x1: 400, z0: -1300, z1: 220 }, // m — khung kẹp vị trí người đi dạo (ước lượng)
+    yMin: 2,             // m — cao độ thấp nhất của người đi dạo, mặt đất 2,5 trừ dung sai (ước lượng)
+    yMax: 20,            // m — cao độ cao nhất của người đi dạo, gồm mặt cầu và lúc nhảy (ước lượng)
+    poseMax: 4           // dáng lớn nhất: 0 đứng, 1 đi, 2 chạy, 3 nhảy, 4 chụp ảnh
+  },
+  clockSlewMs: 4        // ms tối đa độ lệch giờ người gửi → giờ khách được giảm mỗi mẫu (gói nhanh hơn tới), giữ dù không vọt (ước lượng)
 };
