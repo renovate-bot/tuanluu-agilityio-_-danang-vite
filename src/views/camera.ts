@@ -90,6 +90,8 @@ export function updateCamera(dt: number) {
     /* tư thế do SunWheel.update đặt (sau khi vòng quay quay, cùng khung hình); không gọi controls.update() */
   } else if (cam.mode === 'glider') {
     /* tư thế do explore.update đặt ngay sau updateCamera; không gọi controls.update() */
+  } else if (cam.mode === 'stroll') {
+    /* tư thế do stroll.update đặt ngay sau updateCamera; không gọi controls.update() */
   } else if (cam.mode === 'storm') {
     const sc = getWeather()?.scenario;
     if (sc?.running && sc.cameraOwned) { sc.pose(sc.t, camera.position, controls.target); camera.lookAt(controls.target); }

@@ -6,7 +6,7 @@ import { shared } from '../../core/shared';
    VẬT LIỆU NGƯỜI ĐI BỘ — một vật liệu dùng chung cho mọi hệ người (spec G5–G8, §5), theo patchPerson của bản dựng thử.
    Tay chân vung trong vertex shader theo shared.uTime, không cập nhật đỉnh trên CPU. Công thức góc khớp giống hệt gait.ts (ppAngles).
    Thuộc tính instance (bên dựng gắn vào hình học của từng InstancedMesh):
-   - aVar (vec4): x pha φ0 (rad), y biên độ hông A (0 đứng, walk.amp, run.amp), z cờ (1 nón lá, 2 ba lô, 4 chụp ảnh), w nhịp (rad/s, ppCadence)
+   - aVar (vec4): x pha φ0 (rad), y biên độ hông A (0 đứng, walk.amp, run.amp), z cờ (1 nón lá, 2 ba lô, 4 chụp ảnh, 8 nhảy — chỉ nhân vật đi dạo bật, người đi bộ cũ không bao giờ có), w nhịp (rad/s, ppCadence)
    - aPants (vec3): màu quần tuyến tính; màu áo qua instanceColor (setColorAt — bắt buộc gọi để có USE_INSTANCING_COLOR)
    Người không đổ bóng, không vào phản chiếu (spec §6) nên không có vật liệu bóng riêng. Không emissive, không texture.
    Không thêm vào tập bóc mặt cắt hầm (cutaway.ts): người không đứng trong vùng bóc, vật liệu người cũ cũng không có trong tập đó.
@@ -31,12 +31,14 @@ float pPhase() { return uTime * aVar.w + aVar.x; }
 vec2 pAngles() {
   float A = aVar.y, ph = pPhase(), run = pRunMix();
   if ( aPart > 0.5 && aPart < 2.5 ) {
+    if ( pFlag( 8.0 ) > 0.5 ) return vec2( ${f(P.jump.hip)}, ${f(P.jump.knee)} );   // nhảy (chỉ nhân vật đi dạo): co gối
     float fl = aPart < 1.5 ? ph : ph + 3.14159265;
     float sw = max( 0.0, cos( fl - 0.35 ) ), sr = max( 0.0, cos( fl + 0.45 ) );   // đi: gập gối khi đưa chân lên trước; chạy: gập sớm và sâu hơn
     return vec2( A * sin( fl ) + mix( 0.12 * A, 0.22, run ), -mix( A * 2.0 * sw * sw + 0.06 * step( 0.01, A ), 0.38 + 1.5 * sr * sr, run ) );
   }
   if ( aPart > 2.5 && aPart < 4.5 ) {
     float fa = aPart < 3.5 ? ph + 3.14159265 : ph;
+    if ( pFlag( 8.0 ) > 0.5 ) return vec2( ${f(P.jump.shoulder)}, ${f(P.jump.elbow)} );   // nhảy: hai vai đưa lên
     if ( aPart > 3.5 && pFlag( 4.0 ) > 0.5 ) return vec2( ${f(P.photo.shoulder)}, ${f(P.photo.elbow)} );   // giơ tay phải chụp ảnh
     return vec2( A * ( 0.65 + run * 0.5 ) * sin( fa ) - 0.05, 0.16 + run * 1.25 + A * 0.35 * max( 0.0, sin( fa ) ) );
   }

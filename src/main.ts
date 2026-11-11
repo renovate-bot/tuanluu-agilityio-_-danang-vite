@@ -40,6 +40,10 @@ import { exCreate, exStep, exInputFromKeys } from './explore/flight';
 import { exBuildGlider, exPlaceGlider } from './explore/glider';
 import { exChase } from './explore/chase';
 import { explore, setupExplore } from './explore';
+import { stroll } from './explore/stroll';
+import { stValid, stGroundY, stMove } from './explore/stroll/map';
+import { stCamPlace } from './explore/stroll/camera';
+import { stAvatars } from './explore/stroll/avatars';
 import { exMulti } from './explore/multi';
 import { exRemotes } from './explore/multi/remote';
 import { CONFIG } from './config';
@@ -116,7 +120,8 @@ const multiTest = {
 };
 if (query.has('test')) {
   perf.on = query.has('perf');
-  (window as unknown as { __app: unknown }).__app = { reflectState, renderer, scene, camera, controls, cam, shared, songHan, hr: hanTunnel, sunWheel, riverfront, weather, hrDrive, swRide, windFx, THREE: TEST_THREE, dayNight, tours: TOURS, tour, narration, audio, perf, quality, ui: { ...ui, ui: compactState, openSheet, closeSheets, reveal }, explore, keys, multi: multiTest, exFlight: { exCreate, exStep, exInputFromKeys, exBuildGlider, exPlaceGlider, exChase, CONFIG_explore: CONFIG.explore }, boats: boatsTest, traffic: trafficTest, trees: treesTest, people: peopleTest };
+  (window as unknown as { __app: unknown }).__app = { reflectState, renderer, scene, camera, controls, cam, shared, songHan, hr: hanTunnel, sunWheel, riverfront, weather, hrDrive, swRide, windFx, THREE: TEST_THREE, dayNight, tours: TOURS, tour, narration, audio, perf, quality, ui: { ...ui, ui: compactState, openSheet, closeSheets, reveal }, explore, keys, multi: multiTest, exFlight: { exCreate, exStep, exInputFromKeys, exBuildGlider, exPlaceGlider, exChase, CONFIG_explore: CONFIG.explore }, boats: boatsTest, traffic: trafficTest, trees: treesTest, people: peopleTest,
+    stroll: { stroll, stValid, stGroundY, stMove, stCamPlace, CONFIG_stroll: CONFIG.stroll, avatars: stAvatars } };
 }
 
 /* ============================ Vòng lặp ============================ */
@@ -140,7 +145,7 @@ function animate() {
   updateEffects(dt, time); pt = perf.lap('effects', pt);
   updateTraffic(dt); updateDragonPeople(dt, time, camera); pt = perf.lap('traffic', pt);
   updateBoats(dt, time); pt = perf.lap('boats', pt);
-  updateCamera(dt); explore.update(dt); pt = perf.lap('camera', pt);
+  updateCamera(dt); explore.update(dt); stroll.update(dt); pt = perf.lap('camera', pt);
   for (let k = 0; k < bridges.length; k++) { bridges[k].update(dt, time, camera); pt = perf.lap(bridgeKeys[k], pt); }
   hanTunnel.holdBoats(songHan.boats.list);
   updateHrUI(camera);
@@ -149,7 +154,7 @@ function animate() {
   audio.update(dayNight.night, show.fireOn, show.waterOn, camera.position.distanceTo(mouthW)); pt = perf.lap('audio', pt);
   quality.update(now0);                                     // bậc chất lượng (tự hạ khi lag), bóng đổ, giới hạn pixelRatio khi mưa
   renderer.info.reset();
-  renderFrame(dayNight.night, dt); perf.lap('render', pt);   // gồm cả biên dịch shader lần đầu (đồng bộ trên luồng chính)
+  renderFrame(dayNight.night, dt); stroll.afterRender(); perf.lap('render', pt);   // gồm cả biên dịch shader lần đầu (đồng bộ trên luồng chính)
   frames++; const now = performance.now(); fpsT = (now - fpsLast) / 1000;
   if (fpsT >= 0.5) {
     fpsEl.textContent = String(Math.round(frames / fpsT)); fpsLast = now; callsEl.textContent = String(renderer.info.render.calls);

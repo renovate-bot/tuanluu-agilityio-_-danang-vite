@@ -313,6 +313,102 @@ try {
   const RIDE = { vi: 'Kéo chuột để nhìn quanh · Esc để xuống cabin', en: 'Drag to look around · Esc to step off', ko: '드래그하여 둘러보기 · Esc로 내리기', ja: 'ドラッグで見回す · Esc で降ります', zh: '拖动鼠标环顾四周 · 按 Esc 下车', th: 'ลากเมาส์เพื่อมองรอบตัว · กด Esc เพื่อลง', ar: 'اسحب للنظر حولك · اضغط Esc للنزول', hi: 'चारों ओर देखने के लिए खींचें · उतरने के लिए Esc दबाएँ', ru: 'Перетаскивайте мышь, чтобы осмотреться · Esc — выйти из кабины' };
   check('swRideHint không nhắc nút', Object.entries(RIDE).every(([l, v]) => JSON.parse(fs.readFileSync(new URL(`../src/i18n/locales/${l}.json`, import.meta.url), 'utf8')).swRideHint === v));
 
+  // Mục 6 — Đi dạo trên điện thoại (Task 8): cần gạt, Nhảy, 📷, vuốt camera; mở bằng ?explore=stroll (đi một mình)
+  /* Danh sách người chơi giả đầy đủ nhất (đầu + 5 dòng) để thử chồng lấn ở chỗ xấu nhất; không đổi trạng thái chế độ */
+  const fillRoster = (page) => page.evaluate(() => {
+    const r = document.getElementById('exMpRoster');
+    r.innerHTML = '<div class="ex-mp-head">Đang đi n/5</div>' + Array.from({ length: 5 }, (_, i) => `<div class="ex-mp-row walk"><i></i>Người ${i}</div>`).join('');
+    r.hidden = false;
+  });
+  const STH = ['#stPad', '#stJump', '#stPhoto'];
+  const strollLayout = async (page, W, H, tag) => {
+    await fillRoster(page); await frames(page, 2);
+    const hud = await rects(page, STH), avoid = await rects(page, ['#btnExExit', '#exMpRoster']);
+    check(`đi dạo ${tag}: Cần gạt, Nhảy, 📷 hiện`, hud.length === 3);
+    check(`đi dạo ${tag}: mỗi nút ≥ 44 × 44 px`, hud.every((b) => b.width >= 44 && b.height >= 44));
+    check(`đi dạo ${tag}: nằm trọn trong khung nhìn`, hud.every((b) => b.left >= 0 && b.top >= 0 && b.right <= W && b.bottom <= H));
+    check(`đi dạo ${tag}: không chồng nút Thoát và danh sách người chơi`, avoid.length === 2 && noOverlap([...hud, ...avoid]));
+    check(`đi dạo ${tag}: cả ba nút không bị lớp khác che`, (await Promise.all(STH.map((s) => topAtCenter(page, s)))).every(Boolean));
+    return hud;
+  };
+  /* Ngón tay thật qua CDP: mỗi lệnh gửi toàn bộ điểm đang chạm (đa điểm) */
+  const fingers = async (page) => {
+    const cdp = await page.context().newCDPSession(page), pts = new Map();
+    const send = (type) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: [...pts].map(([id, [x, y]]) => ({ x, y, id })) });
+    return {
+      down: async (id, x, y) => { pts.set(id, [x, y]); await send('touchStart'); },
+      move: async (id, x, y) => { pts.set(id, [x, y]); await send('touchMove'); },
+      up: async (id) => { await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] }); pts.delete(id); if (pts.size) await send('touchStart'); },
+      cancel: async () => { await cdp.send('Input.dispatchTouchEvent', { type: 'touchCancel', touchPoints: [] }); pts.clear(); }
+    };
+  };
+  const SP = (page) => page.evaluate(() => window.__app.stroll.stroll.state.speed);
+  const waitStill = (page) => page.waitForFunction(() => window.__app.stroll.stroll.state.speed < 0.05, null, { polling: 'raf' });
+  const knobOff = (page) => page.evaluate(() => document.getElementById('stKnob').style.transform === '');
+
+  const SL = await openApp(browser, srv.url + '?explore=stroll', { width: 844, height: 390, mobile: true });
+  SL.page.setDefaultTimeout(180000);
+  await strollLayout(SL.page, 844, 390, 'ngang 844×390');
+  await SL.page.evaluate(() => { document.getElementById('exMpRoster').hidden = true; });
+  const [pad] = await rects(SL.page, ['#stPad']), [jb] = await rects(SL.page, ['#stJump']), R = pad.width / 2;
+  const px = pad.left + R, py = pad.top + R, jx = jb.left + jb.width / 2, jy = jb.top + jb.height / 2;
+  const F = await fingers(SL.page);
+  await F.down(1, px, py - 0.4 * R); await frames(SL.page, 4);
+  const v40 = await SP(SL.page);
+  check(`cần gạt 40 %: tốc độ tới walk (${v40.toFixed(2)} so 3,5 ± 0,2)`, Math.abs(v40 - 3.5) <= 0.2);
+  check('cần gạt: núm rời tâm', !(await knobOff(SL.page)));
+  await F.move(1, px, py - 0.95 * R); await frames(SL.page, 4);
+  const v95 = await SP(SL.page);
+  check(`cần gạt 95 %: tốc độ tới run (${v95.toFixed(2)} so 10 ± 0,3)`, Math.abs(v95 - 10) <= 0.3);
+  // giữ cần gạt (1), vuốt nửa phải (2), chạm Nhảy (3) cùng lúc
+  await SL.page.evaluate(() => { window.__sawAir = false; const f = () => { if (window.__app.stroll.stroll.state?.air) window.__sawAir = true; requestAnimationFrame(f); }; f(); });
+  const yaw0 = await SL.page.evaluate(() => window.__app.stroll.stroll.cam.yaw);
+  await F.down(2, 700, 300); for (let i = 1; i <= 5; i++) await F.move(2, 700 - 20 * i, 300); await frames(SL.page, 2);
+  const yaw1 = await SL.page.evaluate(() => window.__app.stroll.stroll.cam.yaw);
+  check(`vuốt nửa phải 100 px: camera.yaw đổi (${yaw0.toFixed(3)} → ${yaw1.toFixed(3)}), nhân vật vẫn đi`, Math.abs(yaw1 - yaw0) > 0.3 && (await SP(SL.page)) > 3);
+  await F.down(3, jx, jy); await frames(SL.page, 4);
+  check('chạm Nhảy khi hai ngón kia còn giữ: nhảy (air = true)', await SL.page.evaluate(() => window.__sawAir));
+  check('sau khi nhảy cần gạt vẫn đang giữ (tốc độ > 3)', (await SP(SL.page)) > 3);
+  await F.up(3); await F.up(2);
+  // pointercancel: dừng, núm về tâm
+  await F.cancel(); await waitStill(SL.page); await frames(SL.page, 2);
+  check('pointercancel: tốc độ về 0, núm về tâm', (await SP(SL.page)) < 0.05 && await knobOff(SL.page));
+  // thanh địa chỉ co giãn (bề cao đổi 20 px ≈ 5 %): cần gạt đang giữ không bị thả
+  await F.down(1, px, py - 0.95 * R); await frames(SL.page, 4);
+  const vb = await SP(SL.page);
+  await SL.page.setViewportSize({ width: 844, height: 370 }); await frames(SL.page, 4);
+  check(`đổi bề cao 20 px lúc giữ cần gạt (đang ${vb.toFixed(1)} m/s): vẫn chạy ${(await SP(SL.page)).toFixed(1)} m/s, núm không về tâm`, vb > 5 && (await SP(SL.page)) > 5 && !(await knobOff(SL.page)));
+  await F.cancel(); await waitStill(SL.page);
+  await SL.page.setViewportSize({ width: 844, height: 390 }); await frames(SL.page, 4);
+  // đổi kích thước khung nhìn lúc đang giữ
+  await F.down(1, px, py - 0.95 * R); await frames(SL.page, 4);
+  const vh = await SP(SL.page);
+  await SL.page.setViewportSize({ width: 390, height: 844 }); await frames(SL.page, 2);
+  await waitStill(SL.page); await frames(SL.page, 2);
+  check(`đổi cỡ khung nhìn lúc giữ (đang ${vh.toFixed(1)} m/s): dừng, núm về tâm`, vh > 5 && (await SP(SL.page)) < 0.05 && await knobOff(SL.page));
+  await F.cancel();
+  allErrors.push(...SL.errors); await SL.page.close();
+
+  const SP2 = await openApp(browser, srv.url + '?explore=stroll', { width: 390, height: 844, mobile: true });
+  SP2.page.setDefaultTimeout(180000);
+  await strollLayout(SP2.page, 390, 844, 'dọc 390×844');
+  await pick(SP2.page, '#langSelect', 'ar'); await SP2.page.evaluate(() => window.__app.ui.closeSheets()); await frames(SP2.page, 2);
+  const arHud = await strollLayout(SP2.page, 390, 844, 'ar dọc');
+  const arPad = arHud.find((b) => b.sel === '#stPad');
+  check('đi dạo trên cảm ứng: dòng hướng dẫn phím #stHint ẩn', await SP2.page.evaluate(() => document.getElementById('stHint').getClientRects().length === 0));
+  check('ar: cần gạt vẫn ở nửa trái màn hình',!!arPad && arPad.left + arPad.width / 2 < 390 / 2);
+  allErrors.push(...SP2.errors); await SP2.page.close();
+
+  // màn chọn trên cảm ứng: thẻ Đi dạo bấm được, thẻ Dù lượn khóa
+  const CH = await openApp(browser, srv.url + '?chooser', { width: 390, height: 844, mobile: true });
+  CH.page.setDefaultTimeout(180000);
+  await CH.page.waitForFunction(() => !document.getElementById('chooser').hidden);
+  check('màn chọn cảm ứng: Dù lượn khóa, Đi dạo không khóa', await CH.page.evaluate(() => document.querySelector('[data-pick="glider"]').disabled && !document.querySelector('[data-pick="walk"]').disabled));
+  await CH.page.tap('[data-pick="walk"]');
+  await CH.page.waitForFunction(() => document.body.classList.contains('stroll') && window.__app.cam.mode === 'stroll');
+  check('màn chọn cảm ứng: chạm thẻ Đi dạo vào được chế độ đi dạo', true);
+  allErrors.push(...CH.errors); await CH.page.close();
+
   check('console sạch', allErrors.length === 0);
   if (allErrors.length) console.log(allErrors.join('\n'));
 } catch (e) {

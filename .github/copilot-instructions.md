@@ -60,6 +60,8 @@ npm run test:trees:unit # cây: hình học cây bóng mát / dừa, trần tam 
 npm run test:trees     # cây: 6 lưới, vị trí + chuỗi rand() giữ nguyên, dọn cây, cây đổ dựng lại, gió bám thân, dừa cửa hầm, ảnh; đọc dist/
 npm run test:people:unit # người đi bộ: dáng đi / chạy, hình học ≤ 900 đỉnh, chia kiểu người (nhanh, không trình duyệt)
 npm run test:people    # người đi bộ: 1 lưới mỗi hệ, kiểu đi / chạy / đứng, lề cầu, rời cầu khi bão, tắt/bật; đọc dist/
+npm run test:stroll:unit # đi dạo: bản đồ va chạm, chuyển động, nhân vật, cần gạt, phím (nhanh, không trình duyệt)
+npm run test:stroll    # đi dạo: một mình, không xuyên tòa nhà / lan can, camera, sảnh, ảnh, cảm ứng, 9 ngôn ngữ; đọc dist/
 npm run test:multi:unit   # dù lượn nhiều người: logic phòng, tên, nội suy, idle (nhanh, không trình duyệt)
 npm run test:multi:worker # Worker qua wrangler dev: kiểm Origin
 npm run test:multi        # dù lượn nhiều người: trình duyệt + bot qua wrangler dev cục bộ; đọc dist/

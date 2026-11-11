@@ -42,6 +42,7 @@ export function buildDragonBody() {
   for (let i = 0; i <= SPINE_SEGS; i++) spineP.push(spine.getPointAt(i / SPINE_SEGS));
 
   const body = new THREE.Mesh(taperedTube(spine, SPINE_SEGS, 20, spineRadius, spineFrames), MAT.gold);
+  body.name = 'dragon-body';   // tên cho test đi dạo chọn lưới rắn (tests/stroll-check.mjs)
   scene.add(shadowed(body));
 
   // Đai sườn thép quanh thân

@@ -1,5 +1,5 @@
 ---
-applyTo: "src/ui/**,src/views/**,index.html,src/styles/**"
+applyTo: "src/ui/**,src/views/**,src/explore/**,index.html,src/styles/**"
 description: Quy ước giao diện, góc nhìn và Tour
 ---
 
@@ -11,6 +11,12 @@ description: Quy ước giao diện, góc nhìn và Tour
 - **Điều khiển:** dùng `toggle(id, fn)` và `selectBridge` của `ui/panel.ts`; UI riêng công trình đặt trong `ui/<prefix>UI.ts` và nối trong `setupUI.ts`. Chữ hiển thị luôn qua `t()`, cập nhật lại khi đổi ngôn ngữ (`onChange`).
 - Nhãn 3D bằng `div` định vị theo camera (mẫu `ui/hrUI.ts`), không dùng sprite chữ.
 - Kiểm tra RTL (`ar`) khi thêm khối giao diện mới.
+
+## Chế độ tự khám phá (`body.explore`: dù lượn, đi dạo `body.stroll`)
+- Ô chọn trong bảng Cài đặt (`#langSelect`, `#qualitySel`) được `blur()` sau khi chọn bằng chuột khi đang ở chế độ điều khiển (`src/explore/index.ts`); chế độ mới có phím điều khiển phải thêm mình vào điều kiện đó, nếu không phím đi bị ô chọn nuốt và phím mũi tên đổi luôn cài đặt.
+- Thông báo: `#exMpNotice` chỉ cho nhiều người (sảnh, mất kết nối, lời mời); thông báo riêng của chế độ dùng phần tử riêng (`#stToast`), không ghi đè.
+- Đi dạo: `#stHud` đặt `direction: ltr` để cần gạt luôn bên trái kể cả `ar`; cần gạt / Nhảy / vùng vuốt chỉ hiện trong `@media (hover:none)`, 📷 hiện cả máy tính; dòng hướng dẫn máy tính `#stHint` (anh em của `#exHint`) chỉ `(hover:hover)`. Vùng chạm ≥ 44 px, chừa `env(safe-area-inset-*)`, không đè `#btnExExit` / `#exMpRoster` ở cả hai chiều cầm (kiểm trong `test:mobile`).
+- Phím điều khiển đọc `e.code` (vị trí phím) để bàn phím không Latin (ru, ar, th, hi) vẫn đi được; nhảy / chụp chỉ theo cạnh nhấn (`!e.repeat`).
 
 ## Điện thoại — chế độ gọn (D-019)
 - `body.compact` bật khi cửa sổ khớp `CONFIG.ui.compactQuery` (`ui/compactUI.ts`). CSS cho điện thoại viết dưới `body.compact …`, **không** dùng `@media (max-width)`. Máy tính (không khớp) viết dưới `body:not(.compact) …` (D-025): hai bảng mặc định thu thành nút ⚙ / ☰, dùng chung trạng thái tờ; sửa một bên phải kiểm bên kia không đổi.

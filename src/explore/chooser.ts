@@ -2,15 +2,15 @@
    Lớp phủ HTML (#chooser trong index.html), không thêm gì vào cảnh. Hiện sau khung đầu tiên (cảnh đã dựng phía sau)
    và chặn chuột vào canvas tới khi chọn. Chữ do data-i18n lo; ở đây chỉ khóa thẻ và gọi onPick. */
 
-import { getLang, onChange } from '../i18n';
+import { getLang, onChange, t } from '../i18n';
 import { exMulti } from './multi';
 import { exShowLobby } from './multi/lobby';
 
-export type ExChoice = 'glider' | 'guided';
+export type ExChoice = 'glider' | 'guided' | 'walk';
 
 const el = () => document.getElementById('chooser');
 
-/* Dù lượn cần bàn phím: thiết bị cảm ứng (không có hover) thì khóa thẻ và hiện nhãn "Chỉ dùng trên máy tính" */
+/* Dù lượn cần bàn phím: thiết bị cảm ứng (không có hover) thì khóa thẻ và hiện nhãn "Chỉ dùng trên máy tính". Thẻ Đi dạo không khóa (có điều khiển cảm ứng) */
 function lockGliderOnTouch(root: HTMLElement): void {
   if (!window.matchMedia('(hover: none)').matches) return;
   const card = root.querySelector<HTMLButtonElement>('[data-pick="glider"]');
@@ -40,12 +40,15 @@ function setUnderInert(root: HTMLElement, on: boolean): void {
   } else { for (const c of inerted) c.inert = false; inerted.length = 0; }
 }
 
-export function exShowChooser(onPick: (choice: ExChoice) => void, onWatch: () => void = () => {}): void {
+export function exShowChooser(onPick: (choice: ExChoice) => void, onWatch: (choice: ExChoice) => void = () => {}): void {
   const root = el();
   if (!root) return;
   lockGliderOnTouch(root);
   /* Lần trước mất kết nối khi đang xem (explore.exit tải lại trang): đọc cờ một lần rồi xóa, hiện exMpLostChooser */
-  try { if (sessionStorage.getItem('exMpNotice') === 'lost') { sessionStorage.removeItem('exMpNotice'); const n = document.getElementById('exMpLostNote'); if (n) n.hidden = false; } } catch { /* bộ nhớ bị chặn */ }
+  try {
+    const lost = sessionStorage.getItem('exMpNotice');   // 'lost' (xem bầu trời dù lượn) | 'lostWalk' (xem người đi dạo: câu nhắc chọn Đi dạo, vì thẻ Dù lượn bị khóa trên điện thoại)
+    if (lost === 'lost' || lost === 'lostWalk') { sessionStorage.removeItem('exMpNotice'); const n = document.getElementById('exMpLostNote'); if (n) { if (lost === 'lostWalk') { n.dataset.i18n = 'stLostChooser'; n.textContent = t('stLostChooser'); } n.hidden = false; } }
+  } catch { /* bộ nhớ bị chặn */ }
   wireLang(root);
   /* Không dùng { once: true }: từ sảnh bấm Quay lại / Esc thì các thẻ phải chọn lại được. Hộp đã đóng (đã chọn xong) thì bỏ qua */
   root.querySelectorAll<HTMLButtonElement>('button[data-pick]').forEach((b) => {
@@ -53,10 +56,10 @@ export function exShowChooser(onPick: (choice: ExChoice) => void, onWatch: () =>
     b.addEventListener('click', () => {
       if (root.hidden) return;
       const choice = b.dataset.pick as ExChoice;
-      /* Dù lượn có máy chủ: sang bước chọn slot + nhập tên (mở kết nối ở đây, không sớm hơn); không có máy chủ: bay một mình ngay như trước */
-      if (choice === 'glider' && exMulti.begin(() => {})) {
-        const solo = () => { exHideChooser(); onPick('glider'); };
-        exShowLobby(exMulti.session!, { onFly: solo, onWatch: () => { exHideChooser(); onWatch(); }, onSolo: solo, onBack: () => b.focus({ preventScroll: true }) });
+      /* Dù lượn / Đi dạo có máy chủ: sang bước chọn slot + nhập tên (mở kết nối ở đây, không sớm hơn); không có máy chủ: bay / đi một mình ngay như trước */
+      if ((choice === 'glider' || choice === 'walk') && exMulti.begin(() => {}, choice === 'walk' ? 'walk' : 'fly')) {
+        const solo = () => { exHideChooser(); onPick(choice); };
+        exShowLobby(exMulti.session!, { onFly: solo, onWatch: () => { exHideChooser(); onWatch(choice); }, onSolo: solo, onBack: () => b.focus({ preventScroll: true }) });
         return;
       }
       exHideChooser(); onPick(choice);

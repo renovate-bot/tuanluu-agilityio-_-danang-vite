@@ -43,8 +43,9 @@ export class ExTrack {
     this.push(nowMs, e[1], e[2], e[3], e[4], e[5]);
   }
 
-  /* Ghi vị trí tại thời điểm t vào out; false nếu chưa có mẫu */
-  sample(t: number, out: ExPose): boolean {
+  /* Ghi vị trí tại thời điểm t vào out; false nếu chưa có mẫu.
+     step = true: trường thứ 6 (bank; người đi dạo dùng chở pose) không nội suy, lấy nguyên của mẫu trước, tới đúng giờ mẫu sau mới đổi */
+  sample(t: number, out: ExPose, step = false): boolean {
     if (this.n === 0) return false;
     const b = this.buf, first = (this.head + N - this.n) % N * W;
     const last = ((this.head + N - 1) % N) * W;
@@ -63,7 +64,7 @@ export class ExTrack {
     let dy = b[c + 4] - b[a + 4];
     dy -= Math.round(dy / (2 * Math.PI)) * 2 * Math.PI;
     out.yaw = b[a + 4] + dy * k;
-    out.bank = b[a + 5] + (b[c + 5] - b[a + 5]) * k;
+    out.bank = step ? b[(k >= 1 ? c : a) + 5] : b[a + 5] + (b[c + 5] - b[a + 5]) * k;
     return true;
   }
 

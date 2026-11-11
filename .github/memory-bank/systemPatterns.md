@@ -74,6 +74,14 @@ Không kế thừa `BridgeBase`: module `index.ts` giữ một đối tượng `
 - Gốc nhóm mô hình đặt ở tâm hình học cần bám (giữa cánh và người), không phải mép.
 - Bố cục `body.explore` trên máy tính: góc trên đầu dòng là `.brand` (từ D-025 lúc đóng chỉ còn nút ⚙ ≈ 50 px; mở ra có ngôn ngữ, nút Đêm, Chất lượng hình, cao ≈ 175 px ở 1280×720), giữa trên là `#exHint`, góc trên cuối dòng là `#btnExExit`, giữa dưới là `#exSpeed`, góc dưới cuối dòng là danh sách người bay `#exMpRoster`. Phần tử mới không đặt theo số `top` cố định cạnh `.brand` (từng đè lên nhau). `.stats` chỉ hiện ở góc dưới cuối dòng khi URL có `?test`, nên lúc test sẽ chồng lên `#exMpRoster`.
 
+## Mẫu đi dạo: bản đồ va chạm thuần + oracle độc lập (`src/explore/stroll/`, D-029)
+- `map.ts` thuần (lưới ô, không import three / CONFIG) tách khỏi `mapData.ts` / `sceneData.ts` (đọc CONFIG, dựng vùng + vật cản) và `motion.ts` (bước chuyển động, nhận `StMap`); test đơn vị tự dựng bản đồ nhỏ nên không cần trình duyệt. Cùng nguyên tắc với `flight.ts` của dù (mục `explore/`).
+- Kiểm "không xuyên" bằng oracle **độc lập với `map.ts`**: `tests/stroll-check.mjs` bắn tia lên mesh có tên (`Ray.intersectTriangle`) và so từng bước với hộp tòa nhà; phải có bằng chứng không rỗng (bước gần tường thật, tường thật đẩy lại) vì oracle từng đạt vì nhân vật đứng yên trong hộp.
+- Vùng đi được suy từ hình học trong CONFIG, **không chép số**: bờ thụt vào ngoài lan can dải dạo (|x| 263,49), lối Cầu Tình Yêu dùng `CONFIG.riverfront.love.railGap` ở cả `promenade.ts` lẫn `mapData.ts`. `mapData.test.ts` chép bố cục lan can: đổi `promenade.ts` phải sửa test.
+- `CONFIG.stroll.bounds` phải bằng `multiParams.stroll.bounds` (máy chủ kẹp theo khung này; test kiểm). Đối tượng chỉ dựng khi vào chế độ (`stroll-people`) để góc cũ không đổi draw call.
+- Bước có `dt` lớn bị chia nhỏ theo `dtMax`; bậc cao hơn `stepMax` so với cao độ vùng đo bằng epsilon (nối dải phân cách Cầu Rồng ↔ bờ = 0,3500083).
+- Phím điều khiển theo `e.code` (`keys.ts`), thông báo ảnh ở `#stToast` riêng; `#exMpNotice` dành cho thông báo nhiều người.
+
 ## Mẫu ngày/đêm và hiệu ứng
 - Đọc `shared.uNight` (0 → 1) trong shader hoặc `update()`; không tự giữ trạng thái ngày/đêm riêng.
 - Đèn: emissive + bloom (`core/postprocessing.ts`). Không thêm đèn động mới.

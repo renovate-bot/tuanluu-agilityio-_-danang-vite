@@ -294,6 +294,7 @@ body.explore #exMpRoster:not([hidden]){display:flex;flex-direction:column;gap:3p
 .ex-mp-row{display:flex;align-items:center;gap:6px;}
 .ex-mp-row.me{font-weight:600;}
 .ex-mp-row i{width:9px;height:9px;border-radius:50%;flex:none;}
+.ex-mp-row.walk i{border-radius:2px;}   /* người đi dạo: chấm vuông, người bay: chấm tròn */
 body.explore #exMpNotice:not([hidden]){display:block;position:fixed;left:50%;transform:translateX(-50%);top:calc(100px + env(safe-area-inset-top,0px));padding:8px 14px;font-size:12px;color:var(--text);z-index:5;}
 /* Chế độ xem (hết chỗ hoặc vừa nhường chỗ): không có dù của mình nên ẩn dòng hướng dẫn lái và đồng hồ; hiện "Đang xem" và lời mời */
 body.ex-watching #exHint,body.ex-watching #exSpeed{display:none;}
@@ -310,6 +311,38 @@ body.ex-watching #exMpInvite:not([hidden]){display:flex;align-items:center;gap:1
 body.explore .views,body.explore .specs,body.explore #tourCaption,body.explore #wxScenario,body.explore #hint,body.explore #swRideHint,body.explore #swStormNote,body.explore #hrLabels{display:none!important;}
 body.explore h1,body.explore .eyebrow,body.explore #btnShadow,body.explore .audio-row,body.explore .slider,body.explore .weather-row,body.explore .donate{display:none!important;}
 body.explore:not(.ex-test) .stats{display:none;}   /* HUD giữ khi URL có ?test để test đo draw call */
+/* Đi dạo: dòng hướng dẫn và đồng hồ là của dù lượn nên ẩn; kéo chuột trên cảnh để xoay camera */
+body.explore.stroll #exHint,body.explore.stroll #exSpeed{display:none;}
+/* Dòng hướng dẫn phím của đi dạo (#stHint): cùng chỗ và kiểu với #exHint, chỉ khi có chuột (hover:hover) và không ở chế độ xem; cảm ứng đã có cần gạt */
+#stHint{display:none;}
+@media (hover:hover){
+  body.explore.stroll:not(.ex-watching) #stHint{display:block;position:fixed;left:50%;transform:translateX(-50%);top:calc(14px + env(safe-area-inset-top,0px));padding:8px 14px;font-size:12px;color:var(--text);text-align:center;max-width:calc(100vw - 200px);box-sizing:border-box;pointer-events:none;z-index:4;}
+  body.compact.stroll #stHint{top:calc(64px + env(safe-area-inset-top,0px));}
+}
+body.stroll #scene{cursor:grab;}
+body.stroll #scene:active{cursor:grabbing;}
+/* Đi dạo: điều khiển cảm ứng (explore/stroll/touch.ts). #stHud là lớp phủ trong suốt, chỉ các điều khiển nhận chạm; direction:ltr để ar (RTL) vẫn giữ cần gạt bên trái tay.
+   Bố cục B: cần gạt trái dưới; phải chỉ Nhảy và 📷; vuốt nửa phải để xoay camera. Cần gạt, Nhảy, vuốt chỉ hiện khi không có chuột (hover:none); 📷 hiện cả trên máy tính */
+#stHud,#stPad,#stJump,#stLook,#stPhoto,#stFlash{display:none;}
+body.stroll #stHud{display:block;position:fixed;inset:0;z-index:4;pointer-events:none;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;}
+body.ex-watching #stHud{display:none;}
+#stHud button{position:fixed;display:flex;align-items:center;justify-content:center;pointer-events:auto;touch-action:none;margin:0;padding:0;color:var(--text);background:var(--panel);border:1px solid var(--panel-line);border-radius:50%;font:600 13px/1 var(--font-body);cursor:pointer;-webkit-tap-highlight-color:transparent;}
+body.stroll #stPhoto{display:flex;right:calc(14px + env(safe-area-inset-right,0px));top:calc(100px + env(safe-area-inset-top,0px));width:48px;height:48px;font-size:22px;}   /* dưới nút Thoát (top 56 px) */
+body.compact.stroll #stPhoto{top:calc(60px + env(safe-area-inset-top,0px));}   /* nút Thoát cao 40 px ở top 8 px */
+#stFlash{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;}   /* chớp khi chụp (Task 9 bật bằng lớp .on) */
+body.stroll #stFlash{display:block;}
+#stFlash.on{opacity:.85;}
+/* Thông báo chụp ảnh: ô riêng ở giữa mép trên (không dùng #exMpNotice của dù lượn nhiều người); chừa chỗ cho nút Thoát bên phải, hẹp thì xuống dòng */
+#stToast{display:none;}
+body.stroll #stToast:not([hidden]){display:block;position:fixed;left:50%;transform:translateX(-50%);top:calc(14px + env(safe-area-inset-top,0px));padding:8px 14px;font-size:12px;color:var(--text);max-width:calc(100vw - 200px);box-sizing:border-box;text-align:center;pointer-events:none;z-index:5;}
+body.compact.stroll #stToast:not([hidden]){top:calc(8px + env(safe-area-inset-top,0px));}
+@media (hover:none){
+  body.stroll #stPad{display:block;position:fixed;pointer-events:auto;touch-action:none;left:calc(24px + env(safe-area-inset-left,0px));bottom:calc(24px + env(safe-area-inset-bottom,0px));width:var(--st-pad,120px);height:var(--st-pad,120px);box-sizing:border-box;border-radius:50%;background:rgba(10,18,22,.4);border:2px solid var(--panel-line);}
+  #stKnob{position:absolute;left:50%;top:50%;width:46px;height:46px;margin:-23px 0 0 -23px;border-radius:50%;background:rgba(230,189,106,.55);border:1px solid var(--gold);pointer-events:none;}
+  body.stroll #stJump{display:flex;right:calc(24px + env(safe-area-inset-right,0px));bottom:calc(150px + env(safe-area-inset-bottom,0px));width:72px;height:72px;}   /* trên danh sách người chơi (cao tối đa khoảng 140 px) */
+  body.stroll #stLook{display:block;position:fixed;pointer-events:auto;touch-action:none;right:0;width:50%;top:calc(110px + env(safe-area-inset-top,0px));bottom:0;}   /* nửa phải, dưới nút Thoát và 📷; Nhảy nằm trên nó */
+  body.stroll #exMpRoster:not([hidden]){inset-inline-end:auto;right:calc(14px + env(safe-area-inset-right,0px));}   /* ar: danh sách vẫn ở phải, không đè cần gạt bên trái */
+}
 body.compact #exHint{top:calc(64px + env(safe-area-inset-top,0px));}
 body.compact #btnExExit{top:calc(8px + env(safe-area-inset-top,0px));inset-inline-end:calc(8px + env(safe-area-inset-right,0px));min-height:40px;}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important;}}

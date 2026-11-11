@@ -15,4 +15,9 @@ description: Quy ước viết script kiểm tra Playwright
 - **Không sửa `tests/original/`** — đó là bản gốc dùng để so sánh.
 - Cập nhật `tests/KET-QUA.md` khi đo lại draw call chuẩn (ghi ngày, cấu hình máy/kích thước khung).
 - Test chậm (10–20 phút): khi lặp nhanh, chạy riêng phần cần, nhưng báo cáo cuối phải chạy đủ.
+- SwiftShader trên máy chậm chỉ ~3 s/khung (đo khi làm D-029): chờ theo thời gian dùng `waitForFunction(…, { polling: <ms> })` thay vì rAF, đừng đếm số khung cố định; test nhiều người không thử rời máy thì thêm `idleMs=600000` vào URL để slot không bị thu giữa chừng; không bọc lệnh test trong `timeout` (từng làm chết lượt chạy).
+- Cảm ứng nhiều ngón thật: CDP `Input.dispatchTouchEvent` (mẫu `mobile-check.mjs`); `touchEnd` / `touchCancel` với danh sách rỗng kết thúc **mọi** ngón.
+- Kiểm va chạm ("không xuyên") phải dùng oracle độc lập với mã đang chấm và có bằng chứng không rỗng (có bước sát tường, tường thật chặn lại) — xem mẫu đi dạo trong `systemPatterns.md`.
+- `wrangler dev` cổng 8799 bị bỏ lại sẽ làm `test:multi` / `test:multi:worker` hỏng: kiểm tiến trình `wrangler` mồ côi cùng lúc với `*-check.mjs`.
+- Viết file test bằng công cụ sửa file, không dán mã có dấu `>` vào lệnh shell: trên máy này đã sinh file rỗng lạc ở gốc repo (`0`, `hi`, `o.msg.t`…).
 - Không chạy hai test cùng lúc. Trước mỗi lần chạy, kiểm không còn tiến trình `*-check.mjs`/`drawcalls.mjs` mồ côi (PowerShell: `Get-CimInstance Win32_Process`): một test bị bỏ dở có thể làm test sau treo hàng giờ.

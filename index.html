@@ -223,7 +223,7 @@
       <button type="button" class="ex-card" data-pick="glider"><b data-i18n="exGlider">Dù lượn</b><span data-i18n="exGliderDesc">Bay tự do trên sông Hàn</span><i class="ex-note" data-i18n="exDesktopOnly" hidden>Chỉ dùng trên máy tính</i></button>
       <button type="button" class="ex-card" data-pick="car" disabled><b data-i18n="exCar">Ô tô</b><i class="ex-note" data-i18n="exSoon">Sắp có</i></button>
       <button type="button" class="ex-card" data-pick="bike" disabled><b data-i18n="exBike">Xe máy</b><i class="ex-note" data-i18n="exSoon">Sắp có</i></button>
-      <button type="button" class="ex-card" data-pick="walk" disabled><b data-i18n="exWalk">Đi bộ</b><i class="ex-note" data-i18n="exSoon">Sắp có</i></button>
+      <button type="button" class="ex-card" data-pick="walk"><b data-i18n="exWalk">Đi dạo</b><span data-i18n="exWalkDesc">Dạo bộ trên cầu và hai bờ sông</span></button>
       <button type="button" class="ex-card" data-pick="guided"><b data-i18n="exGuided">Tham quan có hướng dẫn</b><span data-i18n="exGuidedDesc">Tour, góc nhìn và thuyết minh</span></button>
     </div>
     <section id="exMpLobby" class="ex-mp-lobby" hidden>
@@ -243,6 +243,7 @@
   </div>
 </div>
 <div id="exHint" class="panel" data-i18n="exHint">W/S hoặc ↑/↓ để lên/xuống · A/D hoặc ←/→ để rẽ · Q/E để giảm/tăng tốc · Esc để thoát</div>
+<div id="stHint" class="panel" data-i18n="stHint">W A S D: đi · giữ Shift: chạy · Space: nhảy · kéo chuột: xoay camera · P: chụp ảnh · Esc: thoát</div>
 <div id="exSpeed" class="panel"></div>
 <div id="exMpLabels" aria-hidden="true"></div>
 <div id="exMpRoster" class="panel" hidden></div>
@@ -250,11 +251,19 @@
 <div id="exMpIdle" class="panel" role="status" aria-live="polite" hidden></div>
 <div id="exMpWatch" class="panel" role="status" dir="auto" hidden></div>
 <div id="exMpInvite" class="panel" hidden>
-  <span data-i18n="exMpInvite">Có chỗ trống. Bạn muốn bay không?</span>
+  <span id="exMpInviteText" data-i18n="exMpInvite">Có chỗ trống. Bạn muốn bay không?</span>
   <input id="exMpInviteName" type="text" autocomplete="off" spellcheck="false" dir="auto" hidden>
   <button type="button" id="exMpInviteFly" class="ex-mp-btn" data-i18n="exMpInviteFly">Vào bay</button>
 </div>
 <button id="btnExExit" class="panel" type="button" data-i18n="exExit">Thoát</button>
+<div id="stHud" dir="ltr">
+  <div id="stLook"></div>
+  <div id="stPad"><div id="stKnob"></div></div>
+  <button id="stJump" type="button" data-i18n="stJump">Nhảy</button>
+  <button id="stPhoto" type="button" data-i18n-aria="stPhoto" aria-label="Chụp ảnh">📷</button>
+  <div id="stFlash" aria-hidden="true"></div>
+  <div id="stToast" class="panel" role="status" aria-live="polite" dir="auto" hidden></div>
+</div>
 
 <script type="module" src="/src/main.ts"></script>
 </body>

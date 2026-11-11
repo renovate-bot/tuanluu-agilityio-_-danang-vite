@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 
 /* Trạng thái camera dùng chung giữa camera.ts, tour.ts và UI */
-export type CameraMode = 'orbit' | 'fly' | 'drive' | 'tpDrive' | 'hrDrive' | 'walk' | 'tour' | 'storm' | 'swRide' | 'glider';   // storm: camera theo hành trình kịch bản bão; swRide: ngồi cabin Vòng quay Mặt Trời (camera do SunWheel.update đặt); glider: bay dù lượn (camera do explore.update đặt)
+export type CameraMode = 'orbit' | 'fly' | 'drive' | 'tpDrive' | 'hrDrive' | 'walk' | 'tour' | 'storm' | 'swRide' | 'glider' | 'stroll';   // storm: camera theo hành trình kịch bản bão; swRide: ngồi cabin Vòng quay Mặt Trời (camera do SunWheel.update đặt); glider: bay dù lượn (camera do explore.update đặt); stroll: đi dạo (camera do stroll.update đặt)
 export const cam = {
   mode: 'orbit' as CameraMode,
   /* flyTo đang chạy; then === 'tour' nghĩa là bay xong thì bắt đầu Tour */

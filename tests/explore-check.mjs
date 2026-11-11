@@ -204,8 +204,8 @@ try {
     await frames(G.page, 2);
     const e3 = await G.page.evaluate(() => { const a = window.__app, s = a.explore.state, t = a.controls.target; const fx = Math.cos(s.yaw), fz = -Math.sin(s.yaw); return Math.hypot(t.x - (s.pos.x + fx * 30), t.y - (s.pos.y - 4), t.z - (s.pos.z + fz * 30)); });
     check(`3e controls.target bám pos + forward·30 (lệch ${e3.toFixed(3)} m)`, e3 < 1);
-    // 3f Esc → tải lại, bỏ tham số explore
-    await G.page.evaluate(() => { window.__reloadMark = 1; });
+    // 3f Esc → tải lại, bỏ tham số explore (3d mở tờ Cài đặt bằng reveal; tờ còn mở thì Esc đầu chỉ đóng tờ, D-025)
+    await G.page.evaluate(() => { window.__app.ui.closeSheets(); window.__reloadMark = 1; });
     await G.page.keyboard.press('Escape');
     await G.page.waitForFunction(() => !window.__reloadMark, null, { timeout: 240000 });   // dấu hiệu trên window mất = trang tải lại thật
     await G.page.waitForURL((u) => !u.href.includes('explore='), { timeout: 240000, waitUntil: 'commit' });   // chỉ cần điều hướng bắt đầu; tải lại bằng SwiftShader rất chậm
@@ -235,11 +235,11 @@ try {
   {
     const CARDS = ['glider', 'car', 'bike', 'walk', 'guided'];
     const vis = (page, sel) => page.evaluate((s) => { window.__app.ui?.reveal(document.querySelector(s)); const e = document.querySelector(s); return !!e && e.getClientRects().length > 0 && getComputedStyle(e).visibility !== 'hidden'; }, sel);
-    // 4a ?chooser: màn chọn hiện, 5 thẻ, thẻ chưa có disabled
+    // 4a ?chooser: màn chọn hiện, 5 thẻ, thẻ chưa có disabled (thẻ Đi dạo đã mở: chế độ đi dạo)
     const C = await openApp(browser, srv.url + '?chooser');
     await C.page.waitForSelector('#chooser', { state: 'visible', timeout: 240000 });
     const a4 = await C.page.evaluate(() => [...document.querySelectorAll('#chooser button[data-pick]')].map((b) => [b.dataset.pick, b.disabled]));
-    check(`4a #chooser hiện, thẻ: ${JSON.stringify(a4)}`, a4.length === 5 && CARDS.every((k) => a4.some(([n]) => n === k)) && a4.filter(([, d]) => d).map(([n]) => n).sort().join() === 'bike,car,walk');
+    check(`4a #chooser hiện, thẻ: ${JSON.stringify(a4)}`, a4.length === 5 && CARDS.every((k) => a4.some(([n]) => n === k)) && a4.filter(([, d]) => d).map(([n]) => n).sort().join() === 'bike,car');
     const l4 = await C.page.evaluate(() => { const s = document.getElementById('exLang'); const r = s.getBoundingClientRect(); const top = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2); return { n: s.options.length, v: s.value, onTop: top === s }; });
     check(`4a chooser có ô ngôn ngữ riêng: ${l4.n} ngôn ngữ, giá trị ${l4.v}, không bị panel che ${l4.onTop}`, l4.n === 9 && l4.v === 'vi' && l4.onTop);
     const inertOn = await C.page.evaluate(() => { const o = document.querySelector('[data-bridge="tp"]'); return !!o.closest('[inert]') && !document.getElementById('chooser').closest('[inert]') && !document.getElementById('exLang').closest('[inert]'); });
@@ -297,9 +297,9 @@ try {
     // 4f điện thoại: thẻ dù lượn bị khóa
     const M = await openApp(browser, srv.url + '?chooser', { mobile: true });
     await M.page.waitForSelector('#chooser', { state: 'visible', timeout: 240000 });
-    const f4 = await M.page.evaluate(() => { const b = document.querySelector('#chooser [data-pick="glider"]'); return { d: b.disabled, txt: b.textContent }; });
+    const f4 = await M.page.evaluate(() => { const b = document.querySelector('#chooser [data-pick="glider"]'), w = document.querySelector('#chooser [data-pick="walk"]'); return { d: b.disabled, txt: b.textContent, walk: w.disabled }; });
     const vi = JSON.parse(readFileSync(new URL('../src/i18n/locales/vi.json', import.meta.url), 'utf8'));
-    check(`4f mobile: thẻ dù lượn disabled, có "${vi.exDesktopOnly}"`, f4.d && !!vi.exDesktopOnly && f4.txt.includes(vi.exDesktopOnly));
+    check(`4f mobile: thẻ dù lượn disabled, có "${vi.exDesktopOnly}"; thẻ Đi dạo không khóa (${!f4.walk})`, f4.d && !!vi.exDesktopOnly && f4.txt.includes(vi.exDesktopOnly) && !f4.walk);
     await M.page.close();
     // 4b chỉ ?test: không có màn chọn
     const T = await openApp(browser, srv.url);

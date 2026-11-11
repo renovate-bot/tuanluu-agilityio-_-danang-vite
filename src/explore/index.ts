@@ -10,6 +10,7 @@ import { exChase } from './chase';
 import { exShowChooser } from './chooser';
 import { exNight, exNightBind, exNightStep } from './nightShows';
 import { exMulti } from './multi';
+import { stroll, setupStroll } from './stroll';
 import { exWatchShow, exWatchHide, exWatchRender, exFlyNotice } from './multi/watch';
 import { CONFIG } from '../config';
 import type { SwingController } from '../bridges/song-han/SwingController';
@@ -114,10 +115,11 @@ export const explore = {
 
 export function setupExplore(ctrl: SwingController): void {
   exNightBind(ctrl);
+  setupStroll(ctrl, () => explore.exit());
   window.addEventListener('keydown', (e) => {
-    if (!inGlider()) return;
-    if (e.key === 'Escape') { explore.exit(); return; }   // Esc thoát kể cả khi đang focus ô chọn
-    if (watching) return;   // xem: không lái, không ghi phím
+    if (!inGlider() && !stroll.inMode()) return;
+    if (e.key === 'Escape') { explore.exit(); return; }   // Esc thoát kể cả khi đang focus ô chọn (bay dù, đi dạo và hai chế độ xem)
+    if (watching || stroll.inMode()) return;   // xem: không lái; đi dạo: phím do stroll/index.ts ghi
     if (e.ctrlKey || e.metaKey || e.altKey) return;   // phím tắt trình duyệt (Cmd+S...) không lái dù, tránh kẹt phím
     const t = e.target as HTMLElement | null;
     if (t && /^(SELECT|INPUT|TEXTAREA)$/.test(t.tagName)) return;   // phím trong ô chọn/nhập không lái dù
@@ -131,12 +133,14 @@ export function setupExplore(ctrl: SwingController): void {
     let byMouse = false;
     sel.addEventListener('pointerdown', () => { byMouse = true; });
     sel.addEventListener('keydown', () => { byMouse = false; });
-    sel.addEventListener('change', () => { if (byMouse && active()) sel.blur(); byMouse = false; });
+    sel.addEventListener('change', () => { if (byMouse && (active() || stroll.active())) sel.blur(); byMouse = false; });
   }
   const q = new URLSearchParams(location.search);
   exNight.enabled = !q.has('test');   // test bật tường minh qua __app.explore.nightShows
   if (q.has('test')) document.body.classList.add('ex-test');   // giữ HUD khi bay để test đo draw call
   document.getElementById('btnExExit')?.addEventListener('click', () => explore.exit());
   if (q.get('explore') === 'glider') { explore.start(); return; }
-  if (!q.has('test') || q.has('chooser')) exShowChooser((choice) => { if (choice === 'glider') explore.start(); }, () => explore.startWatching());   // 'guided': màn chọn tự ẩn, giao diện cũ
+  if (q.get('explore') === 'stroll') { stroll.start(); return; }   // đi dạo một mình, không qua slot
+  if (!q.has('test') || q.has('chooser')) exShowChooser((choice) => { if (choice === 'glider') explore.start(); else if (choice === 'walk') stroll.start(); },
+    (choice) => { if (choice === 'walk') stroll.startWatching(); else explore.startWatching(); });   // 'guided': màn chọn tự ẩn, giao diện cũ
 }
