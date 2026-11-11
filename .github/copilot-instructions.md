@@ -12,7 +12,7 @@ Vite 6 + TypeScript 5.9 + three@0.165, **không dùng framework UI**. Chuyển t
 
 Agent không nhớ gì giữa các phiên. Bộ nhớ của dự án nằm ở [.github/memory-bank/](memory-bank/README.md).
 
-1. **Đầu phiên:** đọc `memory-bank/activeContext.md` và `memory-bank/progress.md`. Đọc thêm file khác theo bảng trong [memory-bank/README.md](memory-bank/README.md) khi nhiệm vụ cần. Đang làm một tính năng có plan thì đọc plan đó (`../docs/superpowers/plans/`) và spec của nó.
+1. **Đầu phiên:** đọc `memory-bank/activeContext.md`; đọc `memory-bank/progress.md` khi cần biết trạng thái một tính năng cũ. Đọc thêm file khác theo bảng trong [memory-bank/README.md](memory-bank/README.md) khi nhiệm vụ cần. Đang làm một tính năng có plan thì đọc plan đó (`../docs/superpowers/plans/`) và spec của nó.
 2. **Trong phiên:** quyết định kiến trúc mới → ghi vào `decisions.md`. Phát hiện quy ước chưa có → ghi vào `systemPatterns.md`.
 3. **Cuối phiên / trước commit:** cập nhật `activeContext.md` (đang làm gì, bước tiếp theo) và `progress.md` (xong / còn thiếu). Dùng prompt [update-memory-bank](prompts/update-memory-bank.prompt.md).
 
