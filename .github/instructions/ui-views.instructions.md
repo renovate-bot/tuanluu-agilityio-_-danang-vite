@@ -16,6 +16,7 @@ description: Quy ước giao diện, góc nhìn và Tour
 - Ô chọn trong bảng Cài đặt (`#langSelect`, `#qualitySel`) được `blur()` sau khi chọn bằng chuột khi đang ở chế độ điều khiển (`src/explore/index.ts`); chế độ mới có phím điều khiển phải thêm mình vào điều kiện đó, nếu không phím đi bị ô chọn nuốt và phím mũi tên đổi luôn cài đặt.
 - Thông báo: `#exMpNotice` chỉ cho nhiều người (sảnh, mất kết nối, lời mời); thông báo riêng của chế độ dùng phần tử riêng (`#stToast`), không ghi đè.
 - Đi dạo: `#stHud` đặt `direction: ltr` để cần gạt luôn bên trái kể cả `ar`; cần gạt / Nhảy / vùng vuốt chỉ hiện trong `@media (hover:none)`, 📷 hiện cả máy tính; dòng hướng dẫn máy tính `#stHint` (anh em của `#exHint`) chỉ `(hover:hover)`. Vùng chạm ≥ 44 px, chừa `env(safe-area-inset-*)`, không đè `#btnExExit` / `#exMpRoster` ở cả hai chiều cầm (kiểm trong `test:mobile`).
+- Ẩn / hiện phần tử bằng `display` thì quy tắc kiểu chung (vd. `#stHud button`) **không** đặt `display`: `#id phần-tử` có độ ưu tiên cao hơn `#id` nên thắng `#stJump{display:none}` (lỗi đã gặp: chữ "Nhảy" hiện ở góc trên trái trên máy tính). Chỉ quy tắc hiện theo ngữ cảnh (`body.stroll #stJump` trong `@media (hover:none)`) mới đặt `display`; test kiểm cả phía máy tính rằng điều khiển cảm ứng ẩn (`stroll-check` mục 6).
 - Phím điều khiển đọc `e.code` (vị trí phím) để bàn phím không Latin (ru, ar, th, hi) vẫn đi được; nhảy / chụp chỉ theo cạnh nhấn (`!e.repeat`).
 
 ## Điện thoại — chế độ gọn (D-019)

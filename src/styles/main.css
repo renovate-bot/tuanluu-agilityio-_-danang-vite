@@ -326,7 +326,7 @@ body.stroll #scene:active{cursor:grabbing;}
 #stHud,#stPad,#stJump,#stLook,#stPhoto,#stFlash{display:none;}
 body.stroll #stHud{display:block;position:fixed;inset:0;z-index:4;pointer-events:none;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;}
 body.ex-watching #stHud{display:none;}
-#stHud button{position:fixed;display:flex;align-items:center;justify-content:center;pointer-events:auto;touch-action:none;margin:0;padding:0;color:var(--text);background:var(--panel);border:1px solid var(--panel-line);border-radius:50%;font:600 13px/1 var(--font-body);cursor:pointer;-webkit-tap-highlight-color:transparent;}
+#stHud button{position:fixed;align-items:center;justify-content:center;pointer-events:auto;touch-action:none;margin:0;padding:0;color:var(--text);background:var(--panel);border:1px solid var(--panel-line);border-radius:50%;font:600 13px/1 var(--font-body);cursor:pointer;-webkit-tap-highlight-color:transparent;}
 body.stroll #stPhoto{display:flex;right:calc(14px + env(safe-area-inset-right,0px));top:calc(100px + env(safe-area-inset-top,0px));width:48px;height:48px;font-size:22px;}   /* dưới nút Thoát (top 56 px) */
 body.compact.stroll #stPhoto{top:calc(60px + env(safe-area-inset-top,0px));}   /* nút Thoát cao 40 px ở top 8 px */
 #stFlash{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;}   /* chớp khi chụp (Task 9 bật bằng lớp .on) */
