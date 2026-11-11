@@ -6,7 +6,6 @@
    Khi không có yêu cầu chờ, mỗi khung chỉ một phép so sánh, không cấp phát. */
 import { CONFIG } from '../../config';
 import { t } from '../../i18n';
-import { exWatchNotice } from '../multi/watch';
 
 let pending = false;   // có một yêu cầu chụp chờ khung kế tiếp
 export let stPhotoLast: { name: string; size: number; w: number; h: number } | null = null;   // ảnh vừa chụp (cho test)
@@ -18,28 +17,36 @@ export function stPhotoName(d: Date): string {
   return `danang-${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}.png`;
 }
 
-/* Thông báo ngắn ở #exMpNotice (cùng chỗ với các thông báo đi dạo khác), tự ẩn sau noticeMs nếu chưa bị thay */
+/* Thông báo ngắn ở ô riêng #stToast (không dùng chung #exMpNotice); một bộ hẹn giờ duy nhất, mỗi thông báo mới hủy bộ cũ */
+let toastTimer = 0;
 function notice(key: string): void {
-  exWatchNotice(key);
-  const text = t(key);
-  window.setTimeout(() => { const el = document.getElementById('exMpNotice'); if (el && el.textContent === text) exWatchNotice(''); }, CONFIG.explore.multi.noticeMs);
+  const el = document.getElementById('stToast');
+  if (!el) return;
+  el.textContent = t(key); el.hidden = false;
+  window.clearTimeout(toastTimer);
+  toastTimer = window.setTimeout(() => { el.hidden = true; el.textContent = ''; }, CONFIG.explore.multi.noticeMs);
 }
 
 export function stPhotoRequest(): void { pending = true; }
 
-/* Lưu: chia sẻ trên điện thoại, còn lại tải về */
-function save(blob: Blob, name: string): void {
-  const file = new File([blob], name, { type: 'image/png' });
-  const nav = navigator as Navigator & { canShare?: (d: ShareData) => boolean };
-  if (window.matchMedia('(hover: none)').matches && nav.canShare && nav.canShare({ files: [file] })) {
-    navigator.share({ files: [file] }).then(() => notice('stPhotoSaved'), (e: unknown) => { if ((e as { name?: string }).name !== 'AbortError') notice('stPhotoFail'); });
-    return;
-  }
+/* Tải file về qua <a download> */
+function download(blob: Blob, name: string): void {
   const url = URL.createObjectURL(blob), a = document.createElement('a');
   a.href = url; a.download = name; a.style.display = 'none';
   document.body.appendChild(a); a.click(); a.remove();
   window.setTimeout(() => URL.revokeObjectURL(url), CONFIG.stroll.photoUrlMs);
   notice('stPhotoSaved');
+}
+
+/* Lưu: chia sẻ trên điện thoại (lỗi khác AbortError như NotAllowedError thì tải về), còn lại tải về */
+function save(blob: Blob, name: string): void {
+  const file = new File([blob], name, { type: 'image/png' });
+  const nav = navigator as Navigator & { canShare?: (d: ShareData) => boolean };
+  if (window.matchMedia('(hover: none)').matches && nav.canShare && nav.canShare({ files: [file] })) {
+    navigator.share({ files: [file] }).then(() => notice('stPhotoSaved'), (e: unknown) => { if ((e as { name?: string }).name !== 'AbortError') download(blob, name); });
+    return;
+  }
+  download(blob, name);
 }
 
 /* Gọi ngay sau lệnh vẽ khung chính: nếu có yêu cầu thì chụp canvas */

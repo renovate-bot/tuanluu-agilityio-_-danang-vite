@@ -460,12 +460,22 @@ try {
     // bấm #stPhoto: đúng 1 file
     await Q.click('#stPhoto');
     await waitCount(1);
-    const toast = await Q.evaluate(() => { const e = document.getElementById('exMpNotice'); return { hidden: e.hidden, text: e.textContent }; });   // đọc ngay: thông báo tự ẩn sau noticeMs (8 s), SwiftShader chậm
+    const toast = await Q.evaluate(() => { const e = document.getElementById('stToast'); return { hidden: e.hidden, text: e.textContent, shown: e.getClientRects().length > 0 }; });   // ô riêng #stToast; đọc ngay: thông báo tự ẩn sau noticeMs (8 s), SwiftShader chậm
     await frames(Q, 4);
     const a1 = await analyse(got[0]), c1 = await cv();
     check(`11 bấm #stPhoto: ${got.length} file (= 1) "${a1.name}", ${a1.w}×${a1.h} = canvas ${c1.w}×${c1.h}, ${a1.colors} màu / 400 điểm, sáng ${a1.lit}`, got.length === 1 && valid(a1) && a1.w === c1.w && a1.h === c1.h);
     const last = await Q.evaluate(() => window.__app.stroll.stroll.photoLast);
-    check(`11 thông báo "${toast.text}" (stPhotoSaved)`, !toast.hidden && toast.text === 'Đã lưu ảnh');
+    check(`11 thông báo "${toast.text}" (stPhotoSaved) ở #stToast, đang hiện`, !toast.hidden && toast.shown && toast.text === 'Đã lưu ảnh');
+    // thông báo nhiều người đang hiện ở #exMpNotice: chụp ảnh không được đè lên
+    await Q.evaluate(() => { const n = document.getElementById('exMpNotice'); n.textContent = 'MP-NOTICE-GIU-NGUYEN'; n.hidden = false; });
+    const nA = got.length;
+    await Q.evaluate(() => document.getElementById('stPhoto').click());
+    await waitCount(nA + 1);
+    const both = await Q.evaluate(() => ({ mp: document.getElementById('exMpNotice').textContent, mpHidden: document.getElementById('exMpNotice').hidden, st: document.getElementById('stToast').textContent, stHidden: document.getElementById('stToast').hidden }));
+    check(`11 chụp khi #exMpNotice đang có chữ: giữ "${both.mp}", #stToast "${both.st}" (stPhotoSaved)`, both.mp === 'MP-NOTICE-GIU-NGUYEN' && !both.mpHidden && !both.stHidden && both.st === 'Đã lưu ảnh');
+    await Q.evaluate(() => { const n = document.getElementById('exMpNotice'); n.textContent = ''; n.hidden = true; });
+    await frames(Q, 4);
+    got.splice(nA);   // file thêm này chỉ để kiểm thông báo; các mục sau đếm lại từ đây
     check(`11 photoLast ${JSON.stringify(last)} khớp file`, !!last && last.name === a1.name && last.w === a1.w && last.h === a1.h && last.size > 1000);
     // phím p: thêm đúng 1 file; pose 4 khi đứng yên rồi về 0
     await Q.evaluate(() => document.activeElement && document.activeElement.blur());

@@ -326,6 +326,10 @@ body.compact.stroll #stPhoto{top:calc(60px + env(safe-area-inset-top,0px));}   /
 #stFlash{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;}   /* chớp khi chụp (Task 9 bật bằng lớp .on) */
 body.stroll #stFlash{display:block;}
 #stFlash.on{opacity:.85;}
+/* Thông báo chụp ảnh: ô riêng ở giữa mép trên (không dùng #exMpNotice của dù lượn nhiều người); chừa chỗ cho nút Thoát bên phải, hẹp thì xuống dòng */
+#stToast{display:none;}
+body.stroll #stToast:not([hidden]){display:block;position:fixed;left:50%;transform:translateX(-50%);top:calc(14px + env(safe-area-inset-top,0px));padding:8px 14px;font-size:12px;color:var(--text);max-width:calc(100vw - 200px);box-sizing:border-box;text-align:center;pointer-events:none;z-index:5;}
+body.compact.stroll #stToast:not([hidden]){top:calc(8px + env(safe-area-inset-top,0px));}
 @media (hover:none){
   body.stroll #stPad{display:block;position:fixed;pointer-events:auto;touch-action:none;left:calc(24px + env(safe-area-inset-left,0px));bottom:calc(24px + env(safe-area-inset-bottom,0px));width:var(--st-pad,120px);height:var(--st-pad,120px);box-sizing:border-box;border-radius:50%;background:rgba(10,18,22,.4);border:2px solid var(--panel-line);}
   #stKnob{position:absolute;left:50%;top:50%;width:46px;height:46px;margin:-23px 0 0 -23px;border-radius:50%;background:rgba(230,189,106,.55);border:1px solid var(--gold);pointer-events:none;}
