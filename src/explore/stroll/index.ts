@@ -11,7 +11,9 @@
    - Rời máy: phím điều khiển, kéo chuột và chạm cảm ứng gọi exMulti.activity().
    - Cảm ứng (touch.ts, #stHud): cần gạt ghi đè phím khi đang được giữ; vuốt nửa phải xoay camera; 📷 và phím P gọi stPhoto (photo.ts: chụp canvas sau lệnh vẽ chính).
    Mỗi khung không cấp phát (D-018). */
-import { scene, camera, controls, canvas } from '../../core/renderer';
+import type * as THREE from 'three';
+import { scene, camera, controls, canvas, renderer } from '../../core/renderer';
+import { composer } from '../../core/postprocessing';
 import { cam, keys } from '../../views/state';
 import { CONFIG } from '../../config';
 import { stSetGate, type StMap } from './map';
@@ -19,6 +21,7 @@ import { ST_GATE_SWING, stBuildStaticMap } from './mapData';
 import { stCreate, stStep, stPhotoPose, type StState, type StInput } from './motion';
 import { stPhotoRequest, stPhotoAfterRender, stPhotoLast } from './photo';
 import { stAvatars } from './avatars';
+import { stRigSetWarm } from './rig';
 import { stCollectRuntime } from './sceneData';
 import { stCamPlace, stCamDrag, type StCam } from './camera';
 import { stInputFromKeys, stKeyName } from './keys';
@@ -30,6 +33,20 @@ import type { SwingController } from '../../bridges/song-han/SwingController';
 
 const ST_SOLO_SLOT = -1;     // stCreate / stSpawn: đi một mình đứng giữa các điểm xuất phát
 const ST_SOLO_AVATAR = 0;    // slot nhân vật khi đi một mình (avatars.ts; mình luôn là mô hình 0)
+
+/* Làm nóng shader nhân vật có xương (D-018), như core/prewarm.ts: hai biến thể (vẽ thẳng ra canvas ban ngày, vào render target của composer ban đêm),
+   đèn / sương / bóng lấy từ cảnh chính (targetScene = scene), camera chính (đèn lọc theo lớp của nó). Cảnh nguồn không thêm vào scene */
+stRigSetWarm(async (o: THREE.Object3D) => {
+  const rt = renderer.getRenderTarget();
+  renderer.setRenderTarget(null);
+  const a = renderer.compileAsync(o, camera, scene);
+  renderer.setRenderTarget(rt);
+  await a;
+  renderer.setRenderTarget(composer.readBuffer);
+  const b = renderer.compileAsync(o, camera, scene);
+  renderer.setRenderTarget(rt);
+  await b;
+});
 
 let map: StMap | null = null;
 let state: StState | null = null;

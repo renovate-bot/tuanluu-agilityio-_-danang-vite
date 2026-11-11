@@ -180,6 +180,58 @@ test('StRig: đổi dáng làm mượt theo fade; chụp ảnh phát lại từ 
   r.dispose();
 });
 
+test('StRig.dispose: giải phóng skeleton của bản sao (mỗi cái một lần), không dispose geometry / vật liệu dùng chung', () => {
+  const scene = new THREE.Group();
+  const bone = new THREE.Bone(); bone.name = 'Bip01_Pelvis'; scene.add(bone);
+  const geo = new THREE.BufferGeometry(), mat = new THREE.MeshStandardMaterial();
+  const a = new THREE.SkinnedMesh(geo, mat), b = new THREE.SkinnedMesh(geo, mat);
+  a.bind(new THREE.Skeleton([bone])); b.bind(new THREE.Skeleton([bone])); scene.add(a, b);
+  const clips = ST_CLIPS.map((n, i) => new THREE.AnimationClip(n, DUR[i], [new THREE.VectorKeyframeTrack('Bip01_Pelvis.position', [0, DUR[i]], [0, 0, 0, i, 0, 0])]));
+  /* bản sao giả kiểu SkeletonUtils.clone: geometry / vật liệu dùng chung, skeleton mới; a và b của bản sao dùng chung một skeleton để kiểm "mỗi cái một lần" */
+  const shared = new THREE.Skeleton([bone]);
+  const r = new StRig(stRigSource(scene, clips, NAT, 1.8, () => {
+    const g = new THREE.Group(), ca = new THREE.SkinnedMesh(geo, mat), cb = new THREE.SkinnedMesh(geo, mat);
+    ca.bind(shared); cb.bind(shared); g.add(ca, cb); return g;
+  }));
+  let sk = 0, gd = 0, md = 0;
+  shared.dispose = () => { sk++; };
+  geo.dispose = () => { gd++; }; mat.dispose = () => { md++; };
+  stAvatars.build().add(r.root);
+  r.dispose();
+  assert.equal(sk, 1, 'skeleton chung của hai SkinnedMesh dispose đúng một lần');
+  assert.equal(gd, 0, 'không dispose geometry'); assert.equal(md, 0, 'không dispose vật liệu');
+  assert.equal(r.root.parent, null, 'đã gỡ khỏi nhóm');
+});
+
+test('StRig: fade = 0 chuyển tức thì, không NaN', () => {
+  const A = CONFIG.stroll.anim as { fade: number }, old = A.fade;
+  A.fade = 0;
+  try {
+    const r = new StRig(fakeSource());
+    r.pose(ST_POSE_IDLE, 0, 0); r.pose(ST_POSE_PHOTO, 0, 0);
+    assert.equal(r.w[4], 1); assert.equal(r.w[0], 0);
+    for (const x of r.w) assert.ok(Number.isFinite(x));
+    r.dispose();
+  } finally { A.fade = old; }
+});
+
+test('mất kết nối khi đang đi (sync với mySlot = -1): giữ nguyên bản sao của mình, không phát lại từ đầu', async () => {
+  fresh(async () => fakeSource());
+  stAvatars.sync([W(2, 'Tôi'), W(3, 'An')], 2); stAvatars.setSelf(2, st(ST_POSE_WALK, 1.2), 0.016);
+  await tick(); stAvatars.setSelf(2, st(ST_POSE_WALK, 1.2), 0.016);
+  for (let k = 0; k < 10; k++) stAvatars.setSelf(2, st(ST_POSE_WALK, 1.2), 1 / 30);
+  const r0 = rigs().find((o) => Math.abs(o.position.x - 1) < 1e-9)!;
+  assert.ok(r0, 'bản sao của mình');
+  stAvatars.sync([], -1);                        // phiên sang 'solo' (lost): danh sách trống, mySlot = -1
+  assert.equal(stAvatars.self, 2); assert.equal(stAvatars.debug(2)!.real, true, 'không mất khung nào');
+  assert.equal(stAvatars.debug(3), null, 'người khác biến mất');
+  stAvatars.setSelf(2, st(ST_POSE_WALK, 1.2), 1 / 30);
+  assert.ok(rigs().includes(r0), 'cùng bản sao, không dựng lại'); assert.equal(rigs().length, 1);
+  /* bị thu chỗ: sync(-1) rồi setSelf(null) như stroll/index.ts */
+  stAvatars.setSelf(2, null);
+  assert.equal(stAvatars.self, -1); assert.equal(stAvatars.debug(2), null); assert.equal(rigs().length, 0);
+});
+
 /* ===== Hình khối (hình tạm) và nội suy dáng bậc thang: giữ từ bản trước ===== */
 const cap = CONFIG.stroll.cadenceMax * CONFIG.people.run.cadence;
 const v = () => ({ amp: -1, cadence: -1, flags: -1 });

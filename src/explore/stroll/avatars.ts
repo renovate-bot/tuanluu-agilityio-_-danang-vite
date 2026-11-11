@@ -138,11 +138,14 @@ export const stAvatars = {
 
   /* Danh sách người đi dạo đổi (sảnh, vào, ra): slot đổi chủ thì xóa mẫu, ẩn tới mẫu đầu; slot trống thì ẩn. Slot của mình do setSelf lo */
   sync(walkers: Flyer[], mySlot: number): void {
-    if (mySlot !== me && me >= 0 && slots[me]?.who === 1) { slots[me].who = 0; stHide(me); me = -1; }   // đổi slot của mình: setSelf sẽ đặt lại
+    /* Được cấp slot khác: bỏ nhân vật ở slot cũ, setSelf sẽ đặt lại. mySlot < 0 (mất kết nối → đi một mình, bị thu chỗ → xem) thì giữ nguyên:
+       đi tiếp một mình vẫn setSelf cùng slot (không gỡ rồi dựng lại bản sao, chuyển động không phát lại từ đầu); sang xem thì stroll gọi setSelf(null) */
+    if (mySlot >= 0 && mySlot !== me && me >= 0 && slots[me]?.who === 1) { slots[me].who = 0; stHide(me); me = -1; }
     for (let i = 0; i < N; i++) {
       const s = slots[i];
       let name: string | null = null;
       for (const w of walkers) if (w.slot === i) { name = w.name; break; }
+      if (i === me) { s.name = name; continue; }   // nhân vật của mình: chỉ setSelf đổi
       if (i === mySlot) { s.name = name; if (s.who === 2) { s.who = 0; stHide(i); } continue; }   // slot vừa thành của mình: bỏ người khác cũ, chờ setSelf
       if (name === null) { s.name = null; if (s.who === 2) { s.who = 0; stHide(i); } continue; }
       if (name !== s.name || s.who !== 2) { s.name = name; s.who = 2; stHide(i); }

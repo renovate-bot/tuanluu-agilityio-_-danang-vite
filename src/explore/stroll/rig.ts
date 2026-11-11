@@ -3,6 +3,7 @@
      Lỗi bất kỳ (mạng, file hỏng, thiếu đoạn) → console.warn một lần cho mô hình đó, trả null, không thử lại trong phiên; promise không bao giờ bị từ chối.
    - stRigSource: chuẩn hóa cảnh đã nạp: lớp 1 (không vào phản chiếu nước), không đổ / nhận bóng, tắt frustumCulled (hộp bao theo tư thế gốc sai khi diễn),
      vật liệu metalness 0, roughness 0.85; mảnh alpha (alphaMode MASK) giữ alphaTest, không trộn trong suốt. Tốc độ tự nhiên từng đoạn đọc từ extras.speed.
+   - Làm nóng: sau khi nạp, stRigLoad chờ hàm do stRigSetWarm gắn (compileAsync theo cảnh chính, ≤ anim.warmMs) rồi mới trả nguồn (D-018).
    - StRig: một bản sao (SkeletonUtils.clone, dùng chung geometry / texture / vật liệu với nguồn) + AnimationMixer riêng.
      pose(): trọng số đích từ stClipMix (anim.ts), làm mượt về đích với hằng thời gian anim.fade; walk / jog / sprint đồng pha bằng một pha chung 0–1
      (đặt action.time = pha × thời lượng đoạn, timeScale 0 để mixer không tự tua); photo LoopOnce + clampWhenFinished, phát lại từ đầu mỗi lần chuyển sang dáng chụp ảnh.
@@ -49,6 +50,18 @@ export function stRigSource(scene: THREE.Object3D, clips: THREE.AnimationClip[],
 
 const cache = new Map<number, Promise<StRigSource | null>>();
 
+/* Làm nóng shader (D-018): stroll/index.ts gắn hàm biên dịch sẵn chương trình của cảnh nguồn theo đèn / sương / bóng của cảnh chính
+   (rig.ts không import renderer để chạy được trong unit test). Chưa gắn, lỗi hoặc quá anim.warmMs: bỏ qua, nguồn vẫn dùng được */
+let warm: ((o: THREE.Object3D) => Promise<unknown>) | null = null;
+export function stRigSetWarm(fn: ((o: THREE.Object3D) => Promise<unknown>) | null): void { warm = fn; }
+async function stRigWarm(o: THREE.Object3D): Promise<void> {
+  if (!warm) return;
+  let timer = 0;
+  try { await Promise.race([warm(o), new Promise<void>((r) => { timer = setTimeout(r, A.warmMs) as unknown as number; })]); }
+  catch { /* biên dịch trước lỗi: lần vẽ đầu tự biên dịch như cũ */ }
+  finally { clearTimeout(timer); }
+}
+
 /* Nạp mô hình k (nhớ đệm). Không bao giờ ném / từ chối: lỗi → warn một lần, null */
 export function stRigLoad(model: number): Promise<StRigSource | null> {
   let p = cache.get(model);
@@ -62,7 +75,9 @@ export function stRigLoad(model: number): Promise<StRigSource | null> {
       const speeds: Record<string, number> = {};
       const json = gltf.parser.json as { animations?: { name?: string; extras?: { speed?: number } }[] };   // AnimationClip không giữ extras: đọc từ JSON gốc
       for (const a of json.animations || []) if (a.name) speeds[a.name] = Number(a.extras?.speed) || 0;
-      return stRigSource(gltf.scene, gltf.animations, speeds, Number(gltf.scene.userData?.height) || 0, SU.clone);
+      const src = stRigSource(gltf.scene, gltf.animations, speeds, Number(gltf.scene.userData?.height) || 0, SU.clone);
+      await stRigWarm(src.scene);   // nguồn chỉ "sẵn sàng" sau khi shader skinning đã biên dịch: lần hiện đầu không khựng
+      return src;
     } catch (e) {
       console.warn(`Đi dạo: không nạp được mô hình người ${model}, dùng hình khối`, e);
       return null;
@@ -107,7 +122,7 @@ export class StRig {
     const toPhoto = mix.w[ST_PHOTO] === 1;
     if (toPhoto && !this.photo) acts[ST_PHOTO].reset();   // chuyển sang chụp ảnh: giơ máy lại từ đầu
     this.photo = toPhoto;
-    const k = this.fresh ? 1 : 1 - Math.exp(-d / A.fade);
+    const k = this.fresh || !(A.fade > 0) ? 1 : 1 - Math.exp(-d / A.fade);   // fade ≤ 0: chuyển tức thì (tránh 0/0 = NaN khi d = 0)
     this.fresh = false;
     for (let i = 0; i < NC; i++) w[i] += (mix.w[i] - w[i]) * k;
     if (mix.loco) this.rate = mix.rate;   // đang rời nhóm di chuyển: giữ nhịp cũ trong lúc mờ dần
@@ -129,10 +144,16 @@ export class StRig {
   /* Đặt lại như vừa tạo: lần pose kế đặt thẳng trọng số đích */
   reset(): void { this.fresh = true; this.photo = false; this.phase = 0; this.w.fill(0); }
 
-  /* Gỡ khỏi nhóm và bỏ mixer; geometry / texture / vật liệu thuộc nguồn dùng chung nên không dispose */
+  /* Gỡ khỏi nhóm, bỏ mixer, giải phóng skeleton riêng của bản sao (SkeletonUtils.clone tạo skeleton mới cho mỗi SkinnedMesh; renderer cấp boneTexture cho từng cái).
+     geometry / texture / vật liệu thuộc nguồn dùng chung nên không dispose */
   dispose(): void {
     this.mixer.stopAllAction();
     this.mixer.uncacheRoot(this.root);
     this.root.removeFromParent();
+    const seen = new Set<THREE.Skeleton>();
+    this.root.traverse((o) => {
+      const sk = (o as THREE.SkinnedMesh).isSkinnedMesh ? (o as THREE.SkinnedMesh).skeleton : null;
+      if (sk && !seen.has(sk)) { seen.add(sk); sk.dispose(); }
+    });
   }
 }
