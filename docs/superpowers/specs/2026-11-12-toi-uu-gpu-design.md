@@ -45,7 +45,8 @@ Kết luận:
 ## 4. Điều không được xảy ra
 
 - Giật khi chuyển ngày ↔ đêm, khi rồng phun lửa ban ngày, khi bay tới công trình lần đầu: `test:perf -- --strict` vẫn +0 program và render dài nhất ≤ `CONFIG.perf.maxHitchMs` cho mọi thao tác.
-- Tăng draw call ở bất kỳ góc nhìn cũ nào. Ban ngày chênh 0. Ban đêm **giảm** (không còn lượt bóng): bảng chuẩn đêm trong `tests/KET-QUA.md` phải đo lại.
+- Màn hình chờ dài hơn trước D-031.
+- Tăng draw call ở bất kỳ góc nhìn cũ nào. Ban ngày chênh 0. Ban đêm **giảm** khi bộ đèn bật (không còn lượt bóng); `?test` mặc định tắt bộ đèn nên bảng chuẩn giữ nguyên.
 - Đổi chuỗi `rand()`, đổi vị trí / ma trận instance của cây.
 - Thêm đèn, thêm thư viện, thêm lệnh vẽ.
 - Bóng cây hoặc ảnh phản chiếu biến mất, lệch chỗ; lượt chính vẽ nhầm bản thưa.
@@ -54,6 +55,7 @@ Kết luận:
 
 | Khóa | Giá trị | Ý nghĩa |
 |---|---|---|
+| `CONFIG.perf.lightWarmMs` | 3 | ms — ngân sách mỗi khung cho phần đồng bộ của biên dịch nền bộ đèn (ước lượng) |
 | `CONFIG.trees.shade.lodDetail` | 0 | số lần chia khối 20 mặt của mỗi cụm lá ở bản thưa (bản đầy đủ chia 1 lần = 80 tam giác; 0 = 20 tam giác) ⇒ tán thưa 160 tam giác thay vì 640 (ước lượng, chọn theo đo) |
 
 Ba bộ đèn (không phải thông số, là trạng thái):
@@ -70,10 +72,15 @@ Ba bộ đèn (không phải thông số, là trạng thái):
 
 - `stepLights()` chạy mỗi khung, sau mọi chỗ ghi cường độ đèn (`applyNight`, `updateWeather`, `updateEffects`) và trước khi vẽ. Nó chọn bộ theo bảng trên rồi đặt `visible` của `sun`, `moon` và một `Group` chứa 7 `PointLight`. Chỉ ghi khi bộ đổi.
 - three bỏ đèn ẩn khỏi trạng thái đèn, nên số đèn trong shader đổi theo bộ. Mỗi vật liệu giữ sẵn program của từng bộ (`materialProperties.programs`), đổi bộ chỉ là tra bảng, không biên dịch, **với điều kiện cả ba bộ đã được biên dịch trước**.
-- `core/prewarm.ts`: lặp ba bộ đèn; mỗi bộ `compileAsync` hai biến thể (canvas, render target) và vẽ thật một lần với mọi object hiện (canvas + composer) như hiện nay. Lượt "mọi object hiện" không được bật `visible` của đèn (đèn do bộ đang xét quyết định). Kết thúc ở bộ ứng với trạng thái thật.
+- **Biên dịch (sửa sau Task 1, 2026-11-12).** Bản đầu biên dịch cả ba bộ trước khung đầu: số program 174 → 490, màn hình chờ trên Intel Arc 10–16 s → 26–36 s. Không chấp nhận. Thiết kế chốt, theo `device.lightSets`:
+  - `'bg'` (mặc định khi không có `?test`, và chỉ khi trình duyệt có `KHR_parallel_shader_compile`; không có thì `'off'`): trước khung đầu chỉ biên dịch bộ `full` đúng như trước D-031 (không đổi thời gian chờ). Sau khung đầu, `warmLightSets()` chạy mỗi khung với ngân sách thời gian `CONFIG.perf.lightWarmMs`: gọi `renderer.compileAsync(<nhóm object>, camera, scene)` từng nhóm nhỏ cho bộ `day` rồi `night` (hai biến thể canvas / render target); trình duyệt biên dịch song song ngoài luồng chính. Bộ nào xong hết thì `lightState.ready[bộ] = true`.
+  - `stepLights()` chỉ chuyển sang bộ đã `ready`; chưa sẵn sàng thì ở `full` (hình ảnh giống hệt, chỉ chậm như cũ). Tính đúng không phụ thuộc tiến độ biên dịch nền.
+  - `'sync'` (`?test&lightsets=sync`, dùng cho `test:perf`): biên dịch + vẽ thật cả ba bộ trước khung đầu (bản Task 1), sẵn sàng ngay.
+  - `'off'` (mặc định khi `?test`): luôn `full` ⇒ mọi test và bảng draw call cũ giữ nguyên. `?test&lightsets=bg` để thử đường nền.
+  - Biến thể vẽ bóng (`MeshDepthMaterial`, ~5 program nhỏ) của bộ `day` ở chế độ `'bg'` biên dịch lười ở khung đầu chuyển sang `day` (three vẽ shadow map trước khi cập nhật trạng thái đèn của khung).
 - Bộ `night`: `sun` ẩn nên three không vẽ shadow map và shader không lấy mẫu bóng. `stepShadows()` giữ nguyên nghĩa (nút Bóng đổ, bậc chất lượng).
 - Đây là ngoại lệ có kiểm soát của quy tắc D-018 "không đổi program key khi đang chạy": chỉ ba bộ cố định, đều đã biên dịch trước. Mọi cách đổi số đèn khác vẫn cấm.
-- Móc test: `__app.lights = { set(): 'day' | 'night' | 'full' }`.
+- Móc test: `__app.lights` = `lightState` (`set`, `ready`, `mode`).
 
 ### 6.2 Tán cây bản thưa cho lượt bóng và phản chiếu
 
@@ -104,11 +111,11 @@ Ba bộ đèn (không phải thông số, là trạng thái):
 | `npm run test:gpu` | ngày ≤ 14 ms, đêm ≤ 15 ms trên máy đã đo (ghi số vào `tests/KET-QUA.md`) |
 | `npm run test:perf -- --strict` | đạt (+0 program mọi thao tác, gồm đêm lần đầu); thêm kiểm bộ đèn: ngày `day`, đêm `night`; ghi thời gian khung đầu và số program |
 | `npm run test:trees` | đạt |
-| `npm run test:drawcalls` | ngày khớp bảng (chênh 0); đêm ≤ bảng, cập nhật bảng đêm |
+| `npm run test:drawcalls` | khớp bảng (chênh 0; `?test` tắt bộ đèn) |
 | `npm run test:weather`, `npm run test:citynight` | đạt (đèn / khí quyển / ảnh đêm) |
 
 ## 9. Câu hỏi còn mở (báo người dùng)
 
 1. Cây ở lượt chính còn ≈ 3,4 ms: có làm LOD theo khoảng cách (tách cây theo vùng, có thể thêm lệnh vẽ ở vài góc) không.
 2. Màn hình mật độ cao: bậc 0 cho pixelRatio tới 2 (2880×1800 ⇒ 5,2 triệu điểm ảnh, MSAA); có hạ trần bậc 0 xuống 1,5 không.
-3. Biên dịch trước ba bộ đèn làm màn hình chờ dài hơn (đo ở mục 8); nếu quá lâu trên máy yếu thì cân nhắc bỏ bộ `full` (đổi lại: giật một lần khi chuyển ngày ↔ đêm).
+3. Trình duyệt không có `KHR_parallel_shader_compile` không được lợi từ bộ đèn (ở `full` như cũ).
