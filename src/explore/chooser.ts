@@ -6,11 +6,11 @@ import { getLang, onChange } from '../i18n';
 import { exMulti } from './multi';
 import { exShowLobby } from './multi/lobby';
 
-export type ExChoice = 'glider' | 'guided';
+export type ExChoice = 'glider' | 'guided' | 'walk';
 
 const el = () => document.getElementById('chooser');
 
-/* Dù lượn cần bàn phím: thiết bị cảm ứng (không có hover) thì khóa thẻ và hiện nhãn "Chỉ dùng trên máy tính" */
+/* Dù lượn cần bàn phím: thiết bị cảm ứng (không có hover) thì khóa thẻ và hiện nhãn "Chỉ dùng trên máy tính". Thẻ Đi dạo không khóa (có điều khiển cảm ứng) */
 function lockGliderOnTouch(root: HTMLElement): void {
   if (!window.matchMedia('(hover: none)').matches) return;
   const card = root.querySelector<HTMLButtonElement>('[data-pick="glider"]');
@@ -40,7 +40,7 @@ function setUnderInert(root: HTMLElement, on: boolean): void {
   } else { for (const c of inerted) c.inert = false; inerted.length = 0; }
 }
 
-export function exShowChooser(onPick: (choice: ExChoice) => void, onWatch: () => void = () => {}): void {
+export function exShowChooser(onPick: (choice: ExChoice) => void, onWatch: (choice: ExChoice) => void = () => {}): void {
   const root = el();
   if (!root) return;
   lockGliderOnTouch(root);
@@ -53,10 +53,10 @@ export function exShowChooser(onPick: (choice: ExChoice) => void, onWatch: () =>
     b.addEventListener('click', () => {
       if (root.hidden) return;
       const choice = b.dataset.pick as ExChoice;
-      /* Dù lượn có máy chủ: sang bước chọn slot + nhập tên (mở kết nối ở đây, không sớm hơn); không có máy chủ: bay một mình ngay như trước */
-      if (choice === 'glider' && exMulti.begin(() => {})) {
-        const solo = () => { exHideChooser(); onPick('glider'); };
-        exShowLobby(exMulti.session!, { onFly: solo, onWatch: () => { exHideChooser(); onWatch(); }, onSolo: solo, onBack: () => b.focus({ preventScroll: true }) });
+      /* Dù lượn / Đi dạo có máy chủ: sang bước chọn slot + nhập tên (mở kết nối ở đây, không sớm hơn); không có máy chủ: bay / đi một mình ngay như trước */
+      if ((choice === 'glider' || choice === 'walk') && exMulti.begin(() => {}, choice === 'walk' ? 'walk' : 'fly')) {
+        const solo = () => { exHideChooser(); onPick(choice); };
+        exShowLobby(exMulti.session!, { onFly: solo, onWatch: () => { exHideChooser(); onWatch(choice); }, onSolo: solo, onBack: () => b.focus({ preventScroll: true }) });
         return;
       }
       exHideChooser(); onPick(choice);

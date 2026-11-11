@@ -81,6 +81,7 @@ const stPoseSpeed = (pose: number) => (pose === ST_POSE_RUN ? C.run : pose === S
 
 export const stAvatars = {
   get mesh(): THREE.InstancedMesh | null { return mesh; },
+  get self(): number { return me; },   // slot nhân vật của mình, -1 nếu không có (nhãn tên bỏ qua slot này)
 
   /* Dựng lần đầu gọi (lười, ngoài thứ tự dựng cảnh), các lần sau trả lại mesh cũ. Bên gọi thêm vào scene */
   build(): THREE.InstancedMesh {

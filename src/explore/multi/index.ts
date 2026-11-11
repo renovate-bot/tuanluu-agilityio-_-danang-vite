@@ -1,7 +1,8 @@
-/* ===== Dù lượn nhiều người: điều phối phía khách =====
-   Nối MultiSession (kết nối, phiên) với exRemotes (dù người khác), nhãn tên và danh sách người bay.
+/* ===== Dù lượn và đi dạo nhiều người: điều phối phía khách =====
+   Nối MultiSession (kết nối, phiên) với exRemotes (dù người khác), stAvatars (người đi dạo khác), nhãn tên và danh sách người chơi.
+   Người bay thấy người đi dạo và ngược lại; mỗi phiên chỉ giữ một loại chỗ (session.kind).
    Chỉ mở kết nối khi có người gọi begin(); ?test mà không có multi= thì url() rỗng nên không bao giờ mở WebSocket. */
-import { camera } from '../../core/renderer';
+import { scene, camera } from '../../core/renderer';
 import { CONFIG } from '../../config';
 import { t, onChange as onLang } from '../../i18n';
 import { exConnect } from './client';
@@ -9,7 +10,10 @@ import { MultiSession } from './session';
 import { exRemotes } from './remote';
 import { exLabelsUpdate, exLabelsClear } from './labels';
 import { ExIdle } from './idle';
+import { stAvatars } from '../stroll/avatars';
+import type { Kind } from './protocol';
 import type { GliderState } from '../flight';
+import type { StState } from '../stroll/motion';
 
 const M = CONFIG.explore.multi;
 let session: MultiSession | null = null;
@@ -62,24 +66,35 @@ function idleStop(): void {
   idleShow('');
 }
 
-/* Danh sách người bay ở góc màn hình: đầu "Đang bay n/5", mỗi người một dòng có chấm màu theo slot; dùng textContent */
+/* Danh sách người chơi ở góc màn hình: đầu "Đi dạo n/5 · Bay n/5", rồi nhóm người đi dạo (chấm vuông) và nhóm người bay (chấm tròn),
+   mỗi người một dòng có chấm màu theo slot; dòng của mình đậm. Dùng textContent */
 function renderRoster(): void {
   const box = document.getElementById('exMpRoster');
   if (!box) return;
-  const flyers = session ? session.flyers : [];
-  const head = t('exMpFlying', { n: flyers.length });
-  const key = flyers.map(f => f.slot + ':' + f.name).join('|') + '#' + (session ? session.mySlot : -1) + '#' + head;
+  const flyers = session ? session.flyers : [], walkers = session ? session.walkers : [];
+  const head = t('stRoster', { w: walkers.length, f: flyers.length });
+  const kind = session ? session.kind : 'fly', mine = session ? session.mySlot : -1;
+  const key = walkers.map(f => f.slot + ':' + f.name).join('|') + '#' + flyers.map(f => f.slot + ':' + f.name).join('|') + '#' + kind + mine + '#' + head;
   if (key === rosterKey) return;
   rosterKey = key;
   box.hidden = !session || session.phase === 'solo';
   box.textContent = '';
   const h = document.createElement('div'); h.className = 'ex-mp-head'; h.textContent = head; box.appendChild(h);
-  for (const f of flyers) {
-    const row = document.createElement('div'); row.className = 'ex-mp-row' + (session && f.slot === session.mySlot ? ' me' : '');
-    const dot = document.createElement('i'); dot.style.background = M.colors[f.slot % M.colors.length];
-    const nm = document.createElement('span'); nm.textContent = f.name;
-    row.append(dot, nm); box.appendChild(row);
-  }
+  const group = (list: typeof flyers, k: 'fly' | 'walk') => {
+    for (const f of list) {
+      const row = document.createElement('div'); row.className = 'ex-mp-row' + (k === 'walk' ? ' walk' : '') + (k === kind && f.slot === mine ? ' me' : '');
+      const dot = document.createElement('i'); dot.style.background = M.colors[f.slot % M.colors.length];
+      const nm = document.createElement('span'); nm.textContent = f.name;
+      row.append(dot, nm); box.appendChild(row);
+    }
+  };
+  group(walkers, 'walk'); group(flyers, 'fly');
+}
+
+/* Người đi dạo hiện cho cả người bay: dựng nhân vật (lười, 1 lệnh vẽ khi có người) lần đầu phòng có người đi dạo */
+function stEnsureAvatars(): void {
+  const mesh = stAvatars.build();
+  if (!mesh.parent) scene.add(mesh);
 }
 
 export const exMulti = {
@@ -92,15 +107,17 @@ export const exMulti = {
   get session(): MultiSession | null { return session; },
   onChange: (() => {}) as () => void,   // móc cho giao diện sảnh (Task 6) và test
 
-  /* Mở phiên; onReady gọi một lần khi có thông tin đầu tiên (sảnh hoặc ngoại tuyến). Trả false nếu không có địa chỉ */
-  begin(onReady: () => void): boolean {
+  /* Mở phiên loại kind ('fly' giành chỗ bay, 'walk' giành chỗ đi dạo); onReady gọi một lần khi có thông tin đầu tiên (sảnh hoặc ngoại tuyến). Trả false nếu không có địa chỉ */
+  begin(onReady: () => void, kind: Kind = 'fly'): boolean {
     const url = exMulti.url();
     if (!url || session) return false;
-    const s = session = new MultiSession(() => exConnect(url, M.connectTimeoutMs));
+    const s = session = new MultiSession(() => exConnect(url, M.connectTimeoutMs), undefined, kind);
     let ready = false;
     s.onPos = f => exRemotes.onPos(f, performance.now());
+    s.onWalkPos = w => stAvatars.onPos(w, performance.now());
     s.onChange = () => {
-      exRemotes.sync(s.flyers, s.mySlot);
+      exRemotes.sync(s.flyers, s.kind === 'fly' ? s.mySlot : -1);   // slot đi dạo và slot bay là hai nhóm: số slot của mình chỉ loại trừ trong nhóm của mình
+      if (s.walkers.length || stAvatars.mesh) { stEnsureAvatars(); stAvatars.sync(s.walkers, s.kind === 'walk' ? s.mySlot : -1); }
       if (s.phase === 'solo') exLabelsClear();
       renderRoster();
       if (s.phase === 'flying') idleStart(); else idleStop();
@@ -116,23 +133,32 @@ export const exMulti = {
     if (!session) return;
     session.dispose(); session = null;
     exMulti.onChange = () => {};
-    idleStop(); exRemotes.clear(); exLabelsClear();
+    idleStop(); exRemotes.clear(); stAvatars.clear(); exLabelsClear();
     rosterKey = ''; renderRoster();
   },
 
-  /* Mỗi khung khi đang bay: dù người khác, nhãn, gửi vị trí sendHz lần/s */
+  /* Mỗi khung (bay, đi dạo hoặc xem): dù người khác, người đi dạo khác, nhãn; đang bay thì gửi vị trí sendHz lần/s (state = null: không gửi) */
   update(_dt: number, nowMs: number, state: GliderState | null): void {
     if (!session) return;
     exRemotes.update(nowMs);
-    exLabelsUpdate(camera, exRemotes, nowMs);
-    if (state && session.phase === 'flying' && nowMs - sentAt >= 1000 / M.sendHz) {
+    if (stAvatars.mesh) stAvatars.update(nowMs);   // người đi dạo khác, kể cả khi mình bay dù
+    exLabelsUpdate(camera, exRemotes, nowMs, stAvatars);
+    if (state && session.kind === 'fly' && session.phase === 'flying' && nowMs - sentAt >= 1000 / M.sendHz) {
       sentAt = nowMs;
       const p = state.pos, r = (v: number) => Math.round(v * 10) / 10, a = (v: number) => Math.round(v * 1000) / 1000;
       session.sendPos(r(p.x), r(p.y), r(p.z), a(state.yaw), a(state.bank), Math.round(nowMs));
     }
   },
 
-  /* Người bay vừa bấm phím điều khiển: đếm lại thời gian rời máy */
+  /* Mỗi khung khi đi dạo có chỗ: gửi vị trí + dáng sendHz lần/s (s = null: không gửi) */
+  updateWalk(nowMs: number, s: StState | null): void {
+    if (!session || !s || session.kind !== 'walk' || session.phase !== 'flying' || nowMs - sentAt < 1000 / M.sendHz) return;
+    sentAt = nowMs;
+    const r = (v: number) => Math.round(v * 100) / 100, a = (v: number) => Math.round(v * 1000) / 1000;
+    session.sendWalk(r(s.x), r(s.y), r(s.z), a(s.yaw), s.pose, Math.round(nowMs));
+  },
+
+  /* Người chơi vừa bấm phím điều khiển: đếm lại thời gian rời máy */
   activity(): void {
     if (!idle) return;
     idle.activity(performance.now());
@@ -141,7 +167,12 @@ export const exMulti = {
 
   /* Trạng thái dù đang xem (khi hết chỗ, Task 6); null nếu không xem ai */
   watchState(): GliderState | null {
-    return session && session.phase === 'watching' ? exRemotes.slotState(session.watched) : null;
+    return session && session.kind === 'fly' && session.phase === 'watching' ? exRemotes.slotState(session.watched) : null;
+  },
+
+  /* Trạng thái người đi dạo đang xem (hết chỗ đi dạo); null nếu không xem ai */
+  watchWalker(): { x: number; y: number; z: number; yaw: number; pose: number } | null {
+    return session && session.kind === 'walk' && session.phase === 'watching' && session.watched >= 0 ? stAvatars.slotState(session.watched) : null;
   }
 };
 

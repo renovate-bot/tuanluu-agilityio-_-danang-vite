@@ -115,11 +115,11 @@ export const explore = {
 
 export function setupExplore(ctrl: SwingController): void {
   exNightBind(ctrl);
-  setupStroll(ctrl);
+  setupStroll(ctrl, () => explore.exit());
   window.addEventListener('keydown', (e) => {
-    if (!inGlider() && !stroll.active()) return;
-    if (e.key === 'Escape') { explore.exit(); return; }   // Esc thoát kể cả khi đang focus ô chọn (bay dù và đi dạo)
-    if (watching || stroll.active()) return;   // xem: không lái; đi dạo: phím do stroll/index.ts ghi
+    if (!inGlider() && !stroll.inMode()) return;
+    if (e.key === 'Escape') { explore.exit(); return; }   // Esc thoát kể cả khi đang focus ô chọn (bay dù, đi dạo và hai chế độ xem)
+    if (watching || stroll.inMode()) return;   // xem: không lái; đi dạo: phím do stroll/index.ts ghi
     if (e.ctrlKey || e.metaKey || e.altKey) return;   // phím tắt trình duyệt (Cmd+S...) không lái dù, tránh kẹt phím
     const t = e.target as HTMLElement | null;
     if (t && /^(SELECT|INPUT|TEXTAREA)$/.test(t.tagName)) return;   // phím trong ô chọn/nhập không lái dù
@@ -140,6 +140,7 @@ export function setupExplore(ctrl: SwingController): void {
   if (q.has('test')) document.body.classList.add('ex-test');   // giữ HUD khi bay để test đo draw call
   document.getElementById('btnExExit')?.addEventListener('click', () => explore.exit());
   if (q.get('explore') === 'glider') { explore.start(); return; }
-  if (q.get('explore') === 'stroll') { stroll.start(); return; }   // đi dạo một mình (màn chọn mở thẻ Đi dạo ở Task 7)
-  if (!q.has('test') || q.has('chooser')) exShowChooser((choice) => { if (choice === 'glider') explore.start(); }, () => explore.startWatching());   // 'guided': màn chọn tự ẩn, giao diện cũ
+  if (q.get('explore') === 'stroll') { stroll.start(); return; }   // đi dạo một mình, không qua slot
+  if (!q.has('test') || q.has('chooser')) exShowChooser((choice) => { if (choice === 'glider') explore.start(); else if (choice === 'walk') stroll.start(); },
+    (choice) => { if (choice === 'walk') stroll.startWatching(); else explore.startWatching(); });   // 'guided': màn chọn tự ẩn, giao diện cũ
 }

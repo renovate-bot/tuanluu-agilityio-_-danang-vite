@@ -10,6 +10,9 @@
 //   Mục 7: cầu quay: sơ tán khỏi nhịp, không vào lại khi chưa đóng, đóng thì vào được.
 //   Mục 6: phím W theo hướng camera, blur dừng (Review Focus 3), gõ trong ô nhập không điều khiển, Space một lần nhảy một lần, Esc thoát.
 //   Trang B `?test`: không có `stroll-people` trong cảnh.
+//   Mục 9 (Task 7): sảnh đi dạo qua màn chọn với máy chủ giả (routeWebSocket): chữ đi dạo, đổi ngôn ngữ ar / en đổi ngay, Quay lại → Dù lượn về chữ dù lượn,
+//          máy chủ cũ (lobby không walkers) → ngoại tuyến, Đi một mình.
+//   Mục 10 (Task 7): cả 9 file locale có đủ khóa st* và exWalk / exWalkDesc.
 //
 //   npm run build && npm run test:stroll
 //
@@ -20,6 +23,7 @@
 //   cầu tàu, lan can, hàng khóa và tượng cá chép Cầu Tình Yêu). Không dùng: cây, cột đèn, ghế, xe, người, dây văng, bảng quảng cáo (spec §4: đi xuyên được).
 //   Cao độ tia tính từ cao độ đứng tại chỗ (không từ chân khi đang nhảy): spec chỉ chặn trong tầm người tính từ mặt đứng.
 import { fileURLToPath } from 'node:url';
+import { readFileSync } from 'node:fs';
 import { serveDir, launch, openApp, frames } from './lib.mjs';
 
 const problems = [];
@@ -421,6 +425,63 @@ try {
     check(`8 ?test không explore: không có stroll-people (${r.obj}), mode ${r.mode}, body.stroll ${r.st}, active ${r.act}`, !r.obj && r.mode === 'orbit' && !r.st && r.act === false);
     check('console sạch (trang ?test)', N.errors.length === 0);
     await N.page.close();
+  }
+
+  // Mục 9 (Task 7) — sảnh đi dạo đổi ngôn ngữ; máy chủ giả bằng routeWebSocket (không cần wrangler): gửi lobby có walkers, rồi bản máy chủ cũ (không walkers)
+  {
+    const L = await browser.newPage({ viewport: { width: 480, height: 270 } });
+    const errs = []; L.on('pageerror', (e) => errs.push(String(e)));
+    L.on('console', (m) => { if (m.type() === 'error' && !/fonts\.(googleapis|gstatic)|ERR_FAILED|net::/.test(m.text())) errs.push(m.text()); });
+    await L.route(/fonts\.(googleapis|gstatic)\.com/, (r) => r.abort());
+    let oldServer = false, opened = 0;
+    await L.routeWebSocket(/127\.0\.0\.1:1\/sky/, (ws) => { opened++; ws.send(JSON.stringify(oldServer ? { t: 'lobby', flyers: [{ slot: 0, name: 'Bay' }] } : { t: 'lobby', flyers: [{ slot: 0, name: 'Bay' }], walkers: [] })); });
+    await L.goto(srv.url + '?test&chooser&multi=' + encodeURIComponent('ws://127.0.0.1:1/sky'), { waitUntil: 'load', timeout: 180000 });
+    await L.waitForFunction(() => window.__app && document.getElementById('loading')?.classList.contains('done'), null, { timeout: 180000 });
+    await L.waitForSelector('#chooser', { state: 'visible', timeout: 240000 });
+    const loc = (c) => JSON.parse(readFileSync(new URL(`../src/i18n/locales/${c}.json`, import.meta.url), 'utf8'));
+    const lobbyTxt = () => L.evaluate(() => ({ sky: document.getElementById('exMpSky').innerText, seats: document.getElementById('exMpSeats').innerText, go: document.getElementById('exMpFly').innerText, solo: document.getElementById('exMpSolo').innerText, dir: document.documentElement.dir, list: document.getElementById('exMpList').children.length, kind: window.__app.multi.session && window.__app.multi.session.kind }));
+    await L.click('#chooser [data-pick="walk"]');
+    await L.waitForFunction(() => /Còn 5 trên 5 chỗ đi dạo/.test(document.getElementById('exMpSeats')?.innerText || ''), null, { timeout: 30000 }).catch(() => {});
+    const v0 = await lobbyTxt(), V = loc('vi');
+    check(`9 bấm thẻ Đi dạo: sảnh "${v0.sky}", "${v0.seats}", nút "${v0.go}", không liệt kê người bay (${v0.list}), phiên ${v0.kind}`, v0.kind === 'walk' && v0.seats === 'Còn 5 trên 5 chỗ đi dạo' && v0.sky === V.stSky && v0.go === V.stGo && v0.solo === V.stSolo && v0.list === 0);
+    for (const c of ['ar', 'en']) {
+      await L.selectOption('#exLang', c);
+      const r = await lobbyTxt(), T = loc(c);
+      check(`9 đổi sang ${c}: "${r.seats}", nút "${r.go}", tiêu đề "${r.sky}", dir ${r.dir}`, r.seats === T.stSeats.replace('{n}', '5') && r.go === T.stGo && r.sky === T.stSky && r.dir === (c === 'ar' ? 'rtl' : 'ltr'));
+    }
+    await L.selectOption('#exLang', 'vi');
+    // Quay lại rồi chọn Dù lượn: chữ sảnh trở về của dù lượn
+    await L.click('#exMpBack');
+    await L.click('#chooser [data-pick="glider"]');
+    await L.waitForFunction(() => /Còn 4 trên 5 chỗ$/.test(document.getElementById('exMpSeats')?.innerText || ''), null, { timeout: 30000 }).catch(() => {});
+    const g = await lobbyTxt();
+    check(`9 Quay lại rồi chọn Dù lượn: "${g.sky}", "${g.seats}", nút "${g.go}"`, g.kind === 'fly' && g.sky === V.exMpSky && g.go === V.exMpFly && g.seats === V.exMpSeats.replace('{n}', '4'));
+    // Máy chủ cũ (lobby không có walkers): đi dạo coi là ngoại tuyến, đóng kết nối, nút Đi một mình
+    await L.click('#exMpBack');
+    oldServer = true;
+    await L.click('#chooser [data-pick="walk"]');
+    await L.waitForFunction(() => !document.getElementById('exMpOffline').hidden, null, { timeout: 30000 }).catch(() => {});
+    const o = await L.evaluate(() => ({ off: document.getElementById('exMpOffline').innerText, solo: document.getElementById('exMpSolo').innerText, phase: window.__app.multi.session && window.__app.multi.session.phase }));
+    check(`9 máy chủ cũ: "${o.off}", nút "${o.solo}", phase ${o.phase}, ${opened} kết nối giả`, o.off === V.stOffline && o.solo === V.stSolo && o.phase === 'solo' && opened === 3);
+    await L.click('#exMpSolo');
+    await L.waitForFunction(() => window.__app.stroll.stroll.active(), null, { timeout: 60000 }).catch(() => {});
+    const so = await L.evaluate(() => ({ act: window.__app.stroll.stroll.active(), hidden: document.getElementById('chooser').hidden, session: window.__app.multi.session }));
+    check('9 bấm Đi một mình: đi dạo một mình, hộp đóng, không còn phiên', so.act && so.hidden && so.session === null);
+    check('console sạch (sảnh đi dạo)', errs.length === 0);
+    if (errs.length) console.log(errs.join('\n'));
+    await L.close();
+  }
+
+  // Mục 10 (Task 7) — cả 9 file locale có đủ mọi khóa st* và exWalkDesc (không rỗng)
+  {
+    const codes = ['vi', 'en', 'ko', 'ja', 'zh', 'th', 'ar', 'hi', 'ru'];
+    const all = Object.fromEntries(codes.map((c) => [c, JSON.parse(readFileSync(new URL(`../src/i18n/locales/${c}.json`, import.meta.url), 'utf8'))]));
+    const need = ['stSky', 'stSeats', 'stFull', 'stGo', 'stSolo', 'stOffline', 'stRoster', 'stWatch', 'stInvite', 'stInviteGo', 'stLate', 'stReleased', 'stLost', 'stJump', 'stPhoto', 'stPhotoSaved', 'stPhotoFail'];
+    const keys = [...new Set([...need, ...codes.flatMap((c) => Object.keys(all[c]).filter((k) => /^st[A-Z]/.test(k))), 'exWalk', 'exWalkDesc'])];
+    const miss = [];
+    for (const c of codes) for (const k of keys) if (typeof all[c][k] !== 'string' || !all[c][k].trim()) miss.push(`${c}.${k}`);
+    const params = codes.filter((c) => !all[c].stSeats.includes('{n}') || !all[c].stRoster.includes('{w}') || !all[c].stRoster.includes('{f}') || !all[c].stWatch.includes('{name}'));
+    check(`10 9 locale có đủ ${keys.length} khóa st* + exWalk/exWalkDesc (thiếu: ${miss.join(',') || '-'}), tham số đủ (lỗi: ${params.join(',') || '-'}), exWalk vi "${all.vi.exWalk}"`, miss.length === 0 && params.length === 0 && all.vi.exWalk === 'Đi dạo' && all.ar._dir === 'rtl');
   }
 } catch (e) {
   problems.push('ngoại lệ: ' + e); console.log(e);

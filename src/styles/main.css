@@ -294,6 +294,7 @@ body.explore #exMpRoster:not([hidden]){display:flex;flex-direction:column;gap:3p
 .ex-mp-row{display:flex;align-items:center;gap:6px;}
 .ex-mp-row.me{font-weight:600;}
 .ex-mp-row i{width:9px;height:9px;border-radius:50%;flex:none;}
+.ex-mp-row.walk i{border-radius:2px;}   /* người đi dạo: chấm vuông, người bay: chấm tròn */
 body.explore #exMpNotice:not([hidden]){display:block;position:fixed;left:50%;transform:translateX(-50%);top:calc(100px + env(safe-area-inset-top,0px));padding:8px 14px;font-size:12px;color:var(--text);z-index:5;}
 /* Chế độ xem (hết chỗ hoặc vừa nhường chỗ): không có dù của mình nên ẩn dòng hướng dẫn lái và đồng hồ; hiện "Đang xem" và lời mời */
 body.ex-watching #exHint,body.ex-watching #exSpeed{display:none;}
