@@ -205,3 +205,5 @@ Quy tắc:
 ## Ghi chú để báo
 
 _(người làm điền: nhân vật đã thay, mức nhường dung lượng, vùng không tới được khi bỏ nhảy, ảnh đêm, test chưa chạy…)_
+
+- Task 1: không thay nhân vật nào (5 nhân vật spec §4 đều đạt khi xem ảnh). Nhường dung lượng **mức 1**: ngón tay giữ tư thế trung bình của từng đoạn (không cử động ngón); mức 0 cho tổng 6,39 MB > 6 MB. Kết quả 5,79 MB, lớn nhất `p3` 1,42 MB. `Male_Adult_17` (p4) không có mảnh alpha nên chỉ 2 lưới. `idle` dài 5,6 s (dời điểm đầu, khép vòng 0,3 s; lệch vòng gốc nam 6,1°, nữ 4,7°). `photo` tua nhanh 1,67× (nam) / 1,92× (nữ) để còn 0,8 s; động tác giơ máy là tay không (Rocketbox không có máy ảnh).

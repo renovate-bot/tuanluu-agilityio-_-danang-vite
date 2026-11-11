@@ -7,3 +7,5 @@ tests/screens/
 docs/superpowers/specs/tham-chieu/
 .superpowers/
 .wrangler/
+# Nguồn Rocketbox (FBX, TGA) và ảnh kiểm tra của scripts/people/convert.py
+scripts/people/.cache/
