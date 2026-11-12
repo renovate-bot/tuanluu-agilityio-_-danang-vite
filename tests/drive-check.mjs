@@ -326,7 +326,7 @@ try {
         dr.hideTraffic();
         const out = {};
         D.placeAt(0, zc, 0);
-        const s = D.state;
+        let s = D.state;
         const keep = { state: ctrl.state, t: ctrl.t, speed: ctrl.speed };
         ctrl.state = 'STOP_TRAFFIC'; ctrl.t = 0; ctrl.speed = 30;   // ép trạng thái chặn xe: cổng nhịp quay đóng, tốc độ quay 30×
         const inp = { gas: 0, brake: 0, steer: 0, hand: false };
@@ -341,7 +341,7 @@ try {
         out.outside = dr.pts(s, 9).every(([x]) => x < rect[0] || x > rect[1]);
         out.fits = dr.pts(s, 9).every(([x, z]) => !Number.isNaN(dr.ground(x, z, s.y)));
         // lái vào barie: đặt cách barie 30 m phía Đông, đi Tây 100 km/h; cổng vẫn đóng
-        D.placeAt(rect[1] + 30, zc, Math.PI); s.v = 27.78;
+        D.placeAt(rect[1] + 30, zc, Math.PI); s = D.state; s.v = 27.78;   // placeAt tạo trạng thái mới: lấy lại tham chiếu
         let minX = Infinity, bad = 0;
         const inp2 = { gas: 1, brake: 0, steer: 0, hand: false };
         for (let i = 0; i < 60; i++) {
