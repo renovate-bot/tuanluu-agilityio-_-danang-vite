@@ -32,6 +32,9 @@ import { HanTunnel } from './bridges/han-tunnel';
 import { SunWheel, swRide } from './bridges/sun-wheel';
 import { buildRiverfront, updateRiverfront } from './environment/riverfront';
 import { buildDragonPeople, updateDragonPeople, peopleTest } from './environment/pedestrians';
+import { crowdLoad, crowdGet } from './common/people/crowdData';
+import { crowdUsable } from './common/people/crowd';
+import { stBlocky } from './explore/stroll/blocky';
 import { buildWeather, updateWeather } from './environment/weather';
 import { updateCamera, hrDrive } from './views/camera';
 import { cam, keys } from './views/state';
@@ -59,6 +62,10 @@ void narration.init();
 window.addEventListener('resize', scheduleResize); window.addEventListener('orientationchange', scheduleResize);
 
 /* ============================ Khởi tạo ============================ */
+// đám đông người thật (D-032): chờ tải xong (tối đa CONFIG.people.crowd.loadTimeoutMs; lỗi → null, hình khối) để mọi lưới / vật liệu có trước prewarm; không đổi thứ tự dựng.
+// Renderer đã tạo lúc import core/renderer: thiếu WEBGL_multi_draw thì không tải, không chờ (r165 sẽ vẽ mỗi người một lệnh ⇒ hình khối)
+if (renderer.extensions.has('WEBGL_multi_draw')) await crowdLoad();
+else console.info('[people] trình duyệt không có WEBGL_multi_draw: không tải đám đông người thật, dùng hình khối');
 buildLights();
 buildSky();
 buildWater();
@@ -165,5 +172,9 @@ function animate() {
   }
   if (firstFrame) { firstFrame = false; document.getElementById('loading').classList.add('done'); }
 }
+/* Người đi bộ đã là người thật (D-032) ⇒ không lưới nào trong cảnh dùng vật liệu hình khối peopleWalk, nhưng hình tạm của Đi dạo (blocky.ts) vẫn dùng.
+   Thêm sẵn lưới đó vào cảnh (visible = false: không lệnh vẽ ở khung thường) để prewarm và hâm nền bộ đèn (D-031) biên dịch program của nó như mọi vật liệu khác;
+   vào Đi dạo thì avatars.ts chuyển nó sang nhóm stroll-people. Không dùng rand / rng */
+if (crowdUsable(crowdGet(), renderer.extensions.has('WEBGL_multi_draw'))) scene.add(stBlocky.build());
 await prewarm();   // biên dịch sẵn shader + upload texture trong lúc còn màn hình chờ (D-018)
 animate();

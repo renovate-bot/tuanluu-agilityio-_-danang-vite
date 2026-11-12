@@ -805,6 +805,19 @@ const peopleBase = {
   pants: [0x26324a, 0x1d1d1f, 0x6b6f76, 0xc9b999, 0x3d5a80, 0x4a3b32],   // màu quần trầm: xanh than, đen, xám, kaki, xanh jean, nâu (ước lượng)
   palette: { skin: 0xe2b48c, hair: 0x1c1612, shoe: 0x2a2a2e, hat: 0xe9dcae, pack: 0x7a2f2a },   // màu cố định theo đỉnh: da, tóc, giày, nón lá, ba lô (ước lượng theo bản thử)
   roughness: 0.85,                                  // độ nhám vật liệu người, hệ số 0..1 (ước lượng theo bản thử)
+  /* Đám đông người thật (D-032, spec 2026-11-12-dam-dong-nguoi-that-design.md §4): dữ liệu sinh bằng npm run gen:crowd (scripts/people/crowd.py),
+     đọc bằng src/common/people/crowdData.ts; tải lỗi / quá hạn / ?crowd=off thì dùng hình khối như cũ. */
+  crowd: {
+    bin: 'people/crowd.bin',                        // đường dẫn tương đối BASE_URL tới tệp lưới + chuyển động (định dạng ở đầu crowdData.ts)
+    atlas: 'people/crowd.jpg',                      // đường dẫn tương đối BASE_URL tới atlas màu (ô 384² mỗi nhân vật)
+    loadTimeoutMs: 8000,                            // ms — chờ tải hai tệp tối đa, quá thì lùi về hình khối (ước lượng)
+    heightScale: 0.93,                              // hệ số chiều cao nhân vật Rocketbox cho vóc người Việt, không đơn vị (ước lượng)
+    rateMin: 0.6,                                   // nhịp phát chuyển động tối thiểu so với tự nhiên, không đơn vị (ước lượng; ngoài khoảng thì chân trượt rõ)
+    rateMax: 1.6,                                   // nhịp phát chuyển động tối đa so với tự nhiên, không đơn vị (ước lượng)
+    rateMaxChild: 2.1,                              // như rateMax, riêng nhân vật trẻ em: bé đi theo người lớn phải bước nhanh hơn, kẹp 1,6 thì chân trượt tới 23 % (ước lượng)
+    tint: [0.88, 1.0] as [number, number],          // hệ số sáng màu theo người [min, max], không đơn vị: hai người cùng nhân vật không giống hệt (ước lượng)
+    cullPad: 0.6                                    // m — nới bán kính khối cầu bao từng người cho tay chân khi chuyển động (spec §5)
+  },
   dragon: {
     n: 70,                                          // số người trên hai lề Cầu Rồng (ước lượng, spec §7)
     seed: 4107,                                     // hạt rng riêng cho người Cầu Rồng (không gọi rand())

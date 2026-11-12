@@ -6,12 +6,17 @@ import { ppBuildGeometry } from './people/shapes';
 import { ppMaterial } from './people/material';
 import { ppAmp, ppCadence, type PersonKind } from './people/gait';
 import type { PersonInfo } from './people/kinds';
+import { crowdGet } from './people/crowdData';
+import { crowdUsable, crowdBuild, crowdParams, type CrowdInfo } from './people/crowd';
+import { renderer } from '../core/renderer';
 
 /* =====================================================================
    NGƯỜI ĐI BỘ — hệ dùng chung cho Trần Thị Lý, Cầu sông Hàn, Cầu Rồng (spec G5–G10).
    Mỗi hệ: 1 InstancedMesh, hình gộp ppBuildGeometry(), vật liệu ppMaterial() (tay chân vung trong vertex shader theo shared.uTime).
    CPU chỉ dời vị trí, quay hướng; dáng đi / chạy / đứng theo thuộc tính instance aVar (pha, biên độ, cờ, nhịp) và aPants (màu quần).
    Mỗi người: { x, z, lo, hi, dir, speed, profile(c) → cao độ chân, axis: 'x' | 'z' } + kiểu người (ppApplyKinds).
+   Người thật (D-032, real = true): khi đã tải được dữ liệu đám đông (crowdLoad trong main.ts) và có WEBGL_multi_draw, mỗi hệ là một
+   THREE.BatchedMesh (common/people/crowd.ts, 1 lệnh vẽ); ẩn người bằng setVisibleAt. Không thì đường hình khối trên giữ nguyên (đường lùi).
    ===================================================================== */
 export interface Walker {
   x: number; z: number; lo: number; hi: number; dir: number; speed: number; profile: (c: number) => number; axis?: 'x' | 'z';
@@ -19,7 +24,7 @@ export interface Walker {
   face?: number;     // rad quanh Y, chỉ cho người đứng (0: mặt hướng +X)
   follow?: number;   // chỉ số người dẫn (người đi cùng / trẻ em), chép vị trí dọc dải của người đó
 }
-export interface People { list: Walker[]; mesh: THREE.InstancedMesh; group: THREE.Group }
+export interface People { list: Walker[]; mesh: THREE.InstancedMesh | THREE.BatchedMesh; group: THREE.Group; real: boolean }
 
 /* Băm theo chỉ số → [0, 1) (không đụng chuỗi ngẫu nhiên nào) */
 const ppHash = (k: number) => { const s = Math.sin(k * 12.9898 + 78.233) * 43758.5453; return s - Math.floor(s); };
@@ -53,21 +58,32 @@ export function ppApplyKinds(list: Walker[], infos: PersonInfo[], place: (w: Wal
 }
 
 export function createPeople(bridge: { group: THREE.Object3D; noReflect: THREE.Object3D[] }, list: Walker[], name: string, rnd: () => number): People {
-  const P = CONFIG.people, n = list.length, geo = ppBuildGeometry(), col = new THREE.Color();
-  const aVar = new Float32Array(n * 4), aPants = new Float32Array(n * 3);
-  list.forEach((p, i) => {
-    const kind = p.kind ?? 'walk';
-    aVar.set([p.phase ?? 0, ppAmp(kind), p.flags ?? 0, ppCadence(kind, p.speed, p.scale ?? 1)], i * 4);   // pha, biên độ hông, cờ, nhịp (khớp material.ts)
-    col.setHex(P.pants[Math.floor(ppHash(i) * P.pants.length)]); aPants.set([col.r, col.g, col.b], i * 3);   // Color chuyển hex sRGB → tuyến tính
-  });
-  geo.setAttribute('aVar', new THREE.InstancedBufferAttribute(aVar, 4));
-  geo.setAttribute('aPants', new THREE.InstancedBufferAttribute(aPants, 3));
-  const mesh = new THREE.InstancedMesh(geo, ppMaterial(), n);
-  list.forEach((_p, i) => mesh.setColorAt(i, col.setHex(P.shirts[Math.floor(rnd() * P.shirts.length)])));   // màu áo: đúng một rnd() mỗi người như cũ
-  mesh.frustumCulled = false; mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+  const P = CONFIG.people, n = list.length, crowd = crowdGet(), real = crowdUsable(crowd, renderer.extensions.has('WEBGL_multi_draw'));
+  let mesh: THREE.InstancedMesh | THREE.BatchedMesh;
+  if (real) {
+    const bm = crowdBuild(crowd, list, name);
+    for (let i = 0; i < n; i++) rnd();   // màu áo không còn tác dụng với người thật, nhưng giữ đúng một rnd() mỗi người để chuỗi của cầu không đổi
+    // texture trong uniform: prewarm không tải trước (nó chỉ duyệt thuộc tính vật liệu) ⇒ tự tải lên GPU lúc dựng
+    renderer.initTexture(crowd.anim); renderer.initTexture(crowd.atlas); renderer.initTexture(crowdParams(bm.material as THREE.Material));
+    mesh = bm;
+  } else {
+    const geo = ppBuildGeometry(), col = new THREE.Color();
+    const aVar = new Float32Array(n * 4), aPants = new Float32Array(n * 3);
+    list.forEach((p, i) => {
+      const kind = p.kind ?? 'walk';
+      aVar.set([p.phase ?? 0, ppAmp(kind), p.flags ?? 0, ppCadence(kind, p.speed, p.scale ?? 1)], i * 4);   // pha, biên độ hông, cờ, nhịp (khớp material.ts)
+      col.setHex(P.pants[Math.floor(ppHash(i) * P.pants.length)]); aPants.set([col.r, col.g, col.b], i * 3);   // Color chuyển hex sRGB → tuyến tính
+    });
+    geo.setAttribute('aVar', new THREE.InstancedBufferAttribute(aVar, 4));
+    geo.setAttribute('aPants', new THREE.InstancedBufferAttribute(aPants, 3));
+    const im = new THREE.InstancedMesh(geo, ppMaterial(), n);
+    list.forEach((_p, i) => im.setColorAt(i, col.setHex(P.shirts[Math.floor(rnd() * P.shirts.length)])));   // màu áo: đúng một rnd() mỗi người như cũ
+    im.frustumCulled = false; im.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    mesh = im;
+  }
   const group = new THREE.Group(); group.name = name; group.add(mesh);
   bridge.group.add(group); bridge.noReflect.push(group);
-  const people = { list, mesh, group };
+  const people: People = { list, mesh, group, real };
   group.userData.people = people;   // cho móc kiểm thử (environment/pedestrians.ts → peopleTest)
   stepPeople(people, 0, 0);   // đặt sẵn vị trí ban đầu
   return people;
@@ -75,17 +91,19 @@ export function createPeople(bridge: { group: THREE.Object3D; noReflect: THREE.O
 
 const _pm = new THREE.Matrix4(), _pq = new THREE.Quaternion(), _pv = new THREE.Vector3(), _ps = new THREE.Vector3(), _zero = new THREE.Matrix4().makeScale(0, 0, 0);   // tạm cấp sẵn (D-018)
 /* Dời người theo dải; đứng thì đứng yên; người đi cùng chép vị trí dọc dải của người dẫn.
-   Đóng cầu (bão, closable): người thứ i ẩn dần theo vanished như xe (người đi cùng ẩn cùng lúc với người dẫn) */
+   Đóng cầu (bão, closable): người thứ i ẩn dần theo vanished như xe (người đi cùng ẩn cùng lúc với người dẫn): hình khối thu scale 0, người thật setVisibleAt */
 export function stepPeople(P: People, dt: number, _elapsed: number, closable = true) {
   const L = P.list, clear = closable ? weatherFx.clear : 0;
+  const bm = P.real ? (P.mesh as THREE.BatchedMesh) : null, im = P.real ? null : (P.mesh as THREE.InstancedMesh), sc = bm ? (bm.userData.crowd as CrowdInfo).scale : null;
   for (let i = 0; i < L.length; i++) {
     const p = L[i], alongZ = p.axis === 'z', key = alongZ ? 'z' : 'x', lead = p.follow ?? -1;
-    if (vanished(lead >= 0 ? lead : i, clear)) { P.mesh.setMatrixAt(i, _zero); continue; }
+    if (vanished(lead >= 0 ? lead : i, clear)) { if (bm) bm.setVisibleAt(i, false); else im.setMatrixAt(i, _zero); continue; }
     if (lead >= 0) p[key] = L[lead][key];
     else if (p.kind !== 'stand') { p[key] += p.dir * p.speed * dt; if (p[key] > p.hi) p[key] = p.lo; if (p[key] < p.lo) p[key] = p.hi; }
     const yaw = p.kind === 'stand' ? (p.face ?? 0) : alongZ ? (p.dir > 0 ? -Math.PI / 2 : Math.PI / 2) : (p.dir > 0 ? 0 : Math.PI);
-    const s = p.scale ?? 1;
-    P.mesh.setMatrixAt(i, _pm.compose(_pv.set(p.x, p.profile(p[key]), p.z), _pq.setFromAxisAngle(UP, yaw), _ps.set(s, s, s)));
+    const s = sc ? sc[i] : (p.scale ?? 1);   // người thật: tỉ lệ theo chiều cao nhân vật (crowd.ts)
+    _pm.compose(_pv.set(p.x, p.profile(p[key]), p.z), _pq.setFromAxisAngle(UP, yaw), _ps.set(s, s, s));
+    if (bm) { bm.setVisibleAt(i, true); bm.setMatrixAt(i, _pm); } else im.setMatrixAt(i, _pm);   // setVisibleAt / setMatrixAt của BatchedMesh tự đánh dấu cập nhật
   }
-  P.mesh.instanceMatrix.needsUpdate = true;
+  if (im) im.instanceMatrix.needsUpdate = true;
 }

@@ -16,6 +16,11 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Be+Vietnam+Pro:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="/src/styles/main.css">
+<!-- Đám đông người thật (D-032): tải sớm hai tệp mà main.ts chờ trước khi dựng cảnh. Chèn bằng script để ?crowd=off không gửi yêu cầu nào.
+     Cả hai as="fetch" + crossorigin vì crowdData.ts đọc bằng fetch() (as="image" không khớp fetch ⇒ tải hai lần). Đường dẫn tương đối: đúng với base './' -->
+<script>
+  if (new URLSearchParams(location.search).get('crowd') !== 'off') for (const f of ['people/crowd.bin', 'people/crowd.jpg']) { const l = document.createElement('link'); l.rel = 'preload'; l.as = 'fetch'; l.crossOrigin = 'anonymous'; l.href = f; document.head.appendChild(l); }
+</script>
 </head>
 <body>
 

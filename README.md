@@ -44,7 +44,7 @@ src/
   common/            texture làn đường, loft, boxAt, beamBetween, cột đèn, bảng màu LED, xe cộ, thuyền, người, BridgeBase
     vehicles/        xe cộ: siêu xe, xe tay ga, buýt nhỏ (hình học gộp), vật liệu đèn pha/hậu theo đêm, fleet InstancedMesh mỗi hệ xe
     trees/           cây: hình học cây bóng mát (thân + cành, tán cụm lá) và cây dừa (thân cong, tàu lá, bản tĩnh cho cửa hầm), texture canvas
-    people/          người đi bộ có tay chân: hình học (≤ 900 đỉnh), dáng đi / chạy / đứng, vật liệu dáng đi trong vertex shader, chia kiểu người
+    people/          người đi bộ có tay chân: hình học (≤ 900 đỉnh), dáng đi / chạy / đứng, vật liệu dáng đi trong vertex shader, chia kiểu người; `crowd.ts` / `crowdData.ts`: đám đông người thật vẽ bằng `BatchedMesh` + bộ đọc `crowd.bin`, hình khối làm đường lùi
   bridges/
     dragon/          Cầu Rồng (mặt cầu, thân, đầu, lửa/nước)
     thuan-phuoc/     Cầu Thuận Phước
@@ -67,13 +67,13 @@ src/
 server/
   multi/             máy chủ dù lượn nhiều người (Cloudflare Worker + Durable Object, `npm --prefix server/multi run dev`)
 public/
-  people/            5 nhân vật đi dạo p0..p4.glb (có xương + chuyển động) và LICENSE-Rocketbox.txt
+  people/            5 nhân vật đi dạo p0..p4.glb (có xương + chuyển động), `crowd.bin` + `crowd.jpg` (10 nhân vật giản lược cho đám đông người đi bộ, chuyển động nướng sẵn) và LICENSE-Rocketbox.txt
   voice/             clip thuyết minh của Tour
 scripts/
-  people/            convert.py: chuyển Microsoft Rocketbox sang .glb (`npm run gen:people`, cần Blender 4.5)
+  people/            convert.py: chuyển Microsoft Rocketbox sang .glb (`npm run gen:people`); crowd.py: sinh `crowd.bin` + `crowd.jpg` (`npm run gen:crowd`); cả hai cần Blender 4.5 và chạy qua `blender.mjs` (đặt biến môi trường `BLENDER` nếu Blender không ở chỗ mặc định)
 ```
 
-Nhân vật trong chế độ Đi dạo dùng mô hình và chuyển động của [Microsoft Rocketbox](https://github.com/microsoft/Microsoft-Rocketbox) (giấy phép MIT, commit `0943055db6ec570bcef9f2c8b41c9e5467c808f9`); xem `public/people/LICENSE-Rocketbox.txt`.
+Nhân vật trong chế độ Đi dạo và đám đông người đi bộ trên ba cầu dùng mô hình và chuyển động của [Microsoft Rocketbox](https://github.com/microsoft/Microsoft-Rocketbox) (giấy phép MIT, commit `0943055db6ec570bcef9f2c8b41c9e5467c808f9`); xem `public/people/LICENSE-Rocketbox.txt`.
 
 ## Hầm vượt sông Hàn
 

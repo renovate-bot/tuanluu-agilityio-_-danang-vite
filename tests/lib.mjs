@@ -34,10 +34,12 @@ export async function launch() {
   });
 }
 
-/** Mở trang với ?test, chặn font Google (không cần cho kiểm tra), chờ khung hình đầu. */
-export async function openApp(browser, url, { width = 480, height = 270, mobile = false } = {}) {
+/** Mở trang với ?test, chặn font Google (không cần cho kiểm tra), chờ khung hình đầu.
+    before(page): chạy trước khi mở trang (gắn route / lắng nghe yêu cầu, console từ lúc đầu). */
+export async function openApp(browser, url, { width = 480, height = 270, mobile = false, before = null } = {}) {
   const page = await browser.newPage(mobile ? { viewport: { width, height }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 } : { viewport: { width, height } });
   const errors = []; page.setDefaultTimeout(240000);
+  if (before) await before(page);
   page.on('pageerror', (e) => errors.push(String(e)));
   page.on('console', (m) => { if (m.type() === 'error' && !/fonts\.(googleapis|gstatic)|ERR_FAILED|net::/.test(m.text())) errors.push(m.text()); });
   await page.route(/fonts\.(googleapis|gstatic)\.com/, (r) => r.abort());
