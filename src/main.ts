@@ -32,6 +32,7 @@ import { HanTunnel } from './bridges/han-tunnel';
 import { SunWheel, swRide } from './bridges/sun-wheel';
 import { buildRiverfront, updateRiverfront } from './environment/riverfront';
 import { buildDragonPeople, updateDragonPeople, peopleTest } from './environment/pedestrians';
+import { crowdLoad } from './common/people/crowdData';
 import { buildWeather, updateWeather } from './environment/weather';
 import { updateCamera, hrDrive } from './views/camera';
 import { cam, keys } from './views/state';
@@ -59,6 +60,7 @@ void narration.init();
 window.addEventListener('resize', scheduleResize); window.addEventListener('orientationchange', scheduleResize);
 
 /* ============================ Khởi tạo ============================ */
+await crowdLoad();   // đám đông người thật (D-032): chờ tải xong (tối đa CONFIG.people.crowd.loadTimeoutMs; lỗi → null, hình khối) để mọi lưới / vật liệu có trước prewarm; không đổi thứ tự dựng
 buildLights();
 buildSky();
 buildWater();

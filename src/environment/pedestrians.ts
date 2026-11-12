@@ -6,6 +6,7 @@ import { rng, lerp } from '../common/math';
 import { createPeople, stepPeople, ppApplyKinds, ppFaceZ, type People, type Walker } from '../common/people';
 import { ppAssignKinds } from '../common/people/kinds';
 import { deckY } from '../bridges/dragon/profile';
+import type { CrowdInfo } from '../common/people/crowd';
 
 /* =====================================================================
    NGƯỜI ĐI BỘ CẦU RỒNG (spec G9, G10, §7) — hai lề 2,5 m, ngày và đêm như nhau, không nút bật/tắt.
@@ -30,7 +31,8 @@ export function buildDragonPeople(): void {
   }, true);   // người đi cùng lệch ra phía lan can, không lấn vào hàng cột đèn
   dragon = createPeople({ group: scene, noReflect: [] }, list, 'dragon-people', r);
   dragon.group.traverse((o) => o.layers.set(1));
-  /* Cắt theo khung nhìn: khối cầu cố định bao mọi chỗ người có thể tới trên cả mặt cầu (không computeBoundingSphere — sẽ co theo vị trí lúc gọi) */
+  /* Cắt theo khung nhìn: khối cầu cố định bao mọi chỗ người có thể tới trên cả mặt cầu (không computeBoundingSphere — sẽ co theo vị trí lúc gọi).
+     Người thật (BatchedMesh): three cũng tự tính bao cầu cả đối tượng một lần nếu để trống rồi không cập nhật ⇒ đặt sẵn như hình khối; từng id còn cắt riêng (perObjectFrustumCulled) */
   const box = new THREE.Box3(new THREE.Vector3(-326, CONFIG.roadY, -hw), new THREE.Vector3(326, deckY(0) + 2.5, hw));   // x ±(325 + 1) m, cao tới đỉnh nón / tay giơ trên đỉnh vồng
   dragon.mesh.boundingSphere = box.getBoundingSphere(new THREE.Sphere()); dragon.mesh.frustumCulled = true;
 }
@@ -42,28 +44,36 @@ export function updateDragonPeople(dt: number, elapsed: number, cam: THREE.Camer
   dragon.group.visible = near && weatherFx.clear < 1;   // bão đã dọn hết thì bỏ luôn lệnh vẽ
 }
 
-/* Móc kiểm thử (tests/people-check.mjs): các hệ người tìm theo tên trong scene */
+/* Móc kiểm thử (tests/people-check.mjs): các hệ người tìm theo tên trong scene; chạy cho cả hình khối (InstancedMesh) lẫn người thật (BatchedMesh) */
 const PP_NAMES = ['ttl-people', 'sh-people', 'dragon-people'];
+type PpMesh = THREE.InstancedMesh | THREE.BatchedMesh;
 const ppFind = (name: string) => {
-  const g = scene.getObjectByName(name), meshes: THREE.InstancedMesh[] = [];
-  g?.traverse((o) => { if ((o as THREE.InstancedMesh).isInstancedMesh) meshes.push(o as THREE.InstancedMesh); });
-  return { g, meshes, list: (g?.userData.people as People | undefined)?.list };
+  const g = scene.getObjectByName(name), meshes: PpMesh[] = [];
+  g?.traverse((o) => { if ((o as THREE.InstancedMesh).isInstancedMesh || (o as THREE.BatchedMesh).isBatchedMesh) meshes.push(o as PpMesh); });
+  return { g, meshes, list: (g?.userData.people as People | undefined)?.list, real: !!(g?.userData.people as People | undefined)?.real };
 };
 export const peopleTest = {
-  /* visible = số instance có scale > 0 */
-  systems(): { name: string; count: number; visible: number; meshes: number; material: string; materialName: string; verts: number; colors: number; shirtKinds: number; instAttrs: boolean; groupVisible: boolean }[] {
+  /* visible = số người đang hiện (hình khối: instance có scale > 0; người thật: getVisibleAt).
+     Người thật: real, tris = tổng tam giác các id, chars = số nhân vật khác nhau đang dùng, hats = số người đội nón; colors = số id đã setColorAt */
+  systems(): { name: string; count: number; visible: number; meshes: number; material: string; materialName: string; verts: number; colors: number; shirtKinds: number; instAttrs: boolean; groupVisible: boolean; real: boolean; tris: number; chars: number; hats: number }[] {
     return PP_NAMES.map((name) => {
-      const { g, meshes } = ppFind(name), m = meshes[0];
-      if (!m) return null;
-      const a = m.instanceMatrix.array, c = m.instanceColor?.array, geo = m.geometry, shirts = new Set<string>();
+      const { g, meshes, list, real } = ppFind(name), m0 = meshes[0];
+      if (!m0) return null;
+      const mat = m0.material as THREE.Material, geo = m0.geometry, base = { name, meshes: meshes.length, material: mat.uuid, materialName: mat.name, verts: geo.getAttribute('position').count, groupVisible: g.visible, real };
+      if ((m0 as THREE.BatchedMesh).isBatchedMesh) {
+        const m = m0 as THREE.BatchedMesh, info = m.userData.crowd as CrowdInfo, n = list?.length ?? 0, col = new THREE.Color(), tints = new Set<string>();
+        let visible = 0;
+        for (let i = 0; i < n; i++) { if (m.getVisibleAt(i)) visible++; m.getColorAt(i, col); tints.add(col.r.toFixed(3)); }
+        return { ...base, count: n, visible, colors: n, shirtKinds: tints.size, instAttrs: false, tris: info.tris, chars: new Set(info.char).size, hats: info.hat.reduce((a, b) => a + b, 0) };
+      }
+      const m = m0 as THREE.InstancedMesh, a = m.instanceMatrix.array, c = m.instanceColor?.array, shirts = new Set<string>();
       let visible = 0;
       for (let i = 0; i < m.count; i++) { if (Math.abs(a[i * 16]) + Math.abs(a[i * 16 + 1]) + Math.abs(a[i * 16 + 2]) > 1e-9) visible++; if (c) shirts.add(`${c[i * 3].toFixed(3)},${c[i * 3 + 1].toFixed(3)},${c[i * 3 + 2].toFixed(3)}`); }
       const inst = (n: string) => !!(geo.getAttribute(n) as THREE.InstancedBufferAttribute)?.isInstancedBufferAttribute;
-      const mat = m.material as THREE.Material;
-      return { name, count: m.count, visible, meshes: meshes.length, material: mat.uuid, materialName: mat.name, verts: geo.getAttribute('position').count, colors: c ? c.length / 3 : 0, shirtKinds: shirts.size, instAttrs: inst('aVar') && inst('aPants'), groupVisible: g.visible };
+      return { ...base, count: m.count, visible, colors: c ? c.length / 3 : 0, shirtKinds: shirts.size, instAttrs: inst('aVar') && inst('aPants'), tris: (geo.index ? geo.index.count : geo.getAttribute('position').count) / 3 * m.count, chars: 0, hats: 0 };
     }).filter(Boolean);
   },
-  /* Vị trí cục bộ (trong nhóm cầu) từng người, cao độ mặt lề tại đó, kiểu, scale, trục đứng (y của trục Y), hướng mặt (+X của hình) */
+  /* Vị trí cục bộ (trong nhóm cầu) từng người, cao độ mặt lề tại đó, kiểu, scale, trục đứng (y của trục Y), hướng mặt (+X của hình); getMatrixAt có ở cả hai loại lưới */
   positions(name: string): { i: number; x: number; y: number; z: number; ground: number; kind: string; scale: number; upY: number; fwd: number[] }[] {
     const { meshes, list } = ppFind(name), m = meshes[0], M = new THREE.Matrix4(), p = new THREE.Vector3(), q = new THREE.Quaternion(), s = new THREE.Vector3(), up = new THREE.Vector3(), fwd = new THREE.Vector3();
     if (!m || !list) return [];

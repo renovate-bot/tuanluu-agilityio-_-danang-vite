@@ -108,18 +108,18 @@ export interface People { list: Walker[]; mesh: THREE.InstancedMesh | THREE.Batc
 
 `peopleTest` (`pedestrians.ts`) trả thêm: `real`, `tris` (tổng tam giác các id), `chars` (số nhân vật khác nhau đang dùng), `visible` đếm bằng `getVisibleAt` khi là người thật; `positions()` chạy được cho cả hai loại lưới. Giữ các trường cũ để nhánh hình khối vẫn kiểm được.
 
-- [ ] **Bước 1:** viết `tests/people-unit/crowd.test.ts`:
+- [x] **Bước 1:** viết `tests/people-unit/crowd.test.ts`:
   - `crowdUsable(null, true) === false`; `crowdUsable(data, false) === false`; `crowdUsable(data, true) === true`.
   - `crowdPick`: tất định; `isChild` → nhân vật `child`, ngược lại không `child`; với `avoid ≥ 0` kết quả khác `avoid` khi có từ 2 lựa chọn; trên 80 người của một hệ dùng ít nhất 6 nhân vật người lớn khác nhau; hai tên hệ khác nhau cho dãy khác nhau.
   - `crowdRate(1.2, 1.2, 1) === 1`; kẹp ở 0,6 và 1,6; `natural = 0` → 1; `scale` 0,5 làm nhịp tăng gấp đôi trước khi kẹp.
   - `crowdFrame`: trong [0, frames) với `t` = 0; 1; 10 800 s; tại `t = 10 800` hai lần gọi cách nhau 1/60 s lệch đúng `fps × rate / 60` khung (sai số < 0,02, tính modulo `frames`); `loop = false` → `frames − 1`.
   - `crowdBuild` với dữ liệu thật (`crowdParse` + texture giả): `isBatchedMesh`; số id = số người; `sortObjects === false`; `material.name === 'peopleCrowd'`; người có cờ nón dùng lưới có đỉnh cao hơn.
-- [ ] **Bước 2:** chạy, thấy hỏng.
-- [ ] **Bước 3:** viết `crowd.ts`. Shader: tính ma trận skin trong `beginnormal_vertex` (2 xương × 2 khung, `texelFetch`, nội suy tuyến tính, đoạn lặp thì khung cuối nội suy về khung đầu), dùng lại ở `begin_vertex`; thông số theo người đọc từ một `DataTexture` float theo `batchId`; uniform thời gian là `shared.uTime`. Xem mục API r165 trong spec §5. `initTexture` cho texture chuyển động và texture thông số.
-- [ ] **Bước 4:** sửa `people.ts`, `pedestrians.ts`, `main.ts`, `index.html` và các chỗ dùng `People.mesh`.
-- [ ] **Bước 5:** `npm run typecheck`, `npm run test:people:unit`, `npm run test:stroll:unit`, `npm run build` đạt.
-- [ ] **Bước 6:** tự xem bằng mắt: mở bản build (`?test`), chụp ảnh ba hệ ngày và đêm vào `tests/screens/crowd-*.png` (không commit); người đứng trên lề, đúng hướng đi, không bay, không chui; `?crowd=off` ra hình khối như cũ. Sửa tới khi đúng.
-- [ ] **Bước 7:** commit (`feat(people): đám đông người thật bằng BatchedMesh ...`). Ghi "Ghi chú để báo".
+- [x] **Bước 2:** chạy, thấy hỏng.
+- [x] **Bước 3:** viết `crowd.ts`. Shader: tính ma trận skin trong `beginnormal_vertex` (2 xương × 2 khung, `texelFetch`, nội suy tuyến tính, đoạn lặp thì khung cuối nội suy về khung đầu), dùng lại ở `begin_vertex`; thông số theo người đọc từ một `DataTexture` float theo `batchId`; uniform thời gian là `shared.uTime`. Xem mục API r165 trong spec §5. `initTexture` cho texture chuyển động và texture thông số.
+- [x] **Bước 4:** sửa `people.ts`, `pedestrians.ts`, `main.ts`, `index.html` và các chỗ dùng `People.mesh`.
+- [x] **Bước 5:** `npm run typecheck`, `npm run test:people:unit`, `npm run test:stroll:unit`, `npm run build` đạt.
+- [x] **Bước 6:** tự xem bằng mắt: mở bản build (`?test`), chụp ảnh ba hệ ngày và đêm vào `tests/screens/crowd-*.png` (không commit); người đứng trên lề, đúng hướng đi, không bay, không chui; `?crowd=off` ra hình khối như cũ. Sửa tới khi đúng.
+- [x] **Bước 7:** commit (`feat(people): đám đông người thật bằng BatchedMesh ...`). Ghi "Ghi chú để báo".
 
 ### Task 3 (Opus): test trình duyệt và đo
 
@@ -156,3 +156,17 @@ export interface People { list: Walker[]; mesh: THREE.InstancedMesh | THREE.Batc
   - Test đơn vị thêm kiểm ma trận xương khung đầu của walk là phép quay thuần (cột dài 1 ± 0,02) và kiểm phiên bản lạ bị từ chối.
 - **Còn thấy trong ảnh xem trước** (`scripts/people/.cache/preview-crowd/`): khi nhìn sát mặt, `Female_Adult_08` còn khe miệng tối, `Female_Adult_12` có khuyên môi; ở cỡ 120 px không thấy. Trẻ em chạy (`jog`) bay khỏi mặt đất ≈ 3,6 cm, nhưng trẻ em chỉ là người đi cùng (đi bộ) nên không dùng `jog`.
 - **Cho Task 2:** `uv` có v = 0 ở mép trên ảnh, atlas từ `crowdLoad` đã `flipY = false` (ImageBitmap). Lưới ở tư thế chữ T / A (tay dang), mặt +X, chân y = 0; khối cầu bao (đã `computeBoundingSphere`) bán kính ≈ 0,88–0,94 m người lớn, 0,74 m trẻ em, tâm y ≈ 0,86–0,91 / 0,72 m, chưa nới `cullPad`. Skin: 2 xương mỗi đỉnh, `aBones` (u8, chỉ số 0..21), `aW` = trọng số xương thứ nhất, xương thứ hai 1 − `aW`; ma trận xương b của khung r ở texel (b × 3 + j, r), j = 0..2 là ba hàng của ma trận 3×4 (đỉnh mới = dot(hàng, (p, 1))). Nón lá là lưới gắn cứng xương đầu (chỉ số 5) trong bản `hat`, 10 cạnh, bán kính vành 0,21 m, đỉnh cao hơn đỉnh đầu ≈ 0,1 m, có mặt trong. `maxVerts` 1 154, `maxIndices` 4 560 (bản nón). `crowdLoad` đọc `?crowd=off` qua `location.search`; khi preload trong `index.html` dùng `crossorigin` để khớp chế độ `fetch` mặc định.
+
+### Task 2 (2026-11-12)
+
+- **Đã làm:** `src/common/people/crowd.ts` (`crowdUsable`, `crowdPick`, `crowdRate`, `crowdFrame`, `crowdMaterial`, `crowdBuild` đúng chữ ký plan), `createPeople` / `stepPeople` hai nhánh, `peopleTest` chạy cho cả hai loại lưới, `await crowdLoad()` đầu khối khởi tạo của `main.ts`, preload trong `index.html`, `gen:people` sửa thành `node scripts/people/blender.mjs scripts/people/convert.py` (không chạy).
+- **Số đo:** `typecheck` đạt; `test:people:unit` 33/33 (5 test mới), `test:stroll:unit` 87/87; `build` đạt: `index` 593,62 → 602,85 kB, `three` 621,61 → 633,60 kB (`BatchedMesh` vào bundle). Bản build mở bằng Chromium SwiftShader (`?test`, 960×540): ba hệ `real`, cùng một vật liệu `peopleCrowd`; tam giác ttl 120 388 / sh 114 357 / dragon 105 329; nhân vật khác nhau 10 / 10 / 9; nón 21 / 19 / 18. Tắt `visible` lưới của một hệ: `renderer.info.render.calls` giảm đúng 1 ở cả ngày và đêm cho cả ba hệ (vd. 240 → 239 Cầu Rồng ngày, 128 → 127 Trần Thị Lý đêm); quay lưng lại Cầu Rồng ở gần: 260 → 260 (hệ tốn 0 lệnh vẽ). `?crowd=off`: ba hệ `peopleWalk` 853 đỉnh, 0 yêu cầu tới `people/crowd.`. Console: không lỗi / cảnh báo shader (chỉ cảnh báo có sẵn "KHR_parallel_shader_compile not supported" của SwiftShader và lỗi tải font / gtag do script tự chặn).
+- **Lệch plan:**
+  - `People` thêm trường `real` như plan; thông tin theo id (nhân vật, nón, tỉ lệ, tổng tam giác) để ở `mesh.userData.crowd` (`CrowdInfo`), thêm export `crowdParams` (texture thông số cho `initTexture`). Không đổi chữ ký nào trong plan.
+  - Thông số từng người nằm trong **một** texture dùng chung cho cả 3 hệ (một vật liệu ⇒ không có uniform riêng theo hệ); chỉ số người trong texture ghi vào kênh alpha của `batchingColorTexture` (r165 `setColorAt` chỉ ghi rgb). Đọc trường riêng `_colorsTexture` của `BatchedMesh` (r165 không có API khác): nâng three phải kiểm lại.
+  - Preload: cả hai tệp `as="fetch"` + `crossorigin` (plan ghi `as="image"` cho jpg: không khớp `fetch()` ⇒ tải hai lần + cảnh báo "preloaded but not used"); chèn bằng script nhỏ trong `index.html` để `?crowd=off` không gửi yêu cầu nào.
+  - `perObjectFrustumCulled = true` ở cả ba hệ (khối cầu từng id nới `cullPad / tỉ lệ`): khi mọi người của hệ ra ngoài khung nhìn, r165 không gọi lệnh vẽ nào ⇒ một số góc trong `test:drawcalls` có thể **giảm** 1 (không tăng).
+  - Pha chuyển động: `mod(uTime, chu kỳ người)` trước khi nhân khung/giây; `crowdFrame` là bản CPU cùng công thức (double). Sai số còn lại do chính `uTime` float32 sau 3 giờ (≈ 1 ms ⇒ ≤ 0,05 khung), không thấy được.
+- **Xem bằng mắt** (`tests/screens/crowd-*.png`, không commit): người đứng đúng mặt lề, đi đúng hướng, chân không trượt rõ, có nón lá, người chạy (`jog`) đúng dáng; đêm sáng như cảnh (không đen). SwiftShader không có `KHR_parallel_shader_compile` ⇒ bộ đèn luôn `full`: **chưa kiểm được** chuyển bộ đèn `day` / `night` (D-031) bằng mắt; vật liệu là `MeshStandardMaterial` thường nên đi cùng đường hâm như mọi vật liệu khác.
+- **Cho Task 3:** `systems()` nay trả thêm `real, tris, chars, hats`; người thật bị bão ẩn giữ ma trận cũ (đếm bằng `visible`, đừng dựa vào scale 0); `positions().scale` của người thật là tỉ lệ so với lưới (`heightScale × Walker.scale`, trẻ em `heightScale`), không phải `Walker.scale`. Bật / tắt để đếm lệnh vẽ phải đổi `visible` của **lưới** (nhóm bị `update` của cầu ghi đè mỗi khung). `test:perf` cần xem số program: vật liệu mới thêm program theo bộ đèn như mọi vật liệu, đồng thời `peopleWalk` không còn được dùng.
+
