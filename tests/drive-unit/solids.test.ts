@@ -40,18 +40,30 @@ test('thân rồng chặn ở tầng mặt cầu, không chặn đường ven s�
   assert.deepEqual(hitsBand(-305, 30, 2.6, 4.3), []);
 });
 
-test('mỗi làn xe của mỗi cầu thông suốt', () => {
+/* Thân xe đầy đủ (rộng ±width/2, từ y+0,1 tới y+height) quét tại (x, z) có chạm vật cản nào không */
+function bodyHits(x: number, z: number, y: number): DrSolid[] {
+  const hw = CONFIG.drive.car.width / 2, ya = y + 0.1, yb = y + CONFIG.drive.car.height;
+  return solids.filter((s) => {
+    if (s.y1 < ya || s.y0 > yb) return false;
+    if (s.kind === 'circle') return (x - s.cx) ** 2 + Math.max(0, Math.abs(z - s.cz) - hw) ** 2 <= s.r * s.r;
+    return x >= s.x0 && x <= s.x1 && z + hw >= s.z0 && z - hw <= s.z1;
+  });
+}
+
+test('mỗi làn xe của mỗi cầu và hầm thông suốt cho thân xe đầy đủ', () => {
   const lanes = (inner: number, w: number, n: number) => Array.from({ length: n }, (_, i) => inner + w * (i + 0.5));
+  const tun = pads.filter((p) => p.kind === 'tunnel');
+  assert.ok(tun.length > 0);
   const cases: { name: string; z: number; offs: number[]; x0: number; x1: number; y: (x: number) => number }[] = [
     { name: 'Cầu Rồng', z: 0, offs: lanes(CONFIG.median / 2, CONFIG.laneWidth, CONFIG.lanesPerDir), x0: -CONFIG.length / 2, x1: CONFIG.length / 2, y: deckY },
     { name: 'Cầu sông Hàn', z: SH.z, offs: [SH.lane], x0: -290, x1: 290, y: shRoadY },
     { name: 'Trần Thị Lý', z: TTL.z, offs: TTL.laneOffsets, x0: -470, x1: 450, y: ttlRoadY },
     { name: 'Thuận Phước', z: TP.z, offs: lanes(TP.median / 2, TP.laneWidth, 2), x0: -(TP.endX + TP.embankment), x1: TP.endX + TP.embankment, y: tpRoadY },
-    { name: 'Hầm', z: HR.z, offs: HR.laneOffsets, x0: -HR.rampHalf, x1: HR.rampHalf, y: hrRoadY }
+    { name: 'Hầm', z: HR.z, offs: HR.laneOffsets, x0: Math.min(...tun.map((p) => p.x0)), x1: Math.max(...tun.map((p) => p.x1)), y: hrRoadY }
   ];
   for (const c of cases) for (const o of c.offs) for (const s of [-1, 1]) {
-    for (let x = c.x0; x <= c.x1; x += 2) {
-      const h = hits(x, c.z + s * o, c.y(x) + 0.8);
+    for (let x = c.x0; x <= c.x1; x += 1) {
+      const h = bodyHits(x, c.z + s * o, c.y(x));
       assert.deepEqual(h, [], `${c.name} làn ${s * o} tại x = ${x}`);
     }
   }
