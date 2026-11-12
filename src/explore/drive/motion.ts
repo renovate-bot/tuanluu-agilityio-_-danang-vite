@@ -173,7 +173,7 @@ function drEvacTarget(net: DrNet, s: DrState): boolean {
   }
   return false;
 }
-/* Một khung sơ tán. Chưa sơ tán: bắt đầu nếu thân xe chạm ô có cổng đóng (budget: s còn lại tới lúc nhịp bắt đầu xoay, bỏ trống = không hạn).
+/* Một khung sơ tán. Chưa sơ tán: bắt đầu nếu thân xe chạm ô có cổng đóng (budget: s còn lại tới lúc nhịp bắt đầu xoay; bỏ trống = không hạn, ≤ 0 = hết hạn ⇒ trượt trong evac.minTime).
    Đang sơ tán: bỏ qua đầu vào, xe đứng (v = 0), nội suy đều tới chỗ đậu, hết s.evac thì tới đúng chỗ. Trả true khi khung này dành cho sơ tán */
 export function drEvacStep(s: DrState, net: DrNet, dt: number, budget?: number): boolean {
   if (!(s.evac > 0)) {
@@ -185,7 +185,7 @@ export function drEvacStep(s: DrState, net: DrNet, dt: number, budget?: number):
       return true;
     }
     const d = Math.hypot(s.ex - s.x, s.ez - s.z), want = Math.max(d / EV.speed, EV.minTime);
-    s.evac = Math.max(1e-3, budget > 0 ? Math.min(want, budget * EV.share) : want);
+    s.evac = Math.max(1e-3, budget === undefined ? want : budget > 0 ? Math.min(want, budget * EV.share) : EV.minTime);   // 0: nhịp đã / đang xoay (tab ẩn rồi quay lại), không trượt chậm qua nhịp
   }
   s.v = 0; s.steer = 0; s.braking = false; s.slide = 1; s.touch = 0;
   if (!(dt > 0)) return true;

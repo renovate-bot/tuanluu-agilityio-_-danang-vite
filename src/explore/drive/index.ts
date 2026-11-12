@@ -93,7 +93,7 @@ function drEnsureNet(): DrNet {
 }
 
 /* Giây (thời gian thật) còn lại tới lúc nhịp quay bắt đầu xoay (ROTATING_OPEN), giả sử nhịp không phải chờ xe tự động rời nhịp
-   (spanClear đúng ngay: thời gian ngắn nhất); 0 khi nhịp đã / đang xoay hoặc cầu đóng */
+   (spanClear đúng ngay: thời gian ngắn nhất); 0 khi nhịp đã / đang xoay hoặc cầu đóng: drEvacStep coi 0 là hết hạn (trượt trong evac.minTime), khác bỏ trống (không hạn) */
 function drSwingBudget(c: SwingController): number {
   const T = c.cfg.timing, sp = c.speed > 0 ? c.speed : 1;
   if (c.state === 'STOP_TRAFFIC') return Math.max(0, T.amber + T.barrier - c.t + T.unlock) / sp;

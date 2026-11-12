@@ -273,6 +273,26 @@ test('sơ tán gói trong thời gian còn lại trước khi nhịp xoay', () =
   } finally { drSetGate(net, DR_GATE_SWING, false); }
 });
 
+/* budget = 0 là "hết hạn" (nhịp đã / đang xoay, ví dụ tab ẩn lúc STOP_TRAFFIC rồi quay lại), KHÁC bỏ trống (không hạn):
+   trượt trong evac.minTime chứ không mất ≈ 4,7 s qua nhịp đã quay đi */
+test('budget 0 (hết hạn) trượt trong evac.minTime, bỏ trống thì không hạn', () => {
+  const net = shNetCache, EV = CONFIG.drive.evac;
+  drSetGate(net, DR_GATE_SWING, true);
+  try {
+    const run = (budget?: number) => {
+      const s = state(5, SH_LANE_Z, 0, 0, shRoadY(0));
+      let t = 0;
+      while (drEvacStep(s, net, DT, budget) && t < 20) t += DT;
+      return { t, x: s.x };
+    };
+    const zero = run(0), none = run(undefined);
+    assert.ok(zero.t <= EV.minTime + DT, `budget 0: xong sau ${zero.t.toFixed(3)} s (≤ minTime ${EV.minTime})`);
+    assert.ok(zero.x > OUT_X, `budget 0: ra ngoài barie (x = ${zero.x})`);
+    assert.ok(none.t > 1, `bỏ trống: theo evac.speed, lâu hơn (${none.t.toFixed(2)} s)`);
+    assert.ok(Math.abs(none.x - zero.x) < 1e-9, 'cùng chỗ đậu');
+  } finally { drSetGate(net, DR_GATE_SWING, false); }
+});
+
 test('cổng mở lại thì đi qua được', () => {
   const net = shNetCache;
   drSetGate(net, DR_GATE_SWING, true);
