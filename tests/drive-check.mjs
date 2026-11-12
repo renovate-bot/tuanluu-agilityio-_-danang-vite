@@ -250,9 +250,12 @@ try {
           if (!rect) { check(`2 ${id} ${side}: không có ô ${padId}.${side}`, false); continue; }
           const zc = (rect[2] + rect[3]) / 2, xa = x0 + 30, xb = C.axisX1 - 30, dist = xb - xa;
           const start = yaw === 0 ? xa : xb;
-          const r = await P.evaluate((o) => window.__dr.run(o), { tag: `${id}.${side}`, x: start, z: zc, yaw, dist, maxT: dist / 12 + 40, vWant: 100, rayAt: [0.25 * dist, 0.5 * dist, 0.75 * dist] });
+          // Trong ô hầm KHÔNG bắn tia: run() bước mô phỏng không qua khung vẽ nên nhóm hầm (HanTunnel bật lưới theo khoảng cách camera trong update của khung) chưa hiện,
+          // tia không trúng lưới nào ⇒ hai LỖI giả ở lượt trước. Cao độ trong hầm vẫn kiểm bằng y / 9 điểm / drFits theo mặt đường hrRoadY (ground)
+          const rays = id === 'tunnel' ? [] : [0.25 * dist, 0.5 * dist, 0.75 * dist];
+          const r = await P.evaluate((o) => window.__dr.run(o), { tag: `${id}.${side}`, x: start, z: zc, yaw, dist, maxT: dist / 12 + 40, vWant: 100, rayAt: rays });
           check(`2 ${id} ${yaw === 0 ? 'Đông' : 'Tây'} (z ${zc.toFixed(2)}): tới cuối trục ${r.reached} (x ${r.x}, ${r.t.toFixed(0)} s, vmax ${(r.vmax * 3.6).toFixed(0)} km/h), ${r.checks} lần kiểm, ${r.rays} tia, vi phạm ${r.nViol}${r.stuck ? ', kẹt tại ' + r.stuck : ''}${r.viol.length ? ' | ' + r.viol.join(' | ') : ''}`,
-            r.reached && r.nViol === 0 && r.checks > 50 && r.rays >= 3);
+            r.reached && r.nViol === 0 && r.checks > 50 && r.rays >= rays.length);
         }
       }
       // lái theo điểm: Cầu Rồng → bờ Đông → rẽ phải vào đường dọc Đông (nút giao jct.east.dragon) → xuống phía Nam
@@ -361,7 +364,8 @@ try {
       await P.evaluate(() => { const A = window.__app; A.dayNight.target = 0; A.dayNight.night = 0; });
       const rect = await P.evaluate(() => window.__dr.rect('tunnel.tube.S'));
       const zc = (rect[2] + rect[3]) / 2;
-      await P.evaluate(({ zc }) => { const D = window.__app.drive; D.placeAt(0, zc, 0); D.step(0.1, { gas: 0, brake: 0, steer: 0, hand: false }); for (let i = 0; i < 20; i++) D.step(0.1, { gas: 0, brake: 0, steer: 0, hand: false }); }, { zc });
+      // x = 30, không phải 0: tại x = 0 có khe thu nước trạm bơm màu tối ngang hết mặt đường ống (bridges/han-tunnel/bore.ts), ngay dưới camera ⇒ dải đen trong ảnh
+      await P.evaluate(({ zc }) => { const D = window.__app.drive; D.placeAt(30, zc, 0); D.step(0.1, { gas: 0, brake: 0, steer: 0, hand: false }); for (let i = 0; i < 20; i++) D.step(0.1, { gas: 0, brake: 0, steer: 0, hand: false }); }, { zc });
       await frames(P, 4);
       const cs = []; for (let i = 0; i < 3; i++) { await frames(P, 1); cs.push(await P.evaluate(() => window.__app.renderer.info.render.calls)); }
       cs.sort((x, y) => x - y); const calls = cs[1];
