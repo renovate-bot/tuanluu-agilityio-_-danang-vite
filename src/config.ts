@@ -725,6 +725,13 @@ const driveBase = {
     footTop: 40        // m — chiều cao chân đế địa danh tính từ mặt đất (riverfront footprints không có chiều cao) (ước lượng)
   },
   spawn: { x: -150, lane: 8.625, gap: 9 },   // m — chỗ xuất phát trên Cầu Rồng: x giữa, |z| tim làn giữa chiều đi Đông, các slot cách nhau gap theo x (ước lượng)
+  ai: { radius: 40 },  // m — bán kính lấy hộp xe tự động quanh xe người chơi mỗi khung (common/trafficQuery.ts trNearby) (ước lượng)
+  evac: {              // sơ tán xe khỏi nhịp quay Cầu sông Hàn khi cầu rời CLOSED (explore/drive/motion.ts drEvacStep)
+    speed: 15,         // m/s — tốc độ trượt mong muốn (≈ 54 km/h): từ giữa nhịp (x = 0) ra ngoài barie ≈ 70 m mất ≈ 4,7 s (ước lượng)
+    minTime: 0.5,      // s — thời gian trượt ngắn nhất, để đoạn ngắn không giật như dịch chuyển tức thời (ước lượng)
+    share: 0.8,        // phần thời gian còn lại tới lúc nhịp bắt đầu xoay (ROTATING_OPEN) dành cho trượt; tốc độ quay 30× chỉ còn ≈ 1,07 s nên trượt nhanh hơn speed (ước lượng)
+    gap: 0.5           // m — đuôi xe cách barie chừng này ở chỗ dừng sau sơ tán (ước lượng)
+  },
   model: {             // hình xe trong cảnh (explore/drive/car.ts), mô hình public/car/vf3.glb (scripts/car/convert.py)
     url: 'car/vf3.glb',   // đường dẫn tương đối BASE_URL tới mô hình xe
     timeoutMs: 8000,   // ms — nạp quá chừng này thì bỏ, giữ hình tạm (ước lượng)

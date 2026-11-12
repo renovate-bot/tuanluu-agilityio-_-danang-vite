@@ -5,11 +5,12 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { CONFIG } from '../../src/config.ts';
 import { deckY } from '../../src/bridges/dragon/profile.ts';
-import { drMakeNet, drGround, type DrPad, type DrSolid } from '../../src/explore/drive/net.ts';
-import { drBuildPads, drSpawnPose } from '../../src/explore/drive/roadData.ts';
+import { SH, shRoadY } from '../../src/bridges/song-han/profile.ts';
+import { drMakeNet, drGround, drSetGate, type DrPad, type DrSolid } from '../../src/explore/drive/net.ts';
+import { drBuildPads, drSpawnPose, DR_GATE_SWING } from '../../src/explore/drive/roadData.ts';
 import { drBuildSolids } from '../../src/explore/drive/solids.ts';
-import { drFits } from '../../src/explore/drive/collide.ts';
-import { drAccel, drSteerMax, drCreate, drStep, type DrState, type DrInput } from '../../src/explore/drive/motion.ts';
+import { drFits, type DrBox } from '../../src/explore/drive/collide.ts';
+import { drAccel, drSteerMax, drCreate, drStep, drEvacStep, type DrState, type DrInput } from '../../src/explore/drive/motion.ts';
 
 const P = CONFIG.drive.perf, L = CONFIG.drive.car.wheelbase, HL = CONFIG.drive.car.length / 2;
 const flatPad = (x0: number, x1: number, z0: number, z1: number, y = 2.6): DrPad => ({ id: 'a', kind: 'road', x0, x1, z0, z1, y: () => y });
@@ -210,4 +211,79 @@ test('mạng thật: giữ ga 30 s đi thẳng trên Cầu Rồng', () => {
   assert.equal(s.z, z0);
   assert.ok(s.x > CONFIG.length / 2, `đã qua hết cầu (x = ${s.x})`);
   assert.ok(s.v > 25);
+});
+
+/* ===== Sơ tán khỏi nhịp quay Cầu sông Hàn ===== */
+const SH_LANE_Z = SH.z + SH.lane;                                    // tim làn chiều đi Đông (+X) trên Cầu sông Hàn
+const OUT_X = SH.barrierX + HL;                                      // 69,945 — đuôi xe ra hẳn ngoài barie
+const shNetCache = drMakeNet(drBuildPads(), drBuildSolids());
+/* Hộp nào đang chồng thân xe thì bỏ qua (luật drMove): thân xe hợp lệ với vật cản tĩnh mà thêm riêng hộp đó thì không */
+const ign = (net: typeof shNetCache, s: DrState, boxes: DrBox[]) => Uint8Array.from(boxes, (b) => drFits(net, s, [], 0, new Uint8Array(0)) && !drFits(net, s, [b], 1, new Uint8Array(1)) ? 1 : 0);
+
+test('sơ tán khỏi nhịp quay giữa hàng xe', () => {
+  const net = shNetCache, y = shRoadY(0);
+  /* 3 xe tự động: hai xe đứng hàng ngoài barie Đông (như shStepTraffic: barrierX + 3, + 7,5), một xe ngay trên đường ra */
+  const boxes: DrBox[] = [SH.barrierX + 3, SH.barrierX + 10.5, 30].map((x) => ({ x, y: shRoadY(x), z: SH_LANE_Z, yaw: 0, hl: 2.25, hw: 0.975 }));
+  const s = state(0, SH_LANE_Z, 0, 0, y);
+  assert.ok(drFits(net, s, boxes, 0, new Uint8Array(3)), 'cổng mở: đứng giữa nhịp hợp lệ');
+  drSetGate(net, DR_GATE_SWING, true);
+  try {
+    let t = 0;
+    while (t < 6 && (t === 0 || s.evac > 0)) { drStep(s, inp(1, 0, 0.7), net, boxes, 3, DT); t += DT; }
+    assert.equal(s.evac, 0, `sơ tán xong trong 6 s (t = ${t.toFixed(2)})`);
+    assert.ok(Math.abs(s.x) > OUT_X, `ra ngoài barie (x = ${s.x})`);
+    assert.ok(Number.isFinite(drGround(net, s.x, s.z, s.y)), 'đứng trên mặt đường');
+    assert.ok(drFits(net, s, boxes, 3, ign(net, s, boxes)), 'hợp lệ khi bỏ qua hộp đang chồng');
+    assert.ok(!drEvacStep(s, net, DT), 'xong thì trả điều khiển');
+    /* lái ra được: lùi về phía Tây thì bị cổng chặn ở mép nhịp, tiến về Đông đi qua hàng xe đang chồng */
+    const v0 = s.x;
+    for (let i = 0; i < 120; i++) drStep(s, inp(1), net, boxes, 3, DT);
+    assert.ok(s.x > v0 + 1, `lái được sau sơ tán (x ${v0} → ${s.x})`);
+  } finally { drSetGate(net, DR_GATE_SWING, false); }
+});
+
+test('cổng đóng khi xe giữa nhịp thì không lái tự do được', () => {
+  const net = shNetCache;
+  drSetGate(net, DR_GATE_SWING, true);
+  try {
+    /* hai xe cùng chỗ, đầu vào khác nhau: quỹ đạo giống hệt nhau trong suốt lúc sơ tán; không lúc nào ra ngoài nhịp ngoài trục x */
+    const a = state(-20, SH_LANE_Z, 0.4, 12, shRoadY(0)), b = { ...a };
+    const ga = inp(1, 0, 1), gb = inp(0, 1, -1, true);
+    for (let i = 0; i < 6 * 60 && (i === 0 || a.evac > 0); i++) {
+      drStep(a, ga, net, [], 0, DT); drStep(b, gb, net, [], 0, DT);
+      assert.ok(a.x === b.x && a.z === b.z && a.yaw === b.yaw && a.y === b.y, `khung ${i}: đầu vào không đổi quỹ đạo`);
+      assert.equal(a.v, 0, 'đứng (không giữ đà) trong lúc sơ tán');
+      assert.ok(Math.abs(a.z - SH_LANE_Z) < 4 && a.y > SH.deckY - 1, `khung ${i}: không bay ra sông (z = ${a.z}, y = ${a.y})`);
+    }
+    assert.equal(a.evac, 0);
+    assert.ok(a.x < -OUT_X, `ra barie Tây gần nhất (x = ${a.x})`);
+    assert.ok(drFits(net, a, [], 0, new Uint8Array(1)));
+  } finally { drSetGate(net, DR_GATE_SWING, false); }
+});
+
+test('sơ tán gói trong thời gian còn lại trước khi nhịp xoay', () => {
+  const net = shNetCache;
+  drSetGate(net, DR_GATE_SWING, true);
+  try {
+    const s = state(5, SH_LANE_Z, 0, 0, shRoadY(0));
+    let t = 0;
+    while (drEvacStep(s, net, DT, 1.07)) t += DT;                    // tốc độ quay 30×: (4 + 8 + 20) / 30 s tới ROTATING_OPEN
+    assert.ok(t <= 1.07 + DT, `t = ${t}`);
+    assert.ok(s.x > OUT_X);
+  } finally { drSetGate(net, DR_GATE_SWING, false); }
+});
+
+test('cổng mở lại thì đi qua được', () => {
+  const net = shNetCache;
+  drSetGate(net, DR_GATE_SWING, true);
+  try {
+    const s = state(-90, SH_LANE_Z, 0, 0, shRoadY(-90));
+    for (let i = 0; i < 10 * 60; i++) drStep(s, inp(1), net, [], 0, DT);
+    assert.ok(s.x + HL <= -SH.fixedStart + 1e-6 && s.x > -SH.fixedStart - 5, `cổng đóng: dừng ở mép nhịp (x = ${s.x})`);
+    assert.equal(s.evac, 0, 'dừng trước nhịp, không sơ tán');
+    drSetGate(net, DR_GATE_SWING, false);
+    for (let i = 0; i < 15 * 60; i++) drStep(s, inp(1), net, [], 0, DT);
+    assert.ok(s.x > SH.barrierX + 10, `cổng mở: qua hết nhịp (x = ${s.x})`);
+    assert.ok(Math.abs(s.z - SH_LANE_Z) < 1e-9);
+  } finally { drSetGate(net, DR_GATE_SWING, false); }
 });

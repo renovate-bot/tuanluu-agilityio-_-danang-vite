@@ -6,7 +6,10 @@
    - Mạng đường dựng MỘT lần ở lần đầu vào chế độ và giữ lại: ô tĩnh + vật cản tĩnh + nhà / chân đế thu từ cảnh (drCollectRuntime chỉ push,
      gọi hai lần sẽ nhân đôi vật cản). Chỉ đọc cảnh, sau mọi rand().
    - Barie Cầu sông Hàn: cổng DR_GATE_SWING của ô nhịp quay đóng khi cầu rời CLOSED (mỗi khung); không tự quay, không tăng tốc quay (như đi dạo).
-     Sơ tán xe đang đứng trên nhịp quay: Task 8.
+     Xe đang chạm nhịp quay lúc đó được sơ tán ra ngoài barie gần nhất (motion.ts drEvacStep), gói trong thời gian còn lại trước khi nhịp xoay
+     (drSwingBudget: coi như nhịp không phải chờ xe tự động rời nhịp, tức thời gian ngắn nhất).
+   - Xe tự động: mỗi khung lấy hộp các xe đang hiện trong bán kính CONFIG.drive.ai.radius (common/trafficQuery.ts trNearby, mảng tái dùng);
+     người chơi lao vào thì bị chặn, xe tự động chạy tới thì đi xuyên (collide.ts drMove).
    - Ban đêm Cầu Rồng tự phun như khi đi dạo (exNightStep, swing = false).
    - Hầm: driveView.far = CONFIG.drive.tunnelFar khi đang lái để mặt đường hầm hiện ở nút giao với hai đường dọc mới; thoát trả 1.
    - Xe của mình là xe slot 0 của drCars (màu slot 0 khi lái một mình); xe và bánh chỉ vào cảnh khi vào chế độ (góc nhìn cũ không thêm lệnh vẽ).
@@ -22,7 +25,8 @@ import { drMakeNet, drSetGate, type DrNet } from './net';
 import { drBuildPads, DR_GATE_SWING } from './roadData';
 import { drBuildSolids } from './solids';
 import { drCollectRuntime, drSceneStats } from './sceneSolids';
-import { drCreate, drStep, type DrState, type DrInput } from './motion';
+import { drCreate, drStep, drEvacStep, type DrState, type DrInput } from './motion';
+import { trNearby } from '../../common/trafficQuery';
 import type { DrBox } from './collide';
 import { drCarLoad, drCarSetWarm } from './car';
 import { drCars } from './cars';
@@ -54,7 +58,8 @@ let ctrl: SwingController | null = null;
 const drKeys = new Set<string>();  // e.code đang giữ
 const camS: DrCam = { yaw: 0, pitch: 0, idle: 0 };
 const _inp: DrInput = { gas: 0, brake: 0, steer: 0, hand: false };   // đầu vào tái dùng mỗi khung
-const NO_BOXES: DrBox[] = [];      // hộp xe tự động: Task 8
+const boxes: DrBox[] = [];         // hộp xe tự động gần xe, tái dùng mỗi khung (trNearby chỉ thêm phần tử khi phải nới)
+let saved: { fov: number; explore: boolean } | null = null;   // thứ start() đổi, stop() trả lại: fov camera, lớp body 'explore' đã có từ trước chưa
 
 const active = () => cam.mode === 'car' && state !== null;
 const isField = (t: EventTarget | null) => !!t && /^(SELECT|INPUT|TEXTAREA)$/.test((t as HTMLElement).tagName || '');
@@ -62,17 +67,28 @@ const isField = (t: EventTarget | null) => !!t && /^(SELECT|INPUT|TEXTAREA)$/.te
 /* Mạng đường dựng lần đầu vào chế độ, giữ lại cho các lần sau; cổng nhịp quay theo cầu hiện tại */
 function drEnsureNet(): DrNet {
   if (!net) {
-    net = drMakeNet(drBuildPads(), drBuildSolids());
-    drCollectRuntime(net, (scene.getObjectByName('tp-houses') as THREE.InstancedMesh) || null);   // một lần cho mỗi net (chỉ push)
+    const n = drMakeNet(drBuildPads(), drBuildSolids());
+    drCollectRuntime(n, (scene.getObjectByName('tp-houses') as THREE.InstancedMesh) || null);   // một lần cho mỗi net (chỉ push)
+    net = n;                                                         // gán sau khi thu xong: thu lỗi thì lần vào sau thu lại từ đầu
   }
   if (ctrl) drSetGate(net, DR_GATE_SWING, ctrl.state !== 'CLOSED');
   return net;
 }
 
-/* Một bước: cổng nhịp quay, chuyển động, hình xe, camera, hiệu ứng đêm */
+/* Giây (thời gian thật) còn lại tới lúc nhịp quay bắt đầu xoay (ROTATING_OPEN), giả sử nhịp không phải chờ xe tự động rời nhịp
+   (spanClear đúng ngay: thời gian ngắn nhất); 0 khi nhịp đã / đang xoay hoặc cầu đóng */
+function drSwingBudget(c: SwingController): number {
+  const T = c.cfg.timing, sp = c.speed > 0 ? c.speed : 1;
+  if (c.state === 'STOP_TRAFFIC') return Math.max(0, T.amber + T.barrier - c.t + T.unlock) / sp;
+  if (c.state === 'UNLOCK') return Math.max(0, T.unlock - c.t) / sp;
+  return 0;
+}
+
+/* Một bước: cổng nhịp quay, sơ tán / chuyển động, hình xe, camera, hiệu ứng đêm */
 function advance(dt: number, inp: DrInput): void {
   if (ctrl) drSetGate(net!, DR_GATE_SWING, ctrl.state !== 'CLOSED');
-  drStep(state!, inp, net!, NO_BOXES, 0, dt);
+  const s = state!;
+  if (!drEvacStep(s, net!, dt, ctrl ? drSwingBudget(ctrl) : undefined)) drStep(s, inp, net!, boxes, trNearby(s.x, s.z, CONFIG.drive.ai.radius, boxes), dt);
   drCars.place(DR_SELF, state!);
   drCamPlace(camera, state!, camS, net!, dt);
   controls.target.set(state!.x, state!.y, state!.z);   // tâm vùng bóng đổ (main.ts shadowCenter) theo xe
@@ -112,6 +128,7 @@ export const drive = {
     drCars.place(DR_SELF, state);
     driveView.far = CONFIG.drive.tunnelFar;
     drKeys.clear();
+    if (!saved) saved = { fov: camera.fov, explore: document.body.classList.contains('explore') };
     cam.flight.then = null; cam.mode = 'car'; controls.enabled = false;
     camera.fov = CONFIG.drive.cam.fov; onResize();   // onResize cập nhật ma trận chiếu và hệ số cỡ điểm theo fov mới
     drCamPlace(camera, state, camS, n, 0, true);
@@ -126,14 +143,19 @@ export const drive = {
   },
   /* Gọi ngay sau lệnh vẽ khung chính (main.ts); chỗ cho HUD / chụp ảnh của task sau */
   afterRender(): void { /* chưa có việc */ },
-  /* Rời chế độ: trả mọi thứ đã đổi (explore.exit tải lại trang ngay sau) */
+  /* Rời chế độ: trả mọi thứ đã đổi (explore.exit tải lại trang ngay sau), kể cả khi cam.mode đã bị chỗ khác đổi khỏi 'car' */
   stop(): void {
-    if (!active()) return;
+    if (state === null) return;
     state = null; drKeys.clear();
     drCars.clear(); drCars.group.removeFromParent();
     driveView.far = 1;
     document.body.classList.remove('drive');
-    cam.mode = 'orbit'; controls.enabled = true;
+    if (saved) {
+      if (!saved.explore) document.body.classList.remove('explore');
+      camera.fov = saved.fov; onResize();                            // onResize tính lại ma trận chiếu và pScale theo fov cũ
+      saved = null;
+    }
+    if (cam.mode === 'car') { cam.mode = 'orbit'; controls.enabled = true; }
   },
   /* Cho test: như update nhưng nhận đầu vào trực tiếp; đặt xe tại chỗ */
   step(dt: number, inp: DrInput): void { if (active()) advance(dt, inp); },
