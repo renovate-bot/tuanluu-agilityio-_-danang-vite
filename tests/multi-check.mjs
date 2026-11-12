@@ -4,8 +4,9 @@
 //   Mục 3 (Task 6): bước chọn slot + nhập tên trong màn chọn — số chỗ trực tiếp, tên, chống chèn HTML/RTL, nhớ tên, máy chủ tắt, đổi ngôn ngữ.
 //   Mục 4 (Task 7): chế độ xem (5 bot), lời mời vào chỗ trống, giành trước, người xem rời, ô tên không lái dù, Esc, mất máy chủ khi xem và khi bay.
 //   Mục 5 (Task 8): rời máy — đếm ngược, trả slot, camera giữ nguyên, lời mời còn dùng, phím giữ slot, nhịp sống không nhân đôi, đóng trang, tab ẩn + rAF dừng.
-//   Mục 6 (đi dạo, Task 7): khách cũ chỉ thấy flyers / f; sảnh đi dạo qua màn chọn, người bay hiện thành dù và người đi dạo chạy hiện đúng dáng;
-//          dù lượn đã vào bay thấy người đi dạo (1 instance, danh sách "Đi dạo 1/5 · Bay 1/5", nhãn, draw call +1); 5 bot đi dạo → chế độ xem, camera ≤ 8 m,
+//   Mục 6 (đi dạo, Task 7): khách cũ chỉ thấy flyers / f; sảnh đi dạo qua màn chọn, người bay hiện thành dù và người đi dạo chạy hiện đúng dáng
+//          (nhân vật có xương, D-030: mô hình 1 + slot mod 4, trộn đoạn sprint); dù lượn đã vào bay thấy người đi dạo (1 nhân vật đếm bằng avatars.debug,
+//          mô hình 1 + slot mod 4, danh sách "Đi dạo 1/5 · Bay 1/5", nhãn, draw call tăng đúng số lưới của nhân vật); 5 bot đi dạo → chế độ xem, camera ≤ 8 m,
 //          gõ wasd trong ô lời mời không điều khiển gì, lời mời → vào đi, Esc; rời máy khi đi dạo → đếm ngược → xem.
 //   Sửa sau review cuối: bot bay thẳng thì dù nội suy đi đều (Mục 1); ?multi= bị bỏ qua khi không có ?test (Mục 2b); Quay lại / Esc ở bước sảnh,
 //   Bay một mình hiện cả khi có máy chủ (Mục 3); bị giành chỗ ngay ở sảnh có báo (Mục 4); thông báo mất kết nối / nhường chỗ tự ẩn (Mục 4, 5).
@@ -425,7 +426,8 @@ try {
   live.splice(0).forEach((b) => b.close());
   await sleep(2500);
   const obs = { n: -1 }; const ows = new WebSocket(`ws://${HOST}/sky`, { headers: { Origin: 'http://127.0.0.1' } });
-  ows.onmessage = (e) => { const m = JSON.parse(e.data); if (m.t === 'lobby') obs.n = m.flyers.length; };
+  ows.onmessage = (e) => { const m = JSON.parse(e.data); if (m.t === 'lobby') { obs.n = m.flyers.length; obs.k = (obs.k || 0) + 1; obs.at = Date.now(); } };
+  ows.onclose = (e) => { obs.closed = `${e.code} ${e.reason || ''} lúc ${new Date().toISOString()}`; };   // chẩn đoán: ws quan sát bị đóng giữa chừng
   const lobbyIs = async (n, ms) => { for (let t0 = Date.now(); Date.now() - t0 < ms; await sleep(100)) if (obs.n === n) return true; return obs.n === n; };
   check('Phòng trống trước Mục 5 (ws quan sát thấy 0 người bay)', await lobbyIs(0, 8000));
   const URLI = srv.url + '?multi=' + encodeURIComponent(`ws://${HOST}/sky`);
@@ -488,9 +490,10 @@ try {
   const C = await openApp(browser, URLI);
   await C.page.evaluate(() => window.__app.multi.fly('Closer'));
   await C.page.waitForFunction(() => window.__app.explore.active() && window.__app.multi.session.phase === 'flying', null, { timeout: 60000 });
-  const sawOne = await lobbyIs(1, 5000);
+  const sawOne = await lobbyIs(1, 5000), nOne = obs.n;
   await C.page.close();
-  check('Đóng trang đang bay: ws quan sát thấy lobby giảm về 0 trong 3 s', sawOne && await lobbyIs(0, 3000));
+  const sawZero = await lobbyIs(0, 3000);
+  check(`Đóng trang đang bay: ws quan sát thấy lobby giảm về 0 trong 3 s (khi bay: ${nOne}, sau đóng: ${obs.n}, ws quan sát readyState ${ows.readyState}, ${obs.k} lobby, đóng: ${obs.closed || "-"})`, sawOne && sawZero);
 
   // 5g: tab ẩn + rAF dừng 23 s (lâu hơn slotTimeoutMs 10 s + một chu kỳ quét 10 s): chỉ nhịp sống giữ slot; quay lại không lỗi
   const H = await openApp(browser, URLI);
@@ -514,7 +517,7 @@ try {
   });
   await frames(H.page, 20);
   const back = await H.page.evaluate(() => ({ phase: window.__app.multi.session.phase, active: window.__app.explore.active() }));
-  check(`Tab ẩn và rAF dừng 23 s: slot còn (lobby ${obs.n}, phase ${phaseHidden}); quay lại vẫn bay, console không lỗi`, keptHidden && phaseHidden === 'flying' && back.phase === 'flying' && back.active && H.errors.length === 0);
+  check(`Tab ẩn và rAF dừng 23 s: slot còn (lobby ${obs.n}, ws quan sát readyState ${ows.readyState}, đóng: ${obs.closed || "-"}, phase ${phaseHidden}); quay lại vẫn bay, console không lỗi`, keptHidden && phaseHidden === 'flying' && back.phase === 'flying' && back.active && H.errors.length === 0);
   if (H.errors.length) console.log(H.errors.join('\n'));
   await H.page.close();
   try { ows.close(); } catch { /* bỏ qua */ }
@@ -522,8 +525,17 @@ try {
 
   // Mục 6 (Task 7, đi dạo) — người đi dạo và người bay thấy nhau, sảnh đi dạo, chế độ xem, lời mời, ô tên, khách cũ, rời máy
   const URLC = srv.url + '?chooser&multi=' + encodeURIComponent(`ws://${HOST}/sky`);
-  const RUN_AMP = 0.6;   // CONFIG.people.run.amp: biên độ hông khi chạy (rad)
-  const peopleOn = (pg) => pg.evaluate(() => { const m = window.__app.scene.getObjectByName('stroll-people'); if (!m) return { has: false, n: 0, vis: false }; const M = new window.__app.THREE.Matrix4(); let n = 0; for (let i = 0; i < m.count; i++) { m.getMatrixAt(i, M); if (Math.abs(M.determinant()) > 1e-9) n++; } return { has: true, n, vis: m.visible }; });
+  /* Nhân vật đang hiện (D-030): đếm slot có avatars.debug ≠ null và đang có trạng thái hiện; real = số nhân vật có xương; meshes = số lưới của các nhân vật có xương đang hiện */
+  const peopleOn = (pg) => pg.evaluate(() => {
+    const A = window.__app, V = A.stroll.avatars, m = A.scene.getObjectByName('stroll-people');
+    if (!m) return { has: false, n: 0, real: 0, vis: false, slots: [], meshes: 0, blocky: false };
+    const slots = [];
+    for (let i = 0; i < 5; i++) { const d = V.debug(i); if (d && V.slotState(i)) slots.push({ slot: i, ...d }); }
+    let meshes = 0;
+    for (const c of m.children) if (c.name === 'stroll-rig' && c.visible) c.traverse((o) => { if (o.isMesh) meshes++; });
+    const b = m.getObjectByName('stroll-blocky');
+    return { has: true, n: slots.length, real: slots.filter((s) => s.real).length, vis: m.visible, slots, meshes, blocky: !!b && b.visible };
+  });
   const walkCard = async (pg) => { await pg.waitForSelector('#chooser', { state: 'visible', timeout: 240000 }); await pg.click('#chooser [data-pick="walk"]'); };
   const walkTo = async (pg, name) => {   // sảnh đi dạo → nhập tên → Đi dạo ngay → đang đi với slot
     await pg.waitForFunction(() => /Còn \d trên 5 chỗ đi dạo/.test(document.getElementById('exMpSeats')?.innerText || ''), null, { timeout: 30000 }).catch(() => {});
@@ -582,15 +594,19 @@ try {
     const flyB = bot('BayB', 90, 0); bots.push(flyB);
     const runB = walkBot('ChayB', -230, GY[-230], 17.4, 2);
     await S.page.waitForFunction(() => { const A = window.__app; return [0, 1, 2, 3, 4].some((i) => A.multi.remotes.slotState(i)) && [1, 2, 3, 4].some((i) => A.stroll.avatars.slotState(i)); }, null, { timeout: 60000 }).catch(() => {});
-    await frames(S.page, 5);
+    // nhân vật có xương của bot nạp xong và đã mờ hẳn sang đoạn sprint (pose 2, tốc độ danh định stroll.run = 10 m/s)
+    await S.page.waitForFunction(() => { const V = window.__app.stroll.avatars; return [1, 2, 3, 4].some((i) => { const d = V.slotState(i) && V.debug(i); return d && d.real && d.mix[3] > 0.95; }); }, null, { timeout: 240000, polling: 500 }).catch(() => {});
     const r = await S.page.evaluate(() => {
-      const A = window.__app, R = A.multi.remotes, V = A.stroll.avatars, m = V.mesh, a = m.geometry.attributes.aVar.array;
+      const A = window.__app, R = A.multi.remotes, V = A.stroll.avatars;
       const fi = [0, 1, 2, 3, 4].find((i) => R.slotState(i)), wi = [1, 2, 3, 4].find((i) => V.slotState(i));
-      const g = fi === undefined ? null : R.group(fi);
-      return { fly: fi === undefined ? null : R.name(fi), gVis: !!g && g.visible && !!g.parent, walk: wi === undefined ? null : V.name(wi), pose: wi === undefined ? -1 : V.slotState(wi).pose, amp: wi === undefined ? 0 : a[wi * 4 + 1], cad: wi === undefined ? 0 : a[wi * 4 + 3],
+      const g = fi === undefined ? null : R.group(fi), d = wi === undefined ? null : V.debug(wi), me = V.debug(V.self);
+      return { fly: fi === undefined ? null : R.name(fi), gVis: !!g && g.visible && !!g.parent, walk: wi === undefined ? null : V.name(wi), wi: wi ?? -1, pose: wi === undefined ? -1 : V.slotState(wi).pose, d, me, self: V.self,
         roster: document.getElementById('exMpRoster').innerText, sent: null };
     });
-    check(`6b bot bay "${r.fly}" hiện thành dù (${r.gVis}); bot đi dạo "${r.walk}" hiện thành người, pose ${r.pose}, biên độ hông ${r.amp.toFixed(2)} (chạy ${RUN_AMP}), nhịp ${r.cad.toFixed(1)}`, r.fly === 'BayB' && r.gVis && r.walk === 'ChayB' && r.pose === 2 && Math.abs(r.amp - RUN_AMP) < 1e-3 && r.cad > 0);
+    const sprint = r.d && r.d.mix.length === 5 ? r.d.mix[3] : 0;
+    check(`6b bot bay "${r.fly}" hiện thành dù (${r.gVis}); bot đi dạo "${r.walk}" (slot ${r.wi}) hiện thành nhân vật có xương (${r.d && r.d.real}), mô hình ${r.d && r.d.model} (= 1 + slot mod 4 = ${1 + (r.wi % 4)}), pose ${r.pose}, trọng số sprint ${sprint.toFixed(3)}, tua ${r.d ? r.d.rate.toFixed(2) : '-'}`,
+      r.fly === 'BayB' && r.gVis && r.walk === 'ChayB' && r.pose === 2 && !!r.d && r.d.real && r.d.model === 1 + (r.wi % 4) && sprint > 0.95 && r.d.rate > 0);
+    check(`6b nhân vật của mình (slot ${r.self}): mô hình ${r.me && r.me.model} (= 0), có xương ${r.me && r.me.real}`, !!r.me && r.me.model === 0 && r.me.real);
     check(`6b danh sách hai nhóm "${r.roster.replace(/\n/g, ' | ')}"`, /Đi dạo 2\/5 · Bay 1\/5/.test(r.roster) && r.roster.includes('ChayB') && r.roster.includes('BayB'));
     // Mình gửi vị trí có pose: bot quan sát nhận w có slot của mình
     const seen = await new Promise((ok) => {
@@ -621,13 +637,18 @@ try {
     const p0 = await peopleOn(G.page), c0 = await calls();
     const wb = walkBot('DiBo', -230, GY[-230] ?? 8, 17.4, 1);
     await G.page.waitForFunction(() => { const V = window.__app.stroll.avatars; return [0, 1, 2, 3, 4].some((i) => V.slotState(i)); }, null, { timeout: 60000 }).catch(() => {});
-    await frames(G.page, 10);
+    // trang dù lượn nạp mô hình của bot khi slot hiện lần đầu: chờ nhân vật có xương thay hình khối
+    await G.page.waitForFunction(() => { const V = window.__app.stroll.avatars; return [0, 1, 2, 3, 4].some((i) => { const d = V.slotState(i) && V.debug(i); return d && d.real; }); }, null, { timeout: 240000, polling: 500 }).catch(() => {});
+    await frames(G.page, 3);
     const p1 = await peopleOn(G.page), c1 = await calls();
     const r = await G.page.evaluate(() => ({ roster: document.getElementById('exMpRoster').innerText, label: [...document.querySelectorAll('#exMpLabels .ex-mp-label')].filter((e) => !e.hidden).map((e) => e.textContent), slot: window.__app.multi.session.mySlot, kind: window.__app.multi.session.kind }));
-    check(`6a dù lượn (${r.kind}, slot ${r.slot}) trước bot đi dạo: stroll-people ${p0.has ? p0.n + ' instance' : 'chưa dựng'}; sau: ${p1.n} instance, hiện ${p1.vis}`, r.kind === 'fly' && r.slot === 0 && (!p0.has || (p0.n === 0 && !p0.vis)) && p1.has && p1.n === 1 && p1.vis);
+    const ws = p1.slots[0] || null;
+    check(`6a dù lượn (${r.kind}, slot ${r.slot}) trước bot đi dạo: stroll-people ${p0.has ? p0.n + ' nhân vật' : 'chưa dựng'}; sau: ${p1.n} nhân vật (${p1.real} có xương), hiện ${p1.vis}, hình khối ${p1.blocky ? 'còn hiện' : 'ẩn'}`,
+      r.kind === 'fly' && r.slot === 0 && (!p0.has || (p0.n === 0 && !p0.vis)) && p1.has && p1.n === 1 && p1.real === 1 && p1.vis && !p1.blocky);
+    check(`6a bot đi dạo ở slot ${wb.slot}: mô hình ${ws && ws.model} (= 1 + slot mod 4 = ${1 + (wb.slot % 4)}), slot hiện ${ws && ws.slot}`, !!ws && ws.slot === wb.slot && ws.model === 1 + (wb.slot % 4));
     check(`6a danh sách "${r.roster.replace(/\n/g, ' | ')}"`, /Đi dạo 1\/5 · Bay 1\/5/.test(r.roster) && r.roster.includes('DiBo') && r.roster.includes('Phi'));
     check(`6a nhãn tên bot đi dạo (${r.label.join(' ; ')})`, r.label.some((l) => /^DiBo · \d+ m$/.test(l)));
-    check(`6a draw call trước bot ${c0} → sau ${c1}: tăng đúng 1`, c1 - c0 === 1);
+    check(`6a draw call trước bot ${c0} → sau ${c1}: tăng đúng số lưới của nhân vật (${p1.meshes})`, p1.meshes >= 1 && c1 - c0 === p1.meshes);
     check('6a lỗi console của trang dù lượn = 0', G.errors.length === 0);
     if (G.errors.length) console.log(G.errors.join('\n'));
     await G.page.close();

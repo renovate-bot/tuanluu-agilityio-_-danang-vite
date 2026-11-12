@@ -6,27 +6,33 @@
 //          mỗi bước tâm nhân vật không nằm trong hộp bao nhà (theo hình học), đếm bước gần nhà (không rỗng), đẩy thẳng vào một bức tường để chứng minh tia thấy tường.
 //   Mục 4: không ra ngoài mép kè trừ cầu / Cầu Tình Yêu, không thấp hơn mặt đất.
 //   Mục 5: camera sát tường nhà không chui vào nhà, không xuống dưới mặt đất.
-//   Mục 8: draw call của người đi dạo đúng 1.
+//   Mục 8 (D-030): nhân vật có xương nạp xong (chờ debug(self).real, polling): đúng 1 nhân vật thật đang hiện, mô hình 0, mọi lưới lớp 1, không đổ bóng,
+//          hình khối ẩn, có request people/p0.glb; draw call của nhóm = số lưới của nhân vật. Chuyển động thật: 12 mẫu khoảng cách dọc hướng đi
+//          giữa Bip01_L_Foot và Bip01_Pelvis khi chạy (biên độ > 0,2 m) và khi đứng (< 0,05 m). Ảnh ngày / đêm, đứng / chạy (tests/screens/stroll-rig-*.png).
 //   Mục 7: cầu quay: sơ tán khỏi nhịp, không vào lại khi chưa đóng, đóng thì vào được.
-//   Mục 6: phím W theo hướng camera, blur dừng (Review Focus 3), gõ trong ô nhập không điều khiển, Space một lần nhảy một lần, Esc thoát.
-//   Trang B `?test`: không có `stroll-people` trong cảnh.
+//   Mục 6: phím W theo hướng camera, blur dừng (Review Focus 3), gõ trong ô nhập không điều khiển, giữ Space 80 khung khi một nút đang focus:
+//          không rời đất, nút không bị bấm, Space không vào keys (đã bỏ nhảy, Review Focus 5); không còn #stJump; Esc thoát.
+//   Trang B `?test` (mục 8b): không có `stroll-people` trong cảnh, không request nào tới people/ (đếm từ trước khi tải trang).
+//   Mục 12 (D-030): trang chặn people/*.glb: vẫn đi được 60 khung bằng hình khối, debug(self).real false, không lỗi / promise bị từ chối chưa bắt (Review Focus 1).
 //   Mục 9 (Task 7): sảnh đi dạo qua màn chọn với máy chủ giả (routeWebSocket): chữ đi dạo, đổi ngôn ngữ ar / en đổi ngay, Quay lại → Dù lượn về chữ dù lượn,
 //          máy chủ cũ (lobby không walkers) → ngoại tuyến, Đi một mình.
 //   Mục 11 (Task 9): chụp ảnh: PNG đúng khung WebGL (tên, kích thước = canvas, 400 điểm mẫu), phím p, 5 lần bấm, đổi cỡ cửa sổ, bậc thấp, preserveDrawingBuffer = false.
-//   Mục 10 (Task 7): cả 9 file locale có đủ khóa st* và exWalk / exWalkDesc.
+//   Mục 10 (Task 7): cả 9 file locale có đủ khóa st* và exWalk / exWalkDesc; không còn khóa stJump, stHint không nhắc Space (D-030).
 //
-//   npm run build && npm run test:stroll
+//   npm run build && npm run test:stroll [-- --no-shots]
 //
 //   Oracle mục 3 (không dùng bản đồ va chạm): tam giác thế giới của các lưới rắn, xếp vào lưới ô 2 m để chỉ thử tam giác gần nhân vật
 //   (Raycaster trên cả cảnh với 24 000 tia không xong trong thời gian hợp lý trên SwiftShader). Thử tia bằng Ray.intersectTriangle
 //   không loại mặt sau = vật liệu DoubleSide. Lưới dùng: nhà level gần của THREE.LOD (InstancedMesh, mọi instance còn hiện quanh khung đi dạo),
 //   `dragon-body` (thân rồng), `dragon-head` (cả nhóm đầu rồng), `sh-tower` (tháp Cầu sông Hàn), `rf-landmarks` (địa danh ven sông, gồm cả
 //   cầu tàu, lan can, hàng khóa và tượng cá chép Cầu Tình Yêu). Không dùng: cây, cột đèn, ghế, xe, người, dây văng, bảng quảng cáo (spec §4: đi xuyên được).
-//   Cao độ tia tính từ cao độ đứng tại chỗ (không từ chân khi đang nhảy): spec chỉ chặn trong tầm người tính từ mặt đứng.
+//   Cao độ tia tính từ cao độ đứng tại chỗ (không từ chân khi đang rơi): spec chỉ chặn trong tầm người tính từ mặt đứng.
 import { fileURLToPath } from 'node:url';
-import { readFileSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { serveDir, launch, openApp, frames } from './lib.mjs';
 
+const SHOTS = !process.argv.includes('--no-shots');
+const SCREENS = fileURLToPath(new URL('./screens/', import.meta.url));
 const problems = [];
 const check = (name, ok) => { if (!ok) problems.push(name); console.log(`${ok ? 'đạt ' : 'LỖI '} ${name}`); return ok; };
 
@@ -49,8 +55,8 @@ function installHelpers() {
   };
   /* vật đi xuyên được (spec §4) hoặc không phải mặt rắn: bỏ qua khi tìm mặt đứng */
   const through = (o) => {
-    if (o.isInstancedMesh || o.isPoints || o.isLine || o.isSprite || o.name === 'stroll-people') return true;
-    for (let p = o; p; p = p.parent) if (!p.visible) return true;
+    if (o.isInstancedMesh || o.isPoints || o.isLine || o.isSprite) return true;
+    for (let p = o; p; p = p.parent) if (!p.visible || p.name === 'stroll-people') return true;   // cả lưới con của nhân vật có xương (D-030), không chỉ nhóm
     return false;
   };
   const rc = new T.Raycaster(); rc.layers.enableAll(); rc.camera = a.camera;
@@ -64,6 +70,19 @@ function installHelpers() {
 
 const srv = await serveDir(fileURLToPath(new URL('../dist/', import.meta.url)));
 const browser = await launch();
+/* Như openApp nhưng cho cài route / bộ nghe request trước khi tải trang (setup(page)); thêm bộ ghi promise bị từ chối chưa bắt */
+async function openWith(url, setup) {
+  const page = await browser.newPage({ viewport: { width: 480, height: 270 } });
+  const errors = []; page.setDefaultTimeout(240000);
+  page.on('pageerror', (e) => errors.push(String(e)));
+  page.on('console', (m) => { if (m.type() === 'error' && !/fonts\.(googleapis|gstatic)|ERR_FAILED|net::/.test(m.text())) errors.push(m.text()); });
+  await page.route(/fonts\.(googleapis|gstatic)\.com/, (r) => r.abort());
+  await page.addInitScript(() => { window.__unhandled = []; window.addEventListener('unhandledrejection', (e) => window.__unhandled.push(String(e.reason))); });
+  if (setup) await setup(page);
+  await page.goto(url + (url.includes('?') ? '&' : '?') + 'test', { waitUntil: 'load', timeout: 180000 });
+  await page.waitForFunction(() => window.__app && document.getElementById('loading')?.classList.contains('done'), null, { timeout: 180000 });
+  return { page, errors };
+}
 try {
   const A = await openApp(browser, srv.url + '?explore=stroll');
   const P = A.page;
@@ -194,7 +213,7 @@ try {
       let seed = 20261111;
       const rnd = () => { seed = (seed + 0x6D2B79F5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
       const starts = [[-240, 17.4], [0, -10], [-300, 60], [-320, -500], [-320, -1150], [-150, -1074.5], [30, -1083], [320, -1150], [240, -78], [340, -660], [150, -1074.5]];
-      const badStart = [], fails = [], out4 = [], inp = { mx: 0, mz: 0, run: false, jump: false, camYaw: 0 };
+      const badStart = [], fails = [], out4 = [], inp = { mx: 0, mz: 0, run: false, camYaw: 0 };
       const BRIDGE = new Set(['shSwing', 'songHanW', 'songHanE', 'dragon', 'love']);
       let samples = 0, steps = 0, minY = Infinity, zonesSeen = new Set();
       /* chứng minh oracle không rỗng: mỗi BƯỚC kiểm tâm nhân vật không nằm trong khối nhà, đo khoảng cách tới nhà gần nhất, đếm bước đứng im khi đang đẩy */
@@ -217,10 +236,9 @@ try {
         window.__st.put(sx, sz);
         let left = 0; still = 0; px = s.x; pz = s.z;
         for (let i = 0; i < n; i++) {
-          inp.jump = false;
           if (left-- <= 0) {
             left = 10 + Math.floor(rnd() * 50);
-            inp.mx = rnd() < 0.3 ? 0 : rnd() * 2 - 1; inp.mz = rnd() < 0.2 ? 0 : rnd() * 2 - 1; inp.run = rnd() < 0.5; inp.jump = rnd() < 0.4; inp.camYaw = rnd() * Math.PI * 2;
+            inp.mx = rnd() < 0.3 ? 0 : rnd() * 2 - 1; inp.mz = rnd() < 0.2 ? 0 : rnd() * 2 - 1; inp.run = rnd() < 0.5; rnd(); inp.camYaw = rnd() * Math.PI * 2;   // rnd() lẻ: chỗ cờ nhảy cũ (D-030), giữ chuỗi ngẫu nhiên của các đường đi
             still = 0;
           }
           const dt = rnd() < 0.05 ? 0.1 : 1 / 30;
@@ -261,7 +279,7 @@ try {
           if (!okLine) continue;
           wall.tried++;
           window.__st.put(sx0, mz);
-          const w = { mx: 0, mz: 1, run: false, jump: false, camYaw: dir > 0 ? 0 : Math.PI };   // mz = 1: camYaw 0 → +X, π → −X; đi bộ
+          const w = { mx: 0, mz: 1, run: false, camYaw: dir > 0 ? 0 : Math.PI };   // mz = 1: camYaw 0 → +X, π → −X; đi bộ
           for (let i = 0; i < 90; i++) S.stroll.step(1 / 30, w);   // 3 s tới sát tường
           for (let i = 0; i < 120; i++) S.stroll.step(1 / 240, w);   // bước nhỏ ≈ 0,01 m: dừng tại tường, không còn hụt cả một bước
           const gap = dir > 0 ? face - s.x : s.x - face, g = S.stGroundY(map, s.x, s.z);
@@ -322,18 +340,75 @@ try {
     check(`5 ${r.n} vị trí sát tường nhà: camera ngoài chân đế nhà, y ≥ 2,5, cách đầu ≥ minDist (nhỏ nhất ${r.minD.toFixed(2)} m) (lỗi: ${r.bad.length ? JSON.stringify(r.bad.slice(0, 5)) : '-'})`, r.n === 30 && r.bad.length === 0);
   }
 
-  // Mục 8 — draw call của người đi dạo
+  // Mục 8 — nhân vật có xương (D-030): nạp xong, đúng 1 nhân vật thật, lớp, bóng, draw call, chuyển động bàn chân, ảnh
   {
+    await P.waitForFunction(() => { const V = window.__app.stroll.avatars, d = V.self >= 0 ? V.debug(V.self) : null; return !!d && d.real; }, null, { timeout: 240000, polling: 500 }).catch(() => {});
     const r = await P.evaluate(() => {
-      const a = window.__app, S = a.stroll, { renderer, scene, camera } = a, mesh = S.avatars.mesh;
+      const a = window.__app, S = a.stroll, V = S.avatars, { renderer, scene, camera } = a, g = V.mesh;
       window.__st.put(-240, 17.4); S.stroll.state.yaw = 0; S.stroll.cam.yaw = 0; S.stroll.cam.pitch = S.CONFIG_stroll.cam.pitch;
-      S.stroll.step(1 / 60, { mx: 0, mz: 0, run: false, jump: false, camYaw: 0 });
+      S.stroll.step(1 / 60, { mx: 0, mz: 0, run: false, camYaw: 0 });
       S.stCamPlace(camera, a.controls.target, S.stroll.state, S.stroll.cam, S.stroll.map, 0, true);
+      const rigs = g.children.filter((c) => c.name === 'stroll-rig'), shown = rigs.filter((c) => c.visible), blocky = g.getObjectByName('stroll-blocky');
+      const meshes = [], skinned = [];
+      for (const rg of shown) rg.traverse((o) => { if (o.isMesh) { meshes.push({ layer: o.layers.mask, cast: o.castShadow, vis: o.visible }); if (o.isSkinnedMesh) skinned.push(o.name); } });
       const calls = () => { renderer.render(scene, camera); renderer.info.reset(); renderer.render(scene, camera); return renderer.info.render.calls; };
-      const on = calls(); mesh.visible = false; const off = calls(); mesh.visible = true;
-      return { on, off, layer: mesh.layers.mask, cast: mesh.castShadow };
+      const on = calls(); g.visible = false; const off = calls(); g.visible = true;
+      const req = performance.getEntriesByType('resource').filter((e) => /\/people\/p\d\.glb/.test(e.name)).map((e) => e.name.replace(/^.*\/people\//, 'people/'));
+      return { self: V.self, d: V.debug(V.self), rigs: rigs.length, shown: shown.length, meshes, skinned: skinned.length, blocky: !!blocky && blocky.visible, on, off, req,
+        bones: shown[0] ? ['Bip01_Pelvis', 'Bip01_L_Foot', 'Bip01_R_Foot'].filter((n) => !!shown[0].getObjectByName(n)).length : 0 };
     });
-    check(`8 đi dạo: ${r.on} lệnh vẽ, ẩn người đi dạo ${r.off}: chênh ${r.on - r.off} (= 1); lớp ${r.layer}, bóng ${r.cast}`, r.on - r.off === 1 && r.layer === 2 && r.cast === false);
+    check(`8 nhân vật của mình (slot ${r.self}) nạp xong: debug ${JSON.stringify(r.d && { model: r.d.model, real: r.d.real })}, mô hình 0, có xương`, !!r.d && r.d.real && r.d.model === 0);
+    check(`8 đúng 1 nhân vật thật trong stroll-people (${r.rigs} con stroll-rig, ${r.shown} đang hiện, ${r.skinned} SkinnedMesh, đủ 3 xương Bip01 tra cứu: ${r.bones}); hình khối ẩn (${!r.blocky}); đã tải ${r.req.join(',') || '-'}`,
+      r.rigs === 1 && r.shown === 1 && r.skinned >= 1 && r.bones === 3 && !r.blocky && r.req.includes('people/p0.glb'));
+    check(`8 mọi lưới của nhân vật (${r.meshes.length}) ở lớp 1 (mask 2), không đổ bóng (${JSON.stringify(r.meshes)})`, r.meshes.length >= 1 && r.meshes.every((m) => m.layer === 2 && m.cast === false));
+    check(`8 đi dạo: ${r.on} lệnh vẽ, ẩn nhóm người đi dạo ${r.off}: chênh ${r.on - r.off} (= số lưới hiện của nhân vật ${r.meshes.filter((m) => m.vis).length})`, r.on - r.off === r.meshes.filter((m) => m.vis).length);
+    /* chuyển động thật: khoảng cách dọc hướng mặt giữa bàn chân trái và hông (vị trí thế giới của xương) đổi khi chạy, gần như không đổi khi đứng */
+    const amp = await P.evaluate(() => {
+      const a = window.__app, S = a.stroll, V = S.avatars, T = a.THREE, s = S.stroll.state;
+      const rig = V.mesh.children.find((c) => c.name === 'stroll-rig' && c.visible);
+      const foot = rig.getObjectByName('Bip01_L_Foot'), pel = rig.getObjectByName('Bip01_Pelvis'), f = new T.Vector3(), p = new T.Vector3();
+      const along = () => { rig.updateMatrixWorld(true); foot.getWorldPosition(f); pel.getWorldPosition(p); const y = rig.rotation.y; return (f.x - p.x) * Math.cos(y) - (f.z - p.z) * Math.sin(y); };   // mô hình hướng +X, quay yaw quanh Y
+      const series = (inp, warm) => {
+        for (let i = 0; i < warm; i++) S.stroll.step(1 / 30, inp);
+        const v = [];
+        for (let i = 0; i < 12; i++) { S.stroll.step(1 / 30, inp); v.push(along()); }
+        const d = V.debug(V.self);
+        return { amp: Math.max(...v) - Math.min(...v), v: v.map((x) => +x.toFixed(3)), pose: s.pose, speed: +s.speed.toFixed(2), mix: d.mix.map((x) => +x.toFixed(3)), rate: +d.rate.toFixed(3) };
+      };
+      window.__st.put(-240, 17.4); s.yaw = 0;
+      const run = series({ mx: 0, mz: 1, run: true, camYaw: 0 }, 45);   // camYaw 0, mz 1 → +X dọc lề Nam Cầu Rồng; 1,5 s tăng tốc + mờ sang sprint
+      const stand = series({ mx: 0, mz: 0, run: false, camYaw: 0 }, 60);   // 2 s dừng hẳn, mờ về idle
+      return { run, stand };
+    });
+    console.log(`   bàn chân trái − hông dọc hướng đi, chạy: ${JSON.stringify(amp.run.v)}; đứng: ${JSON.stringify(amp.stand.v)}`);
+    check(`8 chạy (pose ${amp.run.pose}, ${amp.run.speed} m/s, trộn ${JSON.stringify(amp.run.mix)}, tua ${amp.run.rate}): biên độ bàn chân so với hông ${amp.run.amp.toFixed(3)} m (> 0,2)`, amp.run.pose === 2 && amp.run.amp > 0.2);
+    check(`8 đứng (pose ${amp.stand.pose}, ${amp.stand.speed} m/s, trộn ${JSON.stringify(amp.stand.mix)}): biên độ ${amp.stand.amp.toFixed(3)} m (< 0,05)`, amp.stand.pose === 0 && amp.stand.speed === 0 && amp.stand.amp < 0.05);
+    /* ảnh để người xem lại: ngày / đêm, đứng / chạy ở điểm xuất phát (vẽ và đọc canvas trong cùng một tác vụ: preserveDrawingBuffer = false vẫn đọc được) */
+    if (SHOTS) {
+      mkdirSync(SCREENS, { recursive: true });
+      await P.setViewportSize({ width: 960, height: 540 });
+      await P.waitForFunction(() => window.__app.renderer.domElement.width >= 900, null, { timeout: 240000, polling: 500 });   // canvas đã đổi cỡ (lần chạy đầu: ảnh ngày còn 480×270)
+      const shot = (run) => P.evaluate((run) => {
+        const a = window.__app, S = a.stroll, s = S.stroll.state, inp = { mx: 0, mz: run ? 1 : 0, run, camYaw: 0 };
+        window.__st.put(S.CONFIG_stroll.spawn.x, S.CONFIG_stroll.spawn.z); s.yaw = 0; S.stroll.cam.yaw = 0; S.stroll.cam.pitch = S.CONFIG_stroll.cam.pitch;
+        for (let i = 0; i < 45; i++) S.stroll.step(1 / 30, inp);
+        S.stCamPlace(a.camera, a.controls.target, s, S.stroll.cam, S.stroll.map, 0, true);
+        a.renderer.render(a.scene, a.camera);
+        return a.renderer.domElement.toDataURL('image/png');
+      }, run);
+      const save = (name, url) => writeFileSync(SCREENS + name, Buffer.from(url.split(',')[1], 'base64'));
+      const setNight = async (v) => {
+        await P.evaluate((v) => { window.__app.dayNight.target = v; window.__app.dayNight.night = v; }, v);
+        await P.waitForFunction((v) => Math.abs(window.__app.dayNight.night - v) < 1e-6, v, { timeout: 60000, polling: 500 });
+        await frames(P, 3);   // applyNight ghi shared.uNight
+      };
+      save('stroll-rig-day-stand.png', await shot(false)); save('stroll-rig-day-run.png', await shot(true));
+      await setNight(1);
+      save('stroll-rig-night-stand.png', await shot(false)); save('stroll-rig-night-run.png', await shot(true));
+      await setNight(0);
+      await P.setViewportSize({ width: 480, height: 270 }); await frames(P, 2);
+      console.log('   ảnh: tests/screens/stroll-rig-{day,night}-{stand,run}.png');
+    }
   }
 
   // Mục 7 — cầu quay
@@ -357,7 +432,7 @@ try {
     check(`7 cầu quay: sau ${r1.f} khung nhân vật ở x = ${r1.x.toFixed(2)} (|x| ≥ ${SHX}), trạng thái ${r1.state} ≠ CLOSED, camera vẫn ${r1.mode}`, !r1.timeout && Math.abs(r1.x) >= SHX && r1.state !== 'CLOSED' && r1.mode === 'stroll');
     const walkIn = () => P.evaluate((X) => {
       const S = window.__app.stroll, s = S.stroll.state; let minAx = Infinity;
-      const inp = { mx: 0, mz: 1, run: false, jump: false, camYaw: s.x > 0 ? Math.PI : 0 };   // đi thẳng về tim cầu
+      const inp = { mx: 0, mz: 1, run: false, camYaw: s.x > 0 ? Math.PI : 0 };   // đi thẳng về tim cầu
       for (let i = 0; i < 500; i++) { S.stroll.step(1 / 30, inp); minAx = Math.min(minAx, Math.abs(s.x)); }
       return { minAx, state: window.__app.songHan.ctrl.state };
     }, SHX);
@@ -398,15 +473,25 @@ try {
     const q1 = await P.evaluate(() => ({ x: window.__app.stroll.stroll.state.x, keys: window.__app.keys.size, v: document.getElementById('__stTestInput').value, air: window.__app.stroll.stroll.state.air }));
     check(`6 gõ "${q1.v}" trong ô nhập: nhân vật đứng yên (${(q1.x - q0).toExponential(1)}), keys ${q1.keys}`, q1.v === 'wwwd wasd' && q1.x === q0 && q1.keys === 0 && !q1.air);
     await P.evaluate(() => document.getElementById('__stTestInput').remove());
-    await P.focus('canvas');
-    // giữ Space: nhảy đúng một lần
-    await P.evaluate(() => { window.__jumps = 0; let prev = false; const s = window.__app.stroll.stroll.state; const w = () => { if (s.air && !prev) window.__jumps++; prev = s.air; window.__jw = requestAnimationFrame(w); }; w(); });
+    // giữ Space 80 khung khi một nút đang focus (đã bỏ nhảy, D-030; Review Focus 5): không rời đất, nút không bị bấm, Space không vào keys, trang không cuộn
+    await P.evaluate(() => {
+      const b = document.createElement('button'); b.id = '__stTestBtn'; b.textContent = 'thử'; b.style.cssText = 'position:fixed;left:0;top:0;z-index:99';
+      window.__btnClicks = 0; b.addEventListener('click', () => window.__btnClicks++); document.body.appendChild(b);
+      window.__air = false; window.__spaceKey = false; window.__sf = 0; const s = window.__app.stroll.stroll.state;
+      const w = () => { window.__sf++; if (s.air) window.__air = true; if (window.__app.keys.has(' ')) window.__spaceKey = true; window.__jw = requestAnimationFrame(w); }; w();
+    });
+    await P.focus('#__stTestBtn');
+    const sp0 = await P.evaluate(() => ({ y: window.__app.stroll.stroll.state.y, scroll: window.scrollY, focus: document.activeElement && document.activeElement.id }));
     await P.keyboard.down(' ');
-    await frames(P, 80);
+    await P.waitForFunction(() => window.__sf >= 80, null, { timeout: 600000, polling: 500 });
     await P.keyboard.up(' ');
-    await frames(P, 30);
-    const jumps = await P.evaluate(() => { cancelAnimationFrame(window.__jw); return window.__jumps; });
-    check(`6 giữ Space 80 khung: nhảy ${jumps} lần (= 1)`, jumps === 1);
+    await frames(P, 3);
+    const sp = await P.evaluate((y0) => { cancelAnimationFrame(window.__jw); const s = window.__app.stroll.stroll.state;
+      return { air: window.__air, key: window.__spaceKey, clicks: window.__btnClicks, dy: s.y - y0, scroll: window.scrollY, frames: window.__sf }; }, sp0.y);
+    await P.evaluate(() => document.getElementById('__stTestBtn').remove());
+    await P.focus('canvas');
+    check(`6 giữ Space ${sp.frames} khung (nút #${sp0.focus} đang focus): air chưa từng true (${sp.air}), cao độ đổi ${sp.dy.toExponential(1)}, nút bị bấm ${sp.clicks} lần (= 0), Space trong keys ${sp.key}, cuộn ${sp0.scroll} → ${sp.scroll}`,
+      sp0.focus === '__stTestBtn' && !sp.air && Math.abs(sp.dy) < 1e-6 && sp.clicks === 0 && !sp.key && sp.scroll === sp0.scroll);
     // chọn ô cài đặt bằng chuột rồi giữ W: ô chọn bỏ focus, nhân vật đi (không đổi chất lượng / ngôn ngữ bằng phím)
     for (const id of ['qualitySel', 'langSelect']) {
       await P.evaluate(() => { const S = window.__app.stroll; window.__st.put(-240, 17.4); S.stroll.state.yaw = 0; S.stroll.cam.yaw = Math.PI; window.__app.keys.clear(); });
@@ -428,9 +513,9 @@ try {
     // dòng hướng dẫn phím (máy tính, có chuột): #stHint hiện đúng chữ, #exHint của dù lượn vẫn ẩn
     const hint = await P.evaluate(() => ({ st: document.getElementById('stHint').innerText, stShown: document.getElementById('stHint').getClientRects().length > 0, ex: document.getElementById('exHint').getClientRects().length > 0 }));
     check(`6 #stHint hiện "${hint.st}" (stHint vi), #exHint ẩn (${hint.ex})`, hint.stShown && hint.st === JSON.parse(readFileSync(new URL('../src/i18n/locales/vi.json', import.meta.url), 'utf8')).stHint && !hint.ex);
-    // máy tính (có chuột): điều khiển cảm ứng ẩn hết, chỉ 📷 hiện (lỗi cũ: "Nhảy" hiện ở góc trên trái vì `#stHud button{display:flex}` thắng `#stJump{display:none}`)
-    const desk = await P.evaluate(() => Object.fromEntries(['stJump', 'stPad', 'stLook', 'stPhoto'].map((id) => [id, document.getElementById(id).getClientRects().length > 0])));
-    check(`6 máy tính: #stJump ${desk.stJump}, #stPad ${desk.stPad}, #stLook ${desk.stLook} ẩn; #stPhoto ${desk.stPhoto} hiện`, !desk.stJump && !desk.stPad && !desk.stLook && desk.stPhoto);
+    // máy tính (có chuột): điều khiển cảm ứng ẩn hết, chỉ 📷 hiện; nút Nhảy đã bỏ khỏi DOM (D-030)
+    const desk = await P.evaluate(() => ({ jump: !!document.getElementById('stJump'), ...Object.fromEntries(['stPad', 'stLook', 'stPhoto'].map((id) => [id, document.getElementById(id).getClientRects().length > 0])) }));
+    check(`6 máy tính: không còn #stJump trong DOM (${desk.jump}); #stPad ${desk.stPad}, #stLook ${desk.stLook} ẩn; #stPhoto ${desk.stPhoto} hiện`, !desk.jump && !desk.stPad && !desk.stLook && desk.stPhoto);
     // Esc thoát
     await P.evaluate(() => { window.__reloadMark = 1; });
     await P.keyboard.press('Escape');
@@ -442,16 +527,49 @@ try {
   if (A.errors.length) console.log(A.errors.join('\n'));
   await P.close();
 
-  // Mục 8b — trang ?test không explore: không có người đi dạo trong cảnh
+  // Mục 8b — trang ?test không explore: không có người đi dạo trong cảnh, không tải mô hình người (đếm request từ trước khi tải trang)
   {
-    const N = await openApp(browser, srv.url);
+    const reqs = [];
+    const N = await openWith(srv.url, (pg) => { pg.on('request', (q) => reqs.push(q.url())); });
     await frames(N.page, 3);
     const r = await N.page.evaluate(() => ({ obj: !!window.__app.scene.getObjectByName('stroll-people'), mode: window.__app.cam.mode, st: document.body.classList.contains('stroll'), act: window.__app.stroll?.stroll.active() }));
     check(`8 ?test không explore: không có stroll-people (${r.obj}), mode ${r.mode}, body.stroll ${r.st}, active ${r.act}`, !r.obj && r.mode === 'orbit' && !r.st && r.act === false);
+    const ppl = reqs.filter((u) => /\/people\//.test(u)), gl = reqs.filter((u) => /GLTFLoader|SkeletonUtils/.test(u));
+    check(`8 ?test không explore: ${reqs.length} request, tới people/: ${ppl.length} (= 0), chunk GLTFLoader / SkeletonUtils: ${gl.length} (= 0)`, reqs.length > 0 && ppl.length === 0 && gl.length === 0);
     const pdb = await N.page.evaluate(() => window.__app.renderer.getContextAttributes().preserveDrawingBuffer);
     check(`11 góc nhìn cũ: preserveDrawingBuffer ${pdb} (= false)`, pdb === false);
     check('console sạch (trang ?test)', N.errors.length === 0);
     await N.page.close();
+  }
+
+  // Mục 12 (D-030) — chặn people/*.glb: nạp lỗi thì vẫn đi được bằng hình khối, không lỗi chưa bắt (Review Focus 1)
+  {
+    let blocked = 0, warned = 0;
+    const B = await openWith(srv.url + '?explore=stroll', async (pg) => {
+      await pg.route('**/people/*.glb', (q) => { blocked++; q.abort(); });
+      pg.on('console', (m) => { if (m.type() === 'warning' && /không nạp được mô hình người/.test(m.text())) warned++; });
+    });
+    const Q = B.page;
+    const t0 = Date.now(); while (warned === 0 && Date.now() - t0 < 240000) await Q.waitForTimeout(500);   // bộ nạp báo lỗi một lần
+    await Q.evaluate(() => { const S = window.__app.stroll; window.__app.keys.clear(); S.stroll.cam.yaw = S.stroll.state.yaw; document.activeElement && document.activeElement.blur(); });
+    await Q.focus('canvas');
+    const b0 = await Q.evaluate(() => { const s = window.__app.stroll.stroll.state; window.__bf = 0; const f = () => { window.__bf++; window.__bfr = requestAnimationFrame(f); }; f(); return { x: s.x, z: s.z }; });
+    await Q.keyboard.down('w');
+    await Q.waitForFunction(() => window.__bf >= 60, null, { timeout: 600000, polling: 500 });
+    await Q.keyboard.up('w');
+    await frames(Q, 2);
+    const r = await Q.evaluate(() => {
+      cancelAnimationFrame(window.__bfr);
+      const a = window.__app, V = a.stroll.avatars, g = V.mesh, s = a.stroll.stroll.state, b = g && g.getObjectByName('stroll-blocky');
+      return { x: s.x, z: s.z, act: a.stroll.stroll.active(), d: V.self >= 0 ? V.debug(V.self) : null, rigs: g ? g.children.filter((c) => c.name === 'stroll-rig').length : -1,
+        blocky: !!b && b.visible, gVis: !!g && g.visible, unh: window.__unhandled, frames: window.__bf };
+    });
+    const moved = Math.hypot(r.x - b0.x, r.z - b0.z);
+    check(`12 chặn people/*.glb (${blocked} request bị chặn, ${warned} cảnh báo): giữ W ${r.frames} khung đi ${moved.toFixed(2)} m (> 1), đang đi dạo ${r.act}`, blocked >= 1 && warned === 1 && moved > 1 && r.act);
+    check(`12 nạp lỗi: debug(self) ${JSON.stringify(r.d && { model: r.d.model, real: r.d.real })} real = false, ${r.rigs} nhân vật có xương (= 0), hình khối hiện ${r.blocky}, nhóm hiện ${r.gVis}`, !!r.d && r.d.real === false && r.rigs === 0 && r.blocky && r.gVis);
+    check(`12 nạp lỗi: không pageerror / lỗi console (${B.errors.length}), không promise bị từ chối chưa bắt (${r.unh.length})`, B.errors.length === 0 && r.unh.length === 0);
+    if (B.errors.length || r.unh.length) console.log([...B.errors, ...r.unh].join('\n'));
+    await Q.close();
   }
 
   // Mục 11 (Task 9) — chụp ảnh: PNG đúng là khung WebGL vừa vẽ (Review Focus 5); Playwright bắt sự kiện download
@@ -505,7 +623,7 @@ try {
     await Q.evaluate(() => document.activeElement && document.activeElement.blur());
     await Q.keyboard.press('p');
     const pose = await Q.evaluate(() => {
-      const S = window.__app.stroll.stroll, idle = { mx: 0, mz: 0, run: false, jump: false, camYaw: 0 }, hold = window.__app.stroll.CONFIG_stroll.photoHold;
+      const S = window.__app.stroll.stroll, idle = { mx: 0, mz: 0, run: false, camYaw: 0 }, hold = window.__app.stroll.CONFIG_stroll.photoHold;
       S.step(0.016, idle); const p0 = S.state.pose;
       let t = 0, p1 = p0; while (t < hold - 0.1) { S.step(0.05, idle); t += 0.05; p1 = S.state.pose; }
       for (let i = 0; i < 6; i++) S.step(0.05, idle);
@@ -600,12 +718,14 @@ try {
   {
     const codes = ['vi', 'en', 'ko', 'ja', 'zh', 'th', 'ar', 'hi', 'ru'];
     const all = Object.fromEntries(codes.map((c) => [c, JSON.parse(readFileSync(new URL(`../src/i18n/locales/${c}.json`, import.meta.url), 'utf8'))]));
-    const need = ['stSky', 'stSeats', 'stFull', 'stGo', 'stSolo', 'stOffline', 'stRoster', 'stWatch', 'stInvite', 'stInviteGo', 'stLate', 'stReleased', 'stLost', 'stJump', 'stPhoto', 'stPhotoSaved', 'stPhotoFail'];
+    const need = ['stSky', 'stSeats', 'stFull', 'stGo', 'stSolo', 'stOffline', 'stRoster', 'stWatch', 'stInvite', 'stInviteGo', 'stLate', 'stReleased', 'stLost', 'stHint', 'stPhoto', 'stPhotoSaved', 'stPhotoFail'];
     const keys = [...new Set([...need, ...codes.flatMap((c) => Object.keys(all[c]).filter((k) => /^st[A-Z]/.test(k))), 'exWalk', 'exWalkDesc'])];
     const miss = [];
     for (const c of codes) for (const k of keys) if (typeof all[c][k] !== 'string' || !all[c][k].trim()) miss.push(`${c}.${k}`);
     const params = codes.filter((c) => !all[c].stSeats.includes('{n}') || !all[c].stRoster.includes('{w}') || !all[c].stRoster.includes('{f}') || !all[c].stWatch.includes('{name}'));
     check(`10 9 locale có đủ ${keys.length} khóa st* + exWalk/exWalkDesc (thiếu: ${miss.join(',') || '-'}), tham số đủ (lỗi: ${params.join(',') || '-'}), exWalk vi "${all.vi.exWalk}"`, miss.length === 0 && params.length === 0 && all.vi.exWalk === 'Đi dạo' && all.ar._dir === 'rtl');
+    const jumpKey = codes.filter((c) => 'stJump' in all[c]), space = codes.filter((c) => /space/i.test(all[c].stHint));
+    check(`10 đã bỏ nhảy (D-030): khóa stJump còn ở ${jumpKey.join(',') || '-'}, stHint còn nhắc Space ở ${space.join(',') || '-'}; vi "${all.vi.stHint}"`, jumpKey.length === 0 && space.length === 0);
   }
 } catch (e) {
   problems.push('ngoại lệ: ' + e); console.log(e);
