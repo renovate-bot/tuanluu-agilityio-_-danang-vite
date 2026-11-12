@@ -11,6 +11,7 @@
     "gen:voice": "node scripts/gen-narration.mjs",
     "gen:people": "node scripts/people/blender.mjs scripts/people/convert.py",
     "gen:crowd": "node scripts/people/blender.mjs scripts/people/crowd.py",
+    "gen:car": "node scripts/people/blender.mjs scripts/car/convert.py",
     "test:tour": "node tests/tour-check.mjs",
     "test:voice": "node tests/voice-check.mjs",
     "test:drawcalls": "node tests/drawcalls.mjs",

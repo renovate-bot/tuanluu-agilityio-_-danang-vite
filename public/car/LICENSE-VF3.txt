@@ -1,0 +1,23 @@
+Mô hình VinFast VF 3 (public/car/vf3.glb)
+=========================================
+
+Tên mô hình : Vinfast Vf3
+Tác giả     : Hoàng Huy (https://sketchfab.com/danghoanghuy69)
+Nguồn       : https://sketchfab.com/3d-models/vinfast-vf3-6a2caea4505347d18c47ef4d47840859
+Giấy phép   : CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+              Được phép chia sẻ và chỉnh sửa, kể cả mục đích thương mại, với điều kiện ghi nguồn tác giả,
+              dẫn liên kết giấy phép và nêu rõ các thay đổi.
+
+Các thay đổi (scripts/car/convert.py, `npm run gen:car`, Blender 4.5); tệp gốc ở scripts/car/vinfast_vf3.glb:
+ - Xoá hai tấm biển số (lưới Object_12, Object_13) cùng vật liệu và hai ảnh JPEG chỉ dùng cho biển số. Logo chữ V và chữ VF3
+   của mô hình gốc được giữ nguyên.
+ - Tách bốn bánh (lốp, mâm, chi tiết trong hộp bánh) thành bốn nút wheel_fl, wheel_fr, wheel_rl, wheel_rr, gốc ở tâm bánh;
+   bốn bánh giống hệt nhau nên dùng chung một lưới (bánh bên phải xoay 180 độ quanh trục đứng). Phần còn lại là nút body.
+ - Đổi hướng (mũi xe hướng +X, trục Y hướng lên, đơn vị mét), phóng đều để xe dài 3,19 m, đặt gốc ở giữa hai trục bánh,
+   đáy lốp ở y = 0.
+ - Đổi tên vật liệu: Material.001 thành paint, TRUOC thành lamp_head, material thành lamp_tail.
+ - Thu ảnh: cạnh dài tối đa 1024 px; ảnh không có alpha chuyển sang JPEG chất lượng 85; bỏ bộ toạ độ texture thứ hai.
+ - Không thay đổi hình dạng thân xe, màu sắc hay texture nào khác.
+
+Mô hình gốc là bản của tác giả; VinFast và VF 3 là nhãn hiệu của chủ sở hữu tương ứng. Mô hình chỉ dùng để minh hoạ
+trong dự án này, không phải sản phẩm hay đại diện chính thức.
