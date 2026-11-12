@@ -11,7 +11,7 @@
 //     drawCalls (người thật): bật / tắt lưới của từng hệ làm renderer.info.render.calls đổi đúng 1.
 //  2. noOldShape: không còn lưới người ≤ 200 đỉnh; hình khối ≤ 900 đỉnh.
 //  3. moving: sau 60 khung ≥ 60 % người đã đổi vị trí; số người đứng yên khớp số người 'stand' (±1); thẳng đứng, quay mặt theo chiều đi.
-//     noSlip (người thật): nhịp phát (đọc lại từ texture thông số shader dùng) nằm trong [rateMin, rateMax]; người đi / chạy:
+//     noSlip (người thật): nhịp phát (đọc lại từ texture thông số shader dùng) nằm trong [rateMin, rateMax] (nhân vật trẻ em: trần rateMaxChild); người đi / chạy:
 //     tốc độ ÷ (nhịp × tốc độ tự nhiên × tỉ lệ) lệch 1 không quá 10 % (chân không trượt rõ); người đứng / chụp ảnh nhịp 1.
 //  4. insideSidewalk: mọi người trong dải lề của cầu mình, gốc hình đúng mặt lề; clearLamps (Cầu Rồng |z| ∈ [17,3; 18,58]); standOverRiver (|x| ≤ 255).
 //     feet (người thật): skin lưới trên CPU từ crowd.bin theo đoạn mỗi người dùng — y thấp nhất của lưới × tỉ lệ: đi / đứng mọi khung,
@@ -45,7 +45,7 @@ const check = (ok, msg) => { console.log(`${ok ? 'ĐẠT ' : 'LỖI '} [${pass}]
 const MAIN_BOAT_SPEEDS = [4.834048458375037, 3.4622229826636612, 3.367667659651488, 4.561683705076575, 4.302534147165716, 3.222870459780097, 4.6476020980626345];
 const COUNTS = { 'ttl-people': 80, 'sh-people': 76, 'dragon-people': 70 };
 const NAMES = Object.keys(COUNTS);
-const CROWD = { loadTimeoutMs: 8000, rateMin: 0.6, rateMax: 1.6, maxTris: 1640 };   // chép từ CONFIG.people.crowd (src/config.ts) và trần tam giác bản nón (plan Task 1)
+const CROWD = { loadTimeoutMs: 8000, rateMin: 0.6, rateMax: 1.6, rateMaxChild: 2.1, maxTris: 1640 };   // chép từ CONFIG.people.crowd (src/config.ts) và trần tam giác bản nón (plan Task 1)
 const CROWD_RE = /people\/crowd\./;
 /* Dải lề theo tọa độ cục bộ của cầu (chép từ src/config.ts):
    Cầu Rồng: width 37,5, sidewalk 2,5 ⇒ |z| ∈ [16,25; 18,75]. Trần Thị Lý: deckWidth 34,5 ⇒ hw 17,25, sidewalk 3,25 ⇒ |z| ∈ [14; 17,25];
@@ -140,11 +140,11 @@ async function suite({ page, errors, warns, crowdReqs }, real, shots) {
     check(tilted === 0 && badHead === 0, `moving: ${n} mọi người thẳng đứng (${tilted} nghiêng), quay mặt theo chiều đi (${badHead} sai hướng)`);
     if (real) {
       /* noSlip: nhịp phát trong khoảng kẹp; người đi / chạy: tốc độ thật so với tốc độ chân (nhịp × tự nhiên × tỉ lệ) */
-      const out = b.filter((p) => !(p.rate >= CROWD.rateMin - 1e-4 && p.rate <= CROWD.rateMax + 1e-4));
+      const out = b.filter((p) => !(p.rate >= CROWD.rateMin - 1e-4 && p.rate <= (p.child ? CROWD.rateMaxChild : CROWD.rateMax) + 1e-4));   // nhân vật trẻ em: trần riêng
       const mov = b.filter((p) => p.clip === 'walk' || p.clip === 'jog'), fixed = b.filter((p) => p.clip === 'idle' || p.clip === 'photo');
       const slip = mov.map((p) => ({ p, k: p.speed / (p.rate * p.natural * p.scale) })), bad = slip.filter((s) => Math.abs(s.k - 1) > 0.1);
       const ks = slip.map((s) => s.k);
-      check(out.length === 0 && fixed.every((p) => Math.abs(p.rate - 1) < 1e-4), `noSlip: ${n} nhịp phát ${Math.min(...b.map((p) => p.rate)).toFixed(3)}…${Math.max(...b.map((p) => p.rate)).toFixed(3)} trong [${CROWD.rateMin}; ${CROWD.rateMax}] (${out.length} ngoài), ${fixed.length} người đứng / chụp ảnh nhịp 1`);
+      check(out.length === 0 && fixed.every((p) => Math.abs(p.rate - 1) < 1e-4), `noSlip: ${n} nhịp phát ${Math.min(...b.map((p) => p.rate)).toFixed(3)}…${Math.max(...b.map((p) => p.rate)).toFixed(3)} trong [${CROWD.rateMin}; ${CROWD.rateMax}] (trẻ em ≤ ${CROWD.rateMaxChild}; ${out.length} ngoài), ${fixed.length} người đứng / chụp ảnh nhịp 1`);
       check(mov.length > 0 && bad.length === 0, `noSlip: ${n} ${mov.length} người đi / chạy, tốc độ ÷ tốc độ chân ${Math.min(...ks).toFixed(3)}…${Math.max(...ks).toFixed(3)} (lệch > 10 %: ${bad.length}${bad.slice(0, 3).map((s) => ` #${s.p.i} ${s.p.clip} ${s.p.speed.toFixed(2)} m/s nhịp ${s.p.rate.toFixed(2)} k ${s.k.toFixed(2)}`).join(';')})`);
     }
   }

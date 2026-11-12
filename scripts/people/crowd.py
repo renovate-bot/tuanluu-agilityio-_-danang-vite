@@ -2,9 +2,12 @@
 
 Cách chạy (máy người phát triển, không cần cho build):
     npm run gen:crowd
-    # tức: "C:/Program Files/Blender Foundation/Blender 4.5/blender.exe" -b --python scripts/people/crowd.py
-    # bỏ ảnh xem trước:  ... --python scripts/people/crowd.py -- --no-preview
-Máy khác: sửa đường dẫn Blender trong package.json ("gen:crowd"). Đã thử: Blender 4.5.10 LTS (Windows).
+    # tức: node scripts/people/blender.mjs scripts/people/crowd.py  (chạy Blender nền: -b --python-exit-code 1 --python ...)
+    # bỏ ảnh xem trước:  npm run gen:crowd -- -- --no-preview
+Đường dẫn Blender: biến môi trường BLENDER (mặc định "C:/Program Files/Blender Foundation/Blender 4.5/blender.exe", xem
+scripts/people/blender.mjs). Đã thử: Blender 4.5.10 LTS (Windows).
+Dữ liệu hiện tại có 5 đỉnh pháp tuyến dài 0 ở Female_Adult_03, đang được crFixNormals (src/common/people/crowdData.ts) vá lúc
+đọc; lần sinh lại sau nên sửa tại nguồn.
 
 Nguồn: Microsoft Rocketbox (MIT), cùng commit ghim với convert.py; FBX / TGA tải vào scripts/people/.cache/ (gitignore).
 Dùng lại hàm của convert.py (tải nguồn, sửa vật liệu, gắn + nướng đoạn chuyển động, trừ quãng trôi của hông); không đổi

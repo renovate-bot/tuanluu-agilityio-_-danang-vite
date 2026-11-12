@@ -13,7 +13,8 @@ import type { Walker } from '../people';
    - Thông số từng người (hàng đầu đoạn, ±số khung, khung/giây, pha theo khung) nằm trong một DataTexture float dùng chung cho cả 3 hệ
      (uCrowdPeople). Chỉ số của người trong texture đó (= chỗ bắt đầu của hệ + id) ghi vào kênh alpha của batchingColorTexture
      (setColorAt chỉ ghi rgb; rgb = hệ số sáng theo người, spec §4.11). Một vật liệu cho cả 3 hệ ⇒ không có uniform riêng theo hệ.
-   - Thời gian: shared.uTime; lấy mod theo chu kỳ của người TRƯỚC khi nhân khung/giây để pha không mất chính xác khi trang chạy lâu.
+   - Thời gian: shared.uTime; lấy mod theo chu kỳ của người TRƯỚC khi nhân khung/giây để không khuếch đại thêm sai số. Bản thân uTime là float32
+     nên vẫn giảm chính xác khi trang chạy lâu: sau khoảng 24 giờ liên tục bước của nó ≈ 8 ms (chuyển động hơi giật), chấp nhận.
    - Phải setColorAt cho mọi id (r165: thiếu bảng màu thì renderer tra lại program mỗi khung). sortObjects = false; không setInstanceCountAt.
    - Ẩn người: setVisibleAt (tự đặt _visibilityChanged). setMatrixAt tự đặt matricesTexture.needsUpdate.
    - Khối cầu bao từng id: của lưới nguồn, nới cullPad / tỉ lệ người (đơn vị cục bộ; matrix nhân lại tỉ lệ) để tay chân không bị cắt nhầm.
@@ -43,11 +44,11 @@ export function crowdPick(chars: { child: boolean }[], system: string, i: number
   return cand[k];
 }
 
-/* Nhịp phát chuyển động = tốc độ người ÷ (tốc độ tự nhiên của đoạn × tỉ lệ người), kẹp [rateMin, rateMax] (spec §4.5). natural = 0 (đứng) → 1 */
-export function crowdRate(speed: number, natural: number, scale: number): number {
+/* Nhịp phát chuyển động = tốc độ người ÷ (tốc độ tự nhiên của đoạn × tỉ lệ người), kẹp [rateMin, rateMax] (spec §4.5; nhân vật trẻ em: trần rateMaxChild). natural = 0 (đứng) → 1 */
+export function crowdRate(speed: number, natural: number, scale: number, child = false): number {
   const C = CONFIG.people.crowd;
   if (!(natural > 0)) return 1;
-  return Math.min(C.rateMax, Math.max(C.rateMin, speed / (natural * scale)));
+  return Math.min(child ? C.rateMaxChild : C.rateMax, Math.max(C.rateMin, speed / (natural * scale)));
 }
 
 /* Khung (số thực) trong [0, frames) tại thời điểm t (s); phase: pha chu kỳ, rad (Walker.phase). Bản CPU của công thức trong shader (VS_SKIN) */
@@ -81,7 +82,7 @@ vec4 crR0 = vec4( 1.0, 0.0, 0.0, 0.0 ), crR1 = vec4( 0.0, 1.0, 0.0, 0.0 ), crR2 
   vec4 crP = texelFetch( uCrowdPeople, ivec2( crG % crPw, crG / crPw ), 0 );   // x hàng đầu đoạn, y ±số khung (âm: giữ khung cuối), z khung/giây, w pha (khung)
   int crN = int( abs( crP.y ) + 0.5 ), f0 = crN - 1, f1 = crN - 1; float ft = 0.0;
   if ( crP.y > 0.0 ) {
-    float crF = mod( mod( uTime, crP.y / crP.z ) * crP.z + crP.w, crP.y );   // mod theo chu kỳ trước: uTime lớn không làm mất chính xác pha
+    float crF = mod( mod( uTime, crP.y / crP.z ) * crP.z + crP.w, crP.y );   // mod theo chu kỳ trước (không khuếch đại sai số); uTime float32 tự nó giảm chính xác sau khoảng 24 giờ chạy liên tục
     f0 = min( int( crF ), crN - 1 ); f1 = f0 + 1 >= crN ? 0 : f0 + 1; ft = fract( crF );
   }
   int crRw = int( crP.x + 0.5 ); f0 += crRw; f1 += crRw;
@@ -155,7 +156,7 @@ export function crowdBuild(data: CrowdData, list: Walker[], system: string): THR
   geos.forEach((g, i) => {
     const id = mesh.addGeometry(g), w = list[i], name = crClip(w), clip = data.chars[char[i]].clips[name];
     mesh.setColorAt(id, col.setScalar(C.tint[0] + (C.tint[1] - C.tint[0]) * crHash(sysH, i)));   // hệ số sáng theo người (spec §4.11); bắt buộc cho mọi id
-    const rate = name === 'walk' || name === 'jog' ? crowdRate(w.speed, clip.speed, scale[i]) : 1;
+    const rate = name === 'walk' || name === 'jog' ? crowdRate(w.speed, clip.speed, scale[i], data.chars[char[i]].child) : 1;
     pd.set([clip.row, clip.loop ? clip.frames : -clip.frames, clip.fps * rate, crPhase(w.phase ?? 0, clip.frames)], (base + id) * 4);
   });
   const colors = (mesh as unknown as { _colorsTexture: THREE.DataTexture })._colorsTexture, cd = colors.image.data as unknown as Float32Array;

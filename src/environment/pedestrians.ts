@@ -76,8 +76,8 @@ export const peopleTest = {
   },
   /* Vị trí cục bộ (trong nhóm cầu) từng người, cao độ mặt lề tại đó, kiểu, scale, trục đứng (y của trục Y), hướng mặt (+X của hình); getMatrixAt có ở cả hai loại lưới.
      visible: đang hiện (hình khối: scale > 0; người thật: getVisibleAt — người ẩn giữ ma trận cũ); follow: chỉ số người dẫn (−1 nếu không); lx, lz: vị trí trong danh sách (CPU).
-     Người thật thêm: char (chỉ số nhân vật), clip (đoạn chuyển động), rate (nhịp phát đọc lại từ texture thông số shader dùng = khung/giây ÷ fps của đoạn), natural (m/s tự nhiên của đoạn ở tỉ lệ 1) */
-  positions(name: string): { i: number; x: number; y: number; z: number; ground: number; kind: string; scale: number; upY: number; fwd: number[]; visible: boolean; follow: number; lx: number; lz: number; char?: number; clip?: string; rate?: number; natural?: number; speed: number }[] {
+     Người thật thêm: char (chỉ số nhân vật), child (nhân vật trẻ em: trần nhịp rateMaxChild), clip (đoạn chuyển động), rate (nhịp phát đọc lại từ texture thông số shader dùng = khung/giây ÷ fps của đoạn), natural (m/s tự nhiên của đoạn ở tỉ lệ 1) */
+  positions(name: string): { i: number; x: number; y: number; z: number; ground: number; kind: string; scale: number; upY: number; fwd: number[]; visible: boolean; follow: number; lx: number; lz: number; char?: number; child?: boolean; clip?: string; rate?: number; natural?: number; speed: number }[] {
     const { meshes, list } = ppFind(name), m = meshes[0], M = new THREE.Matrix4(), p = new THREE.Vector3(), q = new THREE.Quaternion(), s = new THREE.Vector3(), up = new THREE.Vector3(), fwd = new THREE.Vector3();
     if (!m || !list) return [];
     const bm = (m as THREE.BatchedMesh).isBatchedMesh ? (m as THREE.BatchedMesh) : null, data = crowdGet(), info = bm?.userData.crowd as CrowdInfo | undefined;
@@ -89,7 +89,7 @@ export const peopleTest = {
       const out = { i, x: p.x, y: p.y, z: p.z, ground: w.profile(w.axis === 'z' ? w.z : w.x), kind: w.kind ?? 'walk', scale: s.x, upY: up.y, fwd: fwd.toArray(), visible: bm ? bm.getVisibleAt(i) : s.x > 0, follow: w.follow ?? -1, lx: w.x, lz: w.z, speed: w.speed };
       if (!bm || !data) return out;
       const clip = crClip(w), c = data.chars[info.char[i]].clips[clip], g = Math.round(cd[i * 4 + 3]);   // kênh alpha màu id = chỉ số người trong texture thông số
-      return { ...out, char: info.char[i], clip, rate: pd[g * 4 + 2] / c.fps, natural: c.speed };
+      return { ...out, char: info.char[i], child: data.chars[info.char[i]].child, clip, rate: pd[g * 4 + 2] / c.fps, natural: c.speed };
     });
   },
   /* Chân người thật theo chuyển động (oracle trên CPU, đọc thẳng crowd.bin đã tải): với mỗi nhân vật và đoạn, skin lưới (không nón) ở từng khung

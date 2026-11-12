@@ -814,6 +814,7 @@ const peopleBase = {
     heightScale: 0.93,                              // hệ số chiều cao nhân vật Rocketbox cho vóc người Việt, không đơn vị (ước lượng)
     rateMin: 0.6,                                   // nhịp phát chuyển động tối thiểu so với tự nhiên, không đơn vị (ước lượng; ngoài khoảng thì chân trượt rõ)
     rateMax: 1.6,                                   // nhịp phát chuyển động tối đa so với tự nhiên, không đơn vị (ước lượng)
+    rateMaxChild: 2.1,                              // như rateMax, riêng nhân vật trẻ em: bé đi theo người lớn phải bước nhanh hơn, kẹp 1,6 thì chân trượt tới 23 % (ước lượng)
     tint: [0.88, 1.0] as [number, number],          // hệ số sáng màu theo người [min, max], không đơn vị: hai người cùng nhân vật không giống hệt (ước lượng)
     cullPad: 0.6                                    // m — nới bán kính khối cầu bao từng người cho tay chân khi chuyển động (spec §5)
   },

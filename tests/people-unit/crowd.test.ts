@@ -5,7 +5,7 @@ import { readFileSync } from 'node:fs';
 import * as THREE from 'three';
 import { CONFIG } from '../../src/config.ts';
 import { crowdParse, type CrowdData, type CrowdClip } from '../../src/common/people/crowdData.ts';
-import { crowdUsable, crowdPick, crowdRate, crowdFrame, crowdBuild, crowdMaterial } from '../../src/common/people/crowd.ts';
+import { crowdUsable, crowdPick, crowdRate, crowdFrame, crowdBuild, crowdMaterial, crowdParams } from '../../src/common/people/crowd.ts';
 import { PP_FLAG } from '../../src/common/people/kinds.ts';
 import type { Walker } from '../../src/common/people.ts';
 
@@ -51,6 +51,13 @@ test('crowdRate: tỉ lệ tốc độ, kẹp, natural = 0, tỉ lệ người',
   assert.equal(crowdRate(0, 0, 1), 1);
   assert.equal(crowdRate(1.3, 0, 0.7), 1);
   assert.ok(Math.abs(crowdRate(0.6, 1.0, 0.5) - 2 * crowdRate(0.6, 1.0, 1)) < 1e-12);   // 0,6 → 1,2: chưa chạm trần
+  // nhân vật trẻ em: trần riêng rateMaxChild (bé đi theo người lớn phải bước nhanh hơn)
+  assert.ok(C.rateMaxChild > C.rateMax);
+  assert.equal(crowdRate(10, 1.2, 1, true), C.rateMaxChild);
+  assert.equal(crowdRate(0.1, 1.2, 1, true), C.rateMin);
+  assert.ok(Math.abs(crowdRate(2.4, 1.2, 1, true) - 2) < 1e-12, 'trẻ em: 2 < rateMaxChild không bị kẹp');
+  assert.equal(crowdRate(2.4, 1.2, 1, false), C.rateMax, 'người lớn: vẫn kẹp ở rateMax');
+  assert.equal(crowdRate(0, 0, 1, true), 1);
 });
 
 test('crowdFrame: trong [0, frames), bước đều sau 3 giờ, loop = false giữ khung cuối', () => {
@@ -87,6 +94,8 @@ test('crowdBuild: BatchedMesh một id mỗi người, vật liệu peopleCrowd,
   assert.equal(m.material, crowdMaterial(d), 'một vật liệu dùng chung');
   const info = m.userData.crowd as { char: Int16Array; hat: Uint8Array; scale: Float32Array };
   assert.equal(info.char.length, list.length);
+  const pd = crowdParams(m.material as THREE.Material).image.data as unknown as Float32Array;
+  const base = Math.round(((m as unknown as { _colorsTexture: THREE.DataTexture })._colorsTexture.image.data as unknown as Float32Array)[3]);   // kênh alpha id 0 = chỗ bắt đầu của hệ
   const box = new THREE.Box3();
   for (let i = 0; i < list.length; i++) {
     assert.ok(m.getBoundingBoxAt(i, box), `thiếu id ${i}`);
@@ -101,6 +110,8 @@ test('crowdBuild: BatchedMesh một id mỗi người, vật liệu peopleCrowd,
     assert.ok(Math.abs(s - want) < 1e-6, `người ${i}: tỉ lệ ${s} so với ${want}`);
     const sp = new THREE.Sphere(); m.getBoundingSphereAt(i, sp);
     assert.ok(sp.radius >= (hat ? ch.hat : ch.geometry).boundingSphere.radius + C.cullPad / s - 1e-6, `người ${i}: khối cầu bao chưa nới`);
+    const clip = w.kind === 'run' ? ch.clips.jog : ch.clips.walk;   // nhịp phát ghi vào texture thông số: trẻ em dùng trần rateMaxChild
+    if (w.kind !== 'stand') assert.ok(Math.abs(pd[(base + i) * 4 + 2] - clip.fps * crowdRate(w.speed, clip.speed, s, ch.child)) < 1e-4, `người ${i}: khung/giây`);
   }
   assert.throws(() => m.addGeometry(d.chars[0].geometry), 'đã dùng hết chỗ: đúng một id mỗi người');
 });

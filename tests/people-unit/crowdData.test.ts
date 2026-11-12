@@ -124,6 +124,26 @@ test('tệp sai magic / phiên bản bị từ chối', () => {
   assert.throws(() => crowdParse(c.buffer.slice(c.byteOffset, c.byteOffset + c.byteLength) as ArrayBuffer));
 });
 
+/* Tệp hỏng nhưng đúng khung (magic, phiên bản, độ dài mảng): đoạn chuyển động vượt texture, chỉ số xương / đỉnh ngoài khoảng ⇒ ném lỗi (crowdLoad lùi về hình khối) */
+test('tệp có chỉ số ngoài khoảng bị từ chối', () => {
+  const src = readFileSync(BIN), J = src.readUInt32LE(8), meta = JSON.parse(src.subarray(12, 12 + J).toString('utf8')), bin = src.subarray(12 + J);
+  // ghép lại tệp từ JSON (đệm dấu cách tới bội 4) + khối nhị phân; edit sửa trên bản sao của khối nhị phân
+  const make = (m: unknown, edit?: (b: Buffer) => void): ArrayBuffer => {
+    let js = JSON.stringify(m); while (Buffer.byteLength(js) % 4) js += ' ';
+    const head = Buffer.alloc(12); head.write('DNCR', 0, 'latin1'); head.writeUInt32LE(1, 4); head.writeUInt32LE(Buffer.byteLength(js), 8);
+    const b = Buffer.from(bin); edit?.(b);
+    const all = Buffer.concat([head, Buffer.from(js, 'utf8'), b]);
+    return all.buffer.slice(all.byteOffset, all.byteOffset + all.byteLength) as ArrayBuffer;
+  };
+  assert.doesNotThrow(() => crowdParse(make(meta)), 'ghép lại nguyên vẹn vẫn đọc được');
+  const c0 = meta.chars[0];
+  const clip = structuredClone(meta); clip.chars[0].clips.walk.row = meta.anim.height - clip.chars[0].clips.walk.frames + 1;
+  assert.throws(() => crowdParse(make(clip)), /ngoài texture/, 'đoạn vượt cuối texture chuyển động');
+  assert.throws(() => crowdParse(make(meta, (b) => { b[c0.bones + 1] = meta.bones; })), /xương/, 'chỉ số xương = số xương');
+  assert.throws(() => crowdParse(make(meta, (b) => { b.writeUInt16LE(c0.verts, c0.idx); })), /đỉnh/, 'tam giác người trỏ vào đỉnh nón');
+  assert.throws(() => crowdParse(make(meta, (b) => { b.writeUInt16LE(65535, c0.idx + (c0.tris + c0.hatTris) * 6 - 2); })), /đỉnh/, 'tam giác nón trỏ ra ngoài mảng đỉnh');
+});
+
 test('giấy phép ghi tên cả 10 nhân vật', () => {
   const t = readFileSync('public/people/LICENSE-Rocketbox.txt', 'utf8');
   for (const c of data().chars) assert.ok(t.includes(c.id), `thiếu ${c.id}`);

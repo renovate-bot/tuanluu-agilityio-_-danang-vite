@@ -74,12 +74,16 @@ export function crowdParse(buf: ArrayBuffer): CrowdParsed {
     if (off % C.BYTES_PER_ELEMENT || base + off + n * C.BYTES_PER_ELEMENT > buf.byteLength) throw new Error('crowd.bin: mảng vượt tệp');
     return new C(buf, base + off, n);
   };
-  const bones: number = meta.bones;
+  const bones: number = meta.bones, a = meta.anim;
+  if (a.width !== bones * 3 || a.bytes !== a.width * a.height * 8) throw new Error('crowd.bin: kích thước texture chuyển động sai');
   let maxVerts = 0, maxIndices = 0;
   const chars: CrowdChar[] = meta.chars.map((c) => {
     const nv = c.verts + c.hatVerts, ni = (c.tris + c.hatTris) * 3;
     const pos = view(Float32Array, c.pos, nv * 3), nrm = view(Float32Array, c.nrm, nv * 3), uv = view(Float32Array, c.uv, nv * 2);
     const bi = view(Uint8Array, c.bones, nv * 2), w = view(Float32Array, c.w, nv), idx = view(Uint16Array, c.idx, ni);
+    // chỉ số ngoài khoảng: shader đọc ma trận rác / GPU đọc ngoài buffer ⇒ ném lỗi, crowdLoad lùi về hình khối
+    for (let k = 0; k < bi.length; k++) if (bi[k] >= bones) throw new Error(`crowd.bin: ${c.id} chỉ số xương ${bi[k]} ≥ ${bones}`);
+    for (let k = 0; k < ni; k++) if (idx[k] >= (k < c.tris * 3 ? c.verts : nv)) throw new Error(`crowd.bin: ${c.id} chỉ số đỉnh ${idx[k]} ngoài khoảng`);   // tam giác người chỉ trỏ vào đỉnh người
     crFixNormals(pos, nrm, idx);
     const geo =(v: number, i: number): THREE.BufferGeometry => {
       const g = new THREE.BufferGeometry();
@@ -96,12 +100,11 @@ export function crowdParse(buf: ArrayBuffer): CrowdParsed {
     const clips = {} as Record<CrowdClipName, CrowdClip>;
     for (const n of CLIP_NAMES) {
       const k = c.clips?.[n]; if (!k) throw new Error(`crowd.bin: ${c.id} thiếu đoạn ${n}`);
+      if (!(Number.isInteger(k.row) && Number.isInteger(k.frames) && k.row >= 0 && k.frames >= 1 && k.row + k.frames <= a.height && k.fps > 0)) throw new Error(`crowd.bin: ${c.id}/${n} hàng ${k.row} + ${k.frames} khung ngoài texture chuyển động (${a.height} hàng)`);
       clips[n] = { row: k.row, frames: k.frames, fps: k.fps, loop: !!k.loop, speed: k.speed };
     }
     return { id: c.id, child: !!c.child, female: !!c.female, height: c.height, geometry: geo(c.verts, c.tris * 3), hat: c.hatVerts > 0 ? geo(nv, ni) : null, clips };
   });
-  const a = meta.anim;
-  if (a.width !== bones * 3 || a.bytes !== a.width * a.height * 8) throw new Error('crowd.bin: kích thước texture chuyển động sai');
   const animData = view(Uint16Array, a.offset, a.width * a.height * 4);
   return { chars, bones, animWidth: a.width, animHeight: a.height, animData, maxVerts, maxIndices };
 }
@@ -113,7 +116,8 @@ let pending: Promise<CrowdData | null> | null = null;
 // Kết quả của lần crowdLoad đã xong (null nếu chưa xong, lỗi, hoặc ?crowd=off)
 export function crowdGet(): CrowdData | null { return loaded; }
 
-// Tải bin + jpg theo BASE_URL, tối đa CONFIG.people.crowd.loadTimeoutMs; lỗi bất kỳ → console.warn một lần, trả null.
+// Tải bin + jpg theo BASE_URL, tối đa CONFIG.people.crowd.loadTimeoutMs; lỗi bất kỳ → hủy yêu cầu còn lại, console.warn một lần, trả null.
+// main.ts chỉ gọi khi renderer có WEBGL_multi_draw (thiếu thì không tải, dùng hình khối).
 // ?crowd=off → null ngay, không gửi yêu cầu nào. Gọi nhiều lần dùng chung một lượt tải.
 export function crowdLoad(): Promise<CrowdData | null> {
   if (pending) return pending;
@@ -139,6 +143,8 @@ export function crowdLoad(): Promise<CrowdData | null> {
     try {
       loaded = await Promise.race([work, timeout]);
     } catch (e) {
+      ctl.abort();   // một tệp lỗi: hủy yêu cầu còn lại (đã xong thì không làm gì)
+      work.then((d) => (d.atlas.image as ImageBitmap).close?.(), () => {});   // quá hạn mà ảnh vẫn giải mã xong sau đó: trả bộ nhớ ảnh, không dùng
       console.warn('[people] không dùng được đám đông người thật, dùng hình khối:', e instanceof Error ? e.message : e);
       loaded = null;
     } finally { clearTimeout(timer); }

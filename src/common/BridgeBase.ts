@@ -75,6 +75,7 @@ export abstract class BridgeBase<M extends BridgeMaterials = BridgeMaterials> im
       const m = o as THREE.Mesh;
       if (m.geometry) m.geometry.dispose();
       if ((o as THREE.InstancedMesh).isInstancedMesh) (o as THREE.InstancedMesh).dispose();
+      if ((o as THREE.BatchedMesh).isBatchedMesh) (o as THREE.BatchedMesh).dispose();   // người thật (D-032): texture ma trận / màu riêng của lưới; vật liệu + atlas / chuyển động dùng chung 3 hệ không đụng
     });
     for (const [k, mat] of Object.entries(this.mats)) if (k !== 'textures' && mat && (mat as THREE.Material).isMaterial && !sharedMats.has(mat as THREE.Material)) (mat as THREE.Material).dispose();
     (this.mats.textures || []).forEach((t) => t.dispose());

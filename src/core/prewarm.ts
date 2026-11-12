@@ -26,18 +26,29 @@ const wait = (ms: number) => new Promise<void>((ok) => setTimeout(ok, ms));
    (đo GĐ1: không còn program mới nhưng lần đầu bay tới Thuận Phước / Hầm / Vòng quay vẫn khựng 3–5 s trên SwiftShader). Trả nguyên trạng ngay sau đó.
    Đèn và nhóm pointLights giữ nguyên visible: bộ đèn đang xét quyết định đèn nào hiện. */
 function drawAll() {
-  const saved: [THREE.Object3D, boolean, boolean][] = [], counts: [THREE.InstancedMesh, number][] = [], lods: THREE.LOD[] = [];
+  const saved: [THREE.Object3D, boolean, boolean][] = [], counts: [THREE.InstancedMesh, number][] = [], lods: THREE.LOD[] = [], bms: THREE.BatchedMesh[] = [];
   scene.traverse((o) => {
     if ((o as THREE.Light).isLight || o === pointLights) return;
     saved.push([o, o.visible, o.frustumCulled]); o.visible = true; o.frustumCulled = false;
     const im = o as THREE.InstancedMesh; if (im.isInstancedMesh && im.count === 0) { counts.push([im, 0]); im.count = 1; }
     const lod = o as THREE.LOD; if (lod.isLOD && lod.autoUpdate) { lods.push(lod); lod.autoUpdate = false; }
+    if (bmUncull(o)) bms.push(o as THREE.BatchedMesh);
   });
   renderer.render(scene, camera);
   composer.render(0);
   for (const [o, v, f] of saved) { o.visible = v; o.frustumCulled = f; }
   for (const [im, n] of counts) im.count = n;
   for (const lod of lods) lod.autoUpdate = true;
+  for (const bm of bms) bm.perObjectFrustumCulled = true;
+}
+/* BatchedMesh (người thật D-032) cắt từng id theo khung nhìn (perObjectFrustumCulled): mọi id ngoài khung ⇒ _multiDrawCount = 0, three bỏ hẳn lệnh vẽ
+   (renderMultiDraw trả về ngay) ⇒ phần trình điều khiển dịch lười lúc vẽ lần đầu không được làm. Tạm tắt cắt từng id; đặt _visibilityChanged để
+   onBeforeRender tính lại danh sách vẽ (không thì nó giữ danh sách cũ). Bên gọi bật lại perObjectFrustumCulled (khung sau tự tính lại). true nếu đã tắt */
+function bmUncull(o: THREE.Object3D): boolean {
+  const bm = o as THREE.BatchedMesh;
+  if (!bm.isBatchedMesh || !bm.perObjectFrustumCulled) return false;
+  bm.perObjectFrustumCulled = false; (bm as unknown as { _visibilityChanged: boolean })._visibilityChanged = true;
+  return true;
 }
 
 export async function prewarm() {
@@ -169,6 +180,7 @@ function drawChunk(w: Warm, si: number, canvasOnly: boolean) {
     if (!o.parent) { sv[j] = 8; continue; }   // đã gỡ khỏi cảnh
     sv[j] = (o.visible ? 1 : 0) | (o.frustumCulled ? 2 : 0) | (im.isInstancedMesh && im.count === 0 ? 4 : 0);
     o.visible = true; o.frustumCulled = false; if (sv[j] & 4) im.count = 1;
+    if (bmUncull(o)) sv[j] |= 16;   // BatchedMesh: tạm tắt cắt từng id (như drawAll)
     kids.push(o);
   }
   const ob = water.onBeforeRender, au = sm.autoUpdate, nu = sm.needsUpdate, c = renderer.info.render.calls, t = renderer.info.render.triangles;
@@ -186,6 +198,7 @@ function drawChunk(w: Warm, si: number, canvasOnly: boolean) {
     const o = w.objs[k], j = ls.length + k - w.from;
     if (sv[j] & 8) continue;
     o.visible = (sv[j] & 1) !== 0; o.frustumCulled = (sv[j] & 2) !== 0; if (sv[j] & 4) (o as THREE.InstancedMesh).count = 0;
+    if (sv[j] & 16) (o as THREE.BatchedMesh).perObjectFrustumCulled = true;
   }
   kids.length = 0;
 }
