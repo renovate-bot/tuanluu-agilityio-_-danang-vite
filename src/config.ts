@@ -725,6 +725,18 @@ const driveBase = {
     footTop: 40        // m — chiều cao chân đế địa danh tính từ mặt đất (riverfront footprints không có chiều cao) (ước lượng)
   },
   spawn: { x: -150, lane: 8.625, gap: 9 },   // m — chỗ xuất phát trên Cầu Rồng: x giữa, |z| tim làn giữa chiều đi Đông, các slot cách nhau gap theo x (ước lượng)
+  model: {             // hình xe trong cảnh (explore/drive/car.ts), mô hình public/car/vf3.glb (scripts/car/convert.py)
+    url: 'car/vf3.glb',   // đường dẫn tương đối BASE_URL tới mô hình xe
+    timeoutMs: 8000,   // ms — nạp quá chừng này thì bỏ, giữ hình tạm (ước lượng)
+    warmMs: 1500,      // ms — chờ biên dịch sẵn shader của mô hình vừa nạp tối đa chừng này, quá thì vẫn dùng mô hình (D-018) (ước lượng)
+    paintRough: 0.35,  // độ nhám sơn thân (nguồn để 0 nên như gương) (ước lượng)
+    paintMetal: 0.25,  // độ kim loại sơn thân (nguồn để 0) (ước lượng)
+    headNight: 1.6,    // hệ số nhân phát sáng mặt đèn pha (emissive map của nguồn) khi uNight = 1 (ước lượng)
+    tailNight: 0.9,    // hệ số phát sáng mặt đèn hậu (nhân màu cơ bản) khi uNight = 1 (ước lượng)
+    tailBrake: 2.2,    // hệ số phát sáng mặt đèn hậu khi đạp phanh, cả ban ngày (ước lượng)
+    shadow: { pad: 0.45, opacity: 0.55, lift: 0.03 },   // tấm bóng mờ dưới gầm: m — phần nhô ra mỗi chiều so với thân xe; độ đục tối đa; m — nâng khỏi mặt đường (ước lượng)
+    temp: { wheelWidth: 0.2 }   // m — bề rộng bánh của hình tạm (ước lượng)
+  },
   cam: {},             // camera sau xe (task sau điền)
   hud: {},             // đồng hồ, bản đồ nhỏ (task sau điền)
   sound: {}            // tiếng mô tơ, còi (task sau điền)
