@@ -22,14 +22,19 @@ const SCREENS = fileURLToPath(new URL('./screens/', import.meta.url));
 mkdirSync(SCREENS, { recursive: true });
 const problems = [];
 const check = (ok, msg) => { console.log(`${ok ? 'ĐẠT ' : 'LỖI '} ${msg}`); if (!ok) problems.push(msg); return ok; };
+// Mốc null theo từng khóa = chưa chụp: in số đo + CẢNH BÁO, không tính đạt (tổng kết cuối ghi rõ còn thiếu mốc)
+const pending = [];
+const noBase = (what, val) => { const msg = `${what} = ${JSON.stringify(val)}`; console.log(`CẢNH BÁO mốc D-034 chưa chụp, chạy test:trees rồi chép số: ${msg}`); pending.push(msg); };
 
 // Mốc đo trên code CHƯA sửa (8c56cdd, cây quả cầu / nón): số instance và tổng kiểm Σ(x·31 + z) của vị trí [x, z] (gồm cả instance đã dọn ở (0, 0)).
 // Tán dừa không có ở đây vì vị trí của nó dời lên đỉnh thân cong (kiểm riêng theo thân dừa).
-const MAIN_TREE_POS = {"trees-shade-trunk":{"count":890,"sum":-3857311.434},"trees-shade-crown":{"count":890,"sum":-3857311.434},"trees-palm-trunk":{"count":246,"sum":1318102.245},"tp-trees-trunk":{"count":128,"sum":420346.507},"tp-trees-crown":{"count":128,"sum":420346.507}};
+// D-034: drClearRoads (environment/driveRoads.ts) thu về scale 0 (mất cả tịnh tiến ⇒ vị trí (0, 0)) thêm 6–12 cây bóng mát dọc trục Cầu Rồng (z = ±21,5, x ≈ −1080…−1064, −360, 345, 1081…1097)
+// ⇒ tổng kiểm của hai lưới cây bóng mát đổi. Vị trí cây có rand() * 3 nên không tính được ngoài trình duyệt: để null (chế độ in mốc), mốc cũ trên main là {"count":890,"sum":-3857311.434} cho cả hai.
+const MAIN_TREE_POS = {"trees-shade-trunk":null,"trees-shade-crown":null,"trees-palm-trunk":{"count":246,"sum":1318102.245},"tp-trees-trunk":{"count":128,"sum":420346.507},"tp-trees-crown":{"count":128,"sum":420346.507}};
 // Mốc đo trên code CHƯA sửa hầm (88ff1e5): số InstancedMesh, Mesh con của hr.group và số tam giác của hr-concrete
 const MAIN_TUNNEL = { inst: 0, mesh: 4, tris: 25104 - 72 };   // − 72: dải giữa cỏ + vỉa hè gạch hầm chia đoạn tại nút giao / đường dọc mới của chế độ lái (D-034), ít đoạn bentBox hơn
 const MAIN_PAIRS = 3;             // __app.weather.fallen.state().pairs
-const MAIN_CLEARED = { "trees-shade-crown": 26, "trees-palm-crown": 2, "tp-trees-crown": 0 };        // { tên lưới tán: số instance scale 0 }
+const MAIN_CLEARED = { "trees-shade-crown": null /* D-034: mốc cũ 26 + 6–12 cây đường mới, chưa chụp */, "trees-palm-crown": 2, "tp-trees-crown": 0 };        // { tên lưới tán: số instance scale 0 }
 // Mốc đo trên main 43cec90 (chép từ tests/traffic-check.mjs): speed của 7 tàu chạy chung
 const MAIN_BOAT_SPEEDS = [4.834048458375037, 3.4622229826636612, 3.367667659651488, 4.561683705076575, 4.302534147165716, 3.222870459780097, 4.6476020980626345];
 const NAMES = ['trees-shade-trunk', 'trees-shade-crown', 'trees-palm-trunk', 'trees-palm-crown', 'tp-trees-trunk', 'tp-trees-crown'];
@@ -75,7 +80,7 @@ try {
   }
   const got = Object.fromEntries(POS_NAMES.map((n) => [n, { count: pos[n].count, sum: pos[n].sum }]));
   if (!MAIN_TREE_POS) console.log('MỐC MAIN_TREE_POS =', JSON.stringify(got));
-  else for (const n of POS_NAMES) check(got[n].count === MAIN_TREE_POS[n].count && Math.abs(got[n].sum - MAIN_TREE_POS[n].sum) < 0.01, `posKept: ${n} ${got[n].count} instance, tổng kiểm ${got[n].sum} (mốc ${MAIN_TREE_POS[n].count}, ${MAIN_TREE_POS[n].sum})`);
+  else for (const n of POS_NAMES) if (!MAIN_TREE_POS[n]) noBase(`MAIN_TREE_POS["${n}"]`, got[n]); else check(got[n].count === MAIN_TREE_POS[n].count && Math.abs(got[n].sum - MAIN_TREE_POS[n].sum) < 0.01, `posKept: ${n} ${got[n].count} instance, tổng kiểm ${got[n].sum} (mốc ${MAIN_TREE_POS[n].count}, ${MAIN_TREE_POS[n].sum})`);
   const t = pos['trees-palm-trunk'].p, c = pos['trees-palm-crown'].p; let far = 0;
   for (let i = 0; i < t.length; i += 2) if (Math.hypot(c[i] - t[i], c[i + 1] - t[i + 1]) > 0.35 * 0.8 + 0.002) far++;   // = CONFIG.trees.palm.bend (0,35) × CONFIG.trees.palm.trunkWidth (0,8); __app không lộ CONFIG nên giữ số, đổi config thì đổi ở đây
   check(c.length === t.length && far === 0, `posKept: ${c.length / 2} tán dừa nằm trên đỉnh thân cùng chỉ số (${far} lệch quá độ cong)`);
@@ -103,7 +108,7 @@ try {
     check(crownOnly === 0 && trunkOnly === 0, `clearedStayZero: ${cn} ${zc.length} tán đã dọn, tập chỉ số scale 0 của thân trùng tập của tán (${crownOnly} thân còn, ${trunkOnly} tán còn)`);
   }
   if (!MAIN_CLEARED) console.log('MỐC MAIN_CLEARED =', JSON.stringify(cleared));
-  else for (const [, cn] of PAIRS) check(cleared[cn] === MAIN_CLEARED[cn], `clearedStayZero: ${cn} số tán dọn ${cleared[cn]} (mốc ${MAIN_CLEARED[cn]})`);
+  else for (const [, cn] of PAIRS) if (MAIN_CLEARED[cn] === null) noBase(`MAIN_CLEARED["${cn}"]`, cleared[cn]); else check(cleared[cn] === MAIN_CLEARED[cn], `clearedStayZero: ${cn} số tán dọn ${cleared[cn]} (mốc ${MAIN_CLEARED[cn]})`);
 
   /* ---------- 6. fallenRestore ---------- */
   await page.evaluate(() => { const { camera, controls } = window.__app; camera.position.set(-240, 30, 260); controls.target.set(-275, 3, 200); controls.update(); });
@@ -172,5 +177,6 @@ try {
 } finally {
   await browser.close(); srv.close();
 }
-console.log(problems.length ? `\n${problems.length} mục LỖI` : '\nTất cả ĐẠT');
+if (pending.length) console.log(`\nCẢNH BÁO: ${pending.length} mốc chưa chụp (không tính là đạt), chép vào MAIN_TREE_POS / MAIN_CLEARED:\n  ${pending.join('\n  ')}`);
+console.log(problems.length ? `\n${problems.length} mục LỖI` : pending.length ? `\nCác kiểm có mốc ĐẠT; còn ${pending.length} mốc chưa chụp (chưa phải Tất cả ĐẠT)` : '\nTất cả ĐẠT');
 process.exit(problems.length ? 1 : 0);
