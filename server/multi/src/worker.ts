@@ -4,7 +4,7 @@ import { SkyRoom } from './room';
 import type { Out } from './room';
 
 interface Env { SKY: DurableObjectNamespace; ALLOWED_ORIGINS: string }
-interface Att { id: string; slot: number; name: string; seen?: number; kind?: 'walk' }   // seen: giờ có tin cuối của người giữ slot, ghi thưa (mỗi heartbeatMs) để sống sót qua hibernation; kind: 'walk' = slot nằm ở nhóm đi dạo, không có = nhóm bay
+interface Att { id: string; slot: number; name: string; seen?: number; kind?: 'walk' | 'drive' }   // seen: giờ có tin cuối của người giữ slot, ghi thưa (mỗi heartbeatMs) để sống sót qua hibernation; kind: 'walk' = slot nằm ở nhóm đi dạo, 'drive' = nhóm lái xe, không có = nhóm bay
 
 // So khớp scheme + hostname, bỏ cổng
 function originKey(o: string): string | null {
@@ -35,6 +35,7 @@ export class SkyObject implements DurableObject {
   private room = new SkyRoom();
   private names = new Map<number, string>();
   private walkNames = new Map<number, string>();   // tên người đi dạo theo slot, lấy từ walkers của lobby
+  private driveNames = new Map<number, string>();  // tên người lái theo slot, lấy từ drivers của lobby
   private armed: boolean | null = null;   // đã đặt alarm chưa; null = chưa biết (vừa dựng hoặc vừa thức dậy): hỏi storage một lần
 
   constructor(private state: DurableObjectState, _env: Env) {
@@ -96,19 +97,21 @@ export class SkyObject implements DurableObject {
       if (o.msg.t === 'lobby') {
         this.names = new Map(o.msg.flyers.map(f => [f.slot, f.name]));
         this.walkNames = new Map((o.msg.walkers ?? []).map(f => [f.slot, f.name]));
+        this.driveNames = new Map((o.msg.drivers ?? []).map(f => [f.slot, f.name]));
       }
     }
     for (const ws of socks) {
       const a = ws.deserializeAttachment() as Att | null;
       if (!a) continue;
       const kind = this.room.kindOf(a.id);
-      const walk = kind === 'walk';
-      const slot = walk ? this.room.walkSlotOf(a.id) : this.room.slotOf(a.id);
-      const name = slot >= 0 ? ((walk ? this.walkNames : this.names).get(slot) ?? a.name) : '';
+      const walk = kind === 'walk', drive = kind === 'drive';
+      const slot = walk ? this.room.walkSlotOf(a.id) : drive ? this.room.driveSlotOf(a.id) : this.room.slotOf(a.id);
+      const name = slot >= 0 ? ((walk ? this.walkNames : drive ? this.driveNames : this.names).get(slot) ?? a.name) : '';
       const seen = this.room.seenOf(a.id);
       const stale = slot >= 0 && !(seen - (a.seen ?? -Infinity) < P.heartbeatMs);
-      if (slot !== a.slot || name !== a.name || (a.kind === 'walk') !== walk || stale) {
-        const next: Att = slot < 0 ? { id: a.id, slot, name } : walk ? { id: a.id, slot, name, seen, kind: 'walk' } : { id: a.id, slot, name, seen };
+      const k = walk ? 'walk' : drive ? 'drive' : undefined;   // loại ghi trong attachment; người bay không ghi (attachment như bản cũ)
+      if (slot !== a.slot || name !== a.name || a.kind !== k || stale) {
+        const next: Att = slot < 0 ? { id: a.id, slot, name } : k ? { id: a.id, slot, name, seen, kind: k } : { id: a.id, slot, name, seen };
         ws.serializeAttachment(next);
       }
     }

@@ -21,7 +21,7 @@ test('sáu người join: 5 joined, người thứ sáu rejected full', () => {
 test('connect nhận lobby; chỉ người gửi nhận joined; all nhận lobby mới', () => {
   const r = new SkyRoom();
   const c = r.connect('a', 0)!;
-  assert.deepEqual(c, [{ to: 'a', msg: { t: 'lobby', flyers: [], walkers: [] } }]);
+  assert.deepEqual(c, [{ to: 'a', msg: { t: 'lobby', flyers: [], walkers: [], drivers: [] } }]);
   const o = join(r, 'a', 'An');
   const j = has(o, x => x.msg.t === 'joined');
   assert.equal(j.length, 1); assert.equal(j[0].to, 'a'); assert.equal(j[0].msg.slot, 0);
@@ -234,7 +234,7 @@ test('năm người bay và năm người đi dạo cùng lúc: cả mười joi
 
 test('lobby: flyers chỉ gồm người bay, walkers chỉ gồm người đi dạo; lobby luôn có walkers', () => {
   const r = new SkyRoom();
-  assert.deepEqual(r.connect('a', 0), [{ to: 'a', msg: { t: 'lobby', flyers: [], walkers: [] } }]);
+  assert.deepEqual(r.connect('a', 0), [{ to: 'a', msg: { t: 'lobby', flyers: [], walkers: [], drivers: [] } }]);
   r.connect('b', 0);
   join(r, 'a', 'Bay');
   const l = has(joinW(r, 'b', 'Di'), x => x.msg.t === 'lobby')[0].msg;
@@ -349,4 +349,133 @@ test('khách cũ (join không kind, pos có bank) giữa phòng có người đi
   assert.equal(m.f.length, 1); assert.equal(m.f[0].length, 7); assert.equal(m.f[0][0], 0);
   assert.equal(JSON.parse(JSON.stringify(m)).t, 'pos');
   assert.equal(r.walkSlotOf('old'), -1);
+});
+
+/* ===== Chế độ lái xe (D-034): nhóm 5 slot thứ ba, gói pos {x, y, z, yaw, v, st}, phát nhóm d 8 phần tử ===== */
+const joinD = (r: SkyRoom, id: string, name: string, now = 0) => r.message(id, J({ t: 'join', name, kind: 'drive' }), now);
+const posD = (r: SkyRoom, id: string, o: any, now: number) => r.message(id, J({ t: 'pos', x: 0, y: 2.6, z: 0, yaw: 0, v: 10, st: 0.1, ...o }), now);
+
+test('5 bay + 5 đi dạo + 5 lái cùng lúc, người lái thứ 6 bị từ chối full với kind drive', () => {
+  const r = new SkyRoom();
+  const fly: any[][] = [], walk: any[][] = [], drive: any[][] = [];
+  for (let i = 0; i < 5; i++) { r.connect('f' + i, 0); fly.push(join(r, 'f' + i, 'F' + i)); }
+  for (let i = 0; i < 5; i++) { r.connect('w' + i, 0); walk.push(joinW(r, 'w' + i, 'W' + i)); }
+  for (let i = 0; i < 6; i++) { r.connect('d' + i, 0); drive.push(joinD(r, 'd' + i, 'D' + i)); }
+  for (let i = 0; i < 5; i++) {
+    assert.deepEqual(has(fly[i], o => o.msg.t === 'joined')[0].msg, { t: 'joined', slot: i });
+    assert.deepEqual(has(walk[i], o => o.msg.t === 'joined')[0].msg, { t: 'joined', slot: i, kind: 'walk' });
+    assert.deepEqual(has(drive[i], o => o.msg.t === 'joined')[0].msg, { t: 'joined', slot: i, kind: 'drive' });
+    assert.equal(r.kindOf('d' + i), 'drive'); assert.equal(r.driveSlotOf('d' + i), i);
+    assert.equal(r.slotOf('d' + i), -1); assert.equal(r.walkSlotOf('d' + i), -1);
+  }
+  assert.deepEqual(drive[5].map(o => o.msg), [{ t: 'rejected', why: 'full', kind: 'drive' }]);
+  r.connect('f5', 0); assert.deepEqual(join(r, 'f5', 'F5').map(o => o.msg), [{ t: 'rejected', why: 'full' }]);
+  r.connect('x', 0); assert.deepEqual(joinD(r, 'x', 'fuck').map(o => o.msg), [{ t: 'rejected', why: 'name', kind: 'drive' }]);
+  assert.deepEqual(joinD(r, 'd0', 'Lai'), [], 'đang giữ chỗ lái: join lần nữa bị bỏ qua');
+  assert.deepEqual(join(r, 'd0', 'Lai'), [], 'đang giữ chỗ lái: không giành thêm chỗ bay');
+});
+
+test('lobby có drivers: flyers / walkers / drivers tách riêng; lobby luôn có drivers', () => {
+  const r = new SkyRoom();
+  assert.deepEqual(r.connect('a', 0), [{ to: 'a', msg: { t: 'lobby', flyers: [], walkers: [], drivers: [] } }]);
+  r.connect('b', 0); r.connect('c', 0);
+  join(r, 'a', 'Bay'); joinW(r, 'b', 'Di');
+  const l = has(joinD(r, 'c', 'Lai'), x => x.msg.t === 'lobby')[0].msg as any;
+  assert.deepEqual(l.flyers, [{ slot: 0, name: 'Bay' }]);
+  assert.deepEqual(l.walkers, [{ slot: 0, name: 'Di' }]);
+  assert.deepEqual(l.drivers, [{ slot: 0, name: 'Lai' }]);
+});
+
+test('pos của người lái bị kẹp vào khung, v và st bị kẹp', () => {
+  const r = new SkyRoom(); r.connect('a', 0); joinD(r, 'a', 'A');
+  const D = P.drive;
+  const e = (posD(r, 'a', { x: 99999, z: -99999, y: 500, v: 99, st: 9, yaw: 3 * Math.PI + 0.5 }, 1000)[0].msg as any).d[0];
+  assert.deepEqual(e.slice(0, 4), [0, D.bounds.x1, D.yMax, D.bounds.z0]);
+  assert.ok(Math.abs(e[4] - (0.5 - Math.PI)) < 1e-9, 'yaw quấn về ±π ' + e[4]);
+  assert.equal(e[5], D.vMax); assert.equal(e[6], D.steerMax);
+  const e2 = (posD(r, 'a', { x: -99999, z: 99999, y: -500, v: -99, st: -9 }, 1200)[0].msg as any).d[0];
+  assert.deepEqual(e2.slice(1, 4), [D.bounds.x0, D.yMin, D.bounds.z1]);
+  assert.equal(e2[5], -D.vMax, 'lùi: tốc độ có dấu'); assert.equal(e2[6], -D.steerMax);
+  const e3 = (posD(r, 'a', { x: 12.5, y: 2.6, z: -30, v: -3.2, st: 0.25 }, 1400)[0].msg as any).d[0];
+  assert.deepEqual(e3.slice(1, 7), [12.5, 2.6, -30, 0, -3.2, 0.25], 'trong khung: giữ nguyên');
+  // kiểu sai / không hữu hạn / thiếu trường: bỏ cả gói
+  for (const bad of [{ v: null }, { v: '1' }, { st: 'x' }, { st: null }, { x: true }, { yaw: [] }])
+    assert.deepEqual(posD(r, 'a', bad, 1600), [], JSON.stringify(bad));
+  assert.deepEqual(r.message('a', '{"t":"pos","x":0,"y":2.6,"z":0,"yaw":0,"v":1e999,"st":0}', 1600), [], 'v = Infinity');
+  assert.deepEqual(r.message('a', '{"t":"pos","x":0,"y":2.6,"z":0,"yaw":0,"v":1}', 1600), [], 'thiếu st');
+  assert.deepEqual(r.message('a', '{"t":"pos","x":0,"y":2.6,"z":0,"yaw":0,"bank":0.1}', 1600), [], 'gói kiểu bay từ người lái');
+  assert.deepEqual(r.message('a', '{"t":"pos","x":0,"y":2.6,"z":0,"yaw":0,"pose":1}', 1600), [], 'gói kiểu đi dạo từ người lái');
+  // tần suất như các loại khác
+  const r2 = new SkyRoom(); r2.connect('a', 0); joinD(r2, 'a', 'A');
+  for (let i = 0; i < P.posMaxPerSec; i++) posD(r2, 'a', { x: i }, 10000 + i);
+  assert.deepEqual(posD(r2, 'a', { x: 5 }, 10500), []);
+});
+
+test('gói pos phát có nhóm d 8 phần tử, không lẫn sang f / w', () => {
+  const r = new SkyRoom();
+  r.connect('a', 0); r.connect('b', 0); r.connect('c', 0);
+  join(r, 'a', 'A'); joinW(r, 'b', 'B'); joinD(r, 'c', 'C');
+  const o = posD(r, 'c', { x: 10, yaw: 1, v: 5, st: -0.2, ts: 777 }, 1000);
+  assert.equal(o.length, 1); assert.equal(o[0].to, 'all');
+  const m = o[0].msg as any;
+  assert.deepEqual(m.f, [], 'f luôn có (khách cũ đọc m.f)'); assert.equal(m.w, undefined);
+  assert.deepEqual(m.d, [[0, 10, 2.6, 0, 1, 5, -0.2, 777]]);
+  assert.deepEqual(posD(r, 'c', { x: 11 }, 1010), [], 'hãm trong cửa sổ broadcastMs');
+  const m2 = r.message('c', J({ t: 'hb' }), 1200)[0].msg as any;
+  assert.equal(m2.d[0][1], 11); assert.equal(m2.d[0][7], 1010, 'không gửi ts: giờ máy chủ nhận');
+  const m2b = posD(r, 'c', { x: 12, ts: 1.79e308 }, 1400)[0].msg as any;
+  assert.equal(m2b.d[0][7], 1400, 'ts quá lớn: dùng giờ máy chủ');
+  // cả ba loại cùng cử động: mỗi loại ở đúng nhóm của mình
+  assert.deepEqual(pos(r, 'a', { x: 1 }, 1410), []); assert.deepEqual(posW(r, 'b', { x: 2 }, 1420), []);   // hãm trong cửa sổ, đi chung gói sau
+  const m3 = posD(r, 'c', { x: 3 }, 1600)[0].msg as any;
+  assert.equal(m3.f.length, 1); assert.equal(m3.f[0].length, 7); assert.equal(m3.f[0][1], 1);
+  assert.equal(m3.w.length, 1); assert.equal(m3.w[0].length, 7); assert.equal(m3.w[0][1], 2);
+  assert.equal(m3.d.length, 1); assert.equal(m3.d[0].length, 8); assert.equal(m3.d[0][1], 3);
+  const m4 = pos(r, 'a', { x: 4 }, 1800)[0].msg as any;
+  assert.equal(m4.d, undefined, 'không người lái nào cử động thì không có d');
+  // người bay gửi gói kiểu lái: thiếu bank, bị bỏ (phân loại theo slot của kết nối, không theo trường)
+  assert.deepEqual(r.message('a', J({ t: 'pos', x: 0, y: 50, z: 0, yaw: 0, v: 1, st: 0 }), 2000), []);
+});
+
+test('leave / disconnect / sweep trả đúng chỗ lái; hasFlyers tính cả người lái', () => {
+  const r = new SkyRoom();
+  for (let i = 0; i < 3; i++) { r.connect('d' + i, 0); joinD(r, 'd' + i, 'D' + i); }
+  const lv = r.message('d1', J({ t: 'leave' }), 0);
+  assert.deepEqual((lv[0].msg as any).drivers.map((w: any) => w.slot), [0, 2]);
+  assert.equal(r.driveSlotOf('d1'), -1); assert.equal(r.kindOf('d1'), null);
+  assert.equal(has(joinD(r, 'd1', 'Lai'), o => o.msg.t === 'joined')[0].msg.slot, 1);
+  const d = r.disconnect('d0');
+  assert.deepEqual((d[0].msg as any).drivers.map((w: any) => w.slot), [1, 2]);
+  r.message('d2', J({ t: 'hb' }), 9000);
+  assert.equal(r.seenOf('d2'), 9000);
+  const s = r.sweep(P.slotTimeoutMs + 1);
+  assert.equal(has(s, x => x.msg.t === 'released' && x.to === 'd1').length, 1);
+  assert.deepEqual((has(s, x => x.msg.t === 'lobby')[0].msg as any).drivers, [{ slot: 2, name: 'D2' }]);
+  assert.equal(r.hasFlyers(), true);
+  r.disconnect('d2');
+  assert.equal(r.hasFlyers(), false);
+});
+
+test('khôi phục sau hibernation giữ slot lái; slot ngoài khoảng bị bỏ', () => {
+  const r = new SkyRoom();
+  r.restore([{ id: 'f', slot: 1, name: 'F' }, { id: 'w', slot: 1, name: 'W', kind: 'walk' }, { id: 'd', slot: 1, name: 'D', kind: 'drive', seen: 400 }, { id: 'e', slot: 9, name: 'E', kind: 'drive' }], 1000);
+  assert.equal(r.kindOf('f'), 'fly'); assert.equal(r.kindOf('w'), 'walk'); assert.equal(r.kindOf('d'), 'drive');
+  assert.equal(r.driveSlotOf('d'), 1); assert.equal(r.slotOf('d'), -1); assert.equal(r.walkSlotOf('d'), -1);
+  assert.equal(r.seenOf('d'), 400); assert.equal(r.kindOf('e'), null);
+  const m = posD(r, 'd', { x: 5 }, 2000)[0].msg as any;
+  assert.deepEqual(m.d.map((e: number[]) => e[0]), [1]);
+  const r2 = new SkyRoom();
+  r2.restore([{ id: 'd', slot: 0, name: 'D', kind: 'drive' }], 50000);
+  assert.equal(r2.hasFlyers(), true);
+  r2.sweep(50000 + P.heartbeatMs + 1); assert.equal(r2.driveSlotOf('d'), -1, 'không có seen: một chu kỳ nhịp sống như người bay');
+});
+
+test('khách cũ (bay, đi dạo) giữa phòng đầy người lái: vẫn được chỗ của họ, gói pos vẫn có f', () => {
+  const r = new SkyRoom();
+  for (let i = 0; i < 5; i++) { r.connect('d' + i, 0); joinD(r, 'd' + i, 'D' + i); }
+  r.connect('old', 0); r.connect('oldw', 0);
+  assert.deepEqual(join(r, 'old', 'Cu')[0].msg, { t: 'joined', slot: 0 });
+  assert.deepEqual(joinW(r, 'oldw', 'Cu2')[0].msg, { t: 'joined', slot: 0, kind: 'walk' });
+  const m = posD(r, 'd3', { x: 5 }, 1000)[0].msg as any;
+  assert.ok(Array.isArray(m.f)); assert.equal(m.d[0][0], 3);
 });
