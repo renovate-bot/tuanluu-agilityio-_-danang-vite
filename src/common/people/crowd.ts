@@ -59,7 +59,7 @@ export function crowdFrame(t: number, clip: CrowdClip, rate: number, phase: numb
   return f < 0 ? f + N : f;
 }
 const crPhase = (phase: number, N: number) => ((((phase / (2 * Math.PI)) % 1) + 1) % 1) * N;   // rad → khung, [0, N)
-const crClip = (w: Walker): CrowdClipName => (w.kind === 'run' ? 'jog' : w.kind === 'stand' ? ((w.flags ?? 0) & PP_FLAG.photo ? 'photo' : 'idle') : 'walk');
+export const crClip = (w: Walker): CrowdClipName => (w.kind === 'run' ? 'jog' : w.kind === 'stand' ? ((w.flags ?? 0) & PP_FLAG.photo ? 'photo' : 'idle') : 'walk');
 
 /* ---------- shader ---------- */
 const VS_PARS = /* glsl */`#include <batching_pars_vertex>

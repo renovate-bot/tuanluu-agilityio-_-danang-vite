@@ -52,6 +52,16 @@ test('lưới: attribute, trần tam giác, chân y = 0, chiều cao, mũi giày
   }
 });
 
+/* Pháp tuyến dài 0 ⇒ normalize() trong shader ra NaN ⇒ điểm ảnh đen, ban đêm bloom lan NaN ra cả khung (D-032 Task 3: Female_Adult_03 có 5 đỉnh như vậy trong crowd.bin) */
+test('pháp tuyến sau khi đọc: mọi đỉnh dài 1 (kể cả đỉnh tệp ghi 0)', () => {
+  const { chars } = data();
+  for (const c of chars) for (const g of [c.geometry, c.hat]) {
+    if (!g) continue;
+    const a = g.getAttribute('normal');
+    for (let v = 0; v < a.count; v++) { const l = Math.hypot(a.getX(v), a.getY(v), a.getZ(v)); assert.ok(Math.abs(l - 1) < 0.01, `${c.id}: đỉnh ${v} pháp tuyến dài ${l}`); }
+  }
+});
+
 test('nón lá: người lớn có, trẻ em không; đỉnh nón cao hơn đầu', () => {
   const top = (g) => { const a = g.getAttribute('position').array; let m = -Infinity; for (let i = 1; i < a.length; i += 3) m = Math.max(m, a[i]); return m; };
   for (const c of data().chars) {

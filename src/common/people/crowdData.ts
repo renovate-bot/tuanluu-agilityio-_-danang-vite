@@ -40,6 +40,27 @@ export interface CrowdData extends CrowdParsed { anim: THREE.DataTexture; atlas:
 const MAGIC = 'DNCR', VERSION = 1;
 const CLIP_NAMES: CrowdClipName[] = ['walk', 'jog', 'idle', 'photo'];
 
+/* Pháp tuyến dài 0 trong tệp (Blender trả pháp tuyến góc 0 ở vài đỉnh sau giản lược: Female_Adult_03 có 5 đỉnh) ⇒ normalize() trong shader ra NaN,
+   điểm ảnh đen, ban đêm bloom lan NaN ra cả khung. Thay bằng tổng pháp tuyến mặt (theo diện tích) của các tam giác dùng đỉnh đó; không có thì +Y. Sửa tại chỗ */
+function crFixNormals(pos: Float32Array, nrm: Float32Array, idx: Uint16Array): void {
+  const bad: number[] = [];
+  for (let v = 0; v < nrm.length / 3; v++) if (Math.hypot(nrm[v * 3], nrm[v * 3 + 1], nrm[v * 3 + 2]) < 1e-6) bad.push(v);
+  if (!bad.length) return;
+  const acc = new Map<number, number[]>(bad.map((v) => [v, [0, 0, 0]]));
+  for (let t = 0; t < idx.length; t += 3) {
+    const a = idx[t], b = idx[t + 1], c = idx[t + 2];
+    if (!acc.has(a) && !acc.has(b) && !acc.has(c)) continue;
+    const ux = pos[b * 3] - pos[a * 3], uy = pos[b * 3 + 1] - pos[a * 3 + 1], uz = pos[b * 3 + 2] - pos[a * 3 + 2];
+    const vx = pos[c * 3] - pos[a * 3], vy = pos[c * 3 + 1] - pos[a * 3 + 1], vz = pos[c * 3 + 2] - pos[a * 3 + 2];
+    const n = [uy * vz - uz * vy, uz * vx - ux * vz, ux * vy - uy * vx];   // tích có hướng = 2 × diện tích × pháp tuyến mặt
+    for (const k of [a, b, c]) { const s = acc.get(k); if (s) { s[0] += n[0]; s[1] += n[1]; s[2] += n[2]; } }
+  }
+  for (const [v, s] of acc) {
+    const l = Math.hypot(s[0], s[1], s[2]);
+    nrm.set(l > 1e-12 ? [s[0] / l, s[1] / l, s[2] / l] : [0, 1, 0], v * 3);
+  }
+}
+
 /* ===== Đọc tệp (thuần: không DOM, không fetch; chạy được trong node) ===== */
 export function crowdParse(buf: ArrayBuffer): CrowdParsed {
   if (buf.byteLength < 12) throw new Error('crowd.bin: tệp quá ngắn');
@@ -59,7 +80,8 @@ export function crowdParse(buf: ArrayBuffer): CrowdParsed {
     const nv = c.verts + c.hatVerts, ni = (c.tris + c.hatTris) * 3;
     const pos = view(Float32Array, c.pos, nv * 3), nrm = view(Float32Array, c.nrm, nv * 3), uv = view(Float32Array, c.uv, nv * 2);
     const bi = view(Uint8Array, c.bones, nv * 2), w = view(Float32Array, c.w, nv), idx = view(Uint16Array, c.idx, ni);
-    const geo = (v: number, i: number): THREE.BufferGeometry => {
+    crFixNormals(pos, nrm, idx);
+    const geo =(v: number, i: number): THREE.BufferGeometry => {
       const g = new THREE.BufferGeometry();
       g.setAttribute('position', new THREE.BufferAttribute(pos.subarray(0, v * 3), 3));
       g.setAttribute('normal', new THREE.BufferAttribute(nrm.subarray(0, v * 3), 3));

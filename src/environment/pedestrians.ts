@@ -6,7 +6,8 @@ import { rng, lerp } from '../common/math';
 import { createPeople, stepPeople, ppApplyKinds, ppFaceZ, type People, type Walker } from '../common/people';
 import { ppAssignKinds } from '../common/people/kinds';
 import { deckY } from '../bridges/dragon/profile';
-import type { CrowdInfo } from '../common/people/crowd';
+import { crowdParams, crClip, type CrowdInfo } from '../common/people/crowd';
+import { crowdGet } from '../common/people/crowdData';
 
 /* =====================================================================
    NGƯỜI ĐI BỘ CẦU RỒNG (spec G9, G10, §7) — hai lề 2,5 m, ngày và đêm như nhau, không nút bật/tắt.
@@ -73,14 +74,47 @@ export const peopleTest = {
       return { ...base, count: m.count, visible, colors: c ? c.length / 3 : 0, shirtKinds: shirts.size, instAttrs: inst('aVar') && inst('aPants'), tris: (geo.index ? geo.index.count : geo.getAttribute('position').count) / 3 * m.count, chars: 0, hats: 0 };
     }).filter(Boolean);
   },
-  /* Vị trí cục bộ (trong nhóm cầu) từng người, cao độ mặt lề tại đó, kiểu, scale, trục đứng (y của trục Y), hướng mặt (+X của hình); getMatrixAt có ở cả hai loại lưới */
-  positions(name: string): { i: number; x: number; y: number; z: number; ground: number; kind: string; scale: number; upY: number; fwd: number[] }[] {
+  /* Vị trí cục bộ (trong nhóm cầu) từng người, cao độ mặt lề tại đó, kiểu, scale, trục đứng (y của trục Y), hướng mặt (+X của hình); getMatrixAt có ở cả hai loại lưới.
+     visible: đang hiện (hình khối: scale > 0; người thật: getVisibleAt — người ẩn giữ ma trận cũ); follow: chỉ số người dẫn (−1 nếu không); lx, lz: vị trí trong danh sách (CPU).
+     Người thật thêm: char (chỉ số nhân vật), clip (đoạn chuyển động), rate (nhịp phát đọc lại từ texture thông số shader dùng = khung/giây ÷ fps của đoạn), natural (m/s tự nhiên của đoạn ở tỉ lệ 1) */
+  positions(name: string): { i: number; x: number; y: number; z: number; ground: number; kind: string; scale: number; upY: number; fwd: number[]; visible: boolean; follow: number; lx: number; lz: number; char?: number; clip?: string; rate?: number; natural?: number; speed: number }[] {
     const { meshes, list } = ppFind(name), m = meshes[0], M = new THREE.Matrix4(), p = new THREE.Vector3(), q = new THREE.Quaternion(), s = new THREE.Vector3(), up = new THREE.Vector3(), fwd = new THREE.Vector3();
     if (!m || !list) return [];
+    const bm = (m as THREE.BatchedMesh).isBatchedMesh ? (m as THREE.BatchedMesh) : null, data = crowdGet(), info = bm?.userData.crowd as CrowdInfo | undefined;
+    const pd = bm ? (crowdParams(bm.material as THREE.Material).image.data as unknown as Float32Array) : null;
+    const cd = bm ? ((bm as unknown as { _colorsTexture: THREE.DataTexture })._colorsTexture.image.data as unknown as Float32Array) : null;
     return list.map((w, i) => {
       m.getMatrixAt(i, M); M.decompose(p, q, s);
       up.set(0, 1, 0).applyQuaternion(q); fwd.set(1, 0, 0).applyQuaternion(q);
-      return { i, x: p.x, y: p.y, z: p.z, ground: w.profile(w.axis === 'z' ? w.z : w.x), kind: w.kind ?? 'walk', scale: s.x, upY: up.y, fwd: fwd.toArray() };
+      const out = { i, x: p.x, y: p.y, z: p.z, ground: w.profile(w.axis === 'z' ? w.z : w.x), kind: w.kind ?? 'walk', scale: s.x, upY: up.y, fwd: fwd.toArray(), visible: bm ? bm.getVisibleAt(i) : s.x > 0, follow: w.follow ?? -1, lx: w.x, lz: w.z, speed: w.speed };
+      if (!bm || !data) return out;
+      const clip = crClip(w), c = data.chars[info.char[i]].clips[clip], g = Math.round(cd[i * 4 + 3]);   // kênh alpha màu id = chỉ số người trong texture thông số
+      return { ...out, char: info.char[i], clip, rate: pd[g * 4 + 2] / c.fps, natural: c.speed };
+    });
+  },
+  /* Chân người thật theo chuyển động (oracle trên CPU, đọc thẳng crowd.bin đã tải): với mỗi nhân vật và đoạn, skin lưới (không nón) ở từng khung
+     (đoạn không lặp: chỉ khung cuối, đúng như shader) rồi lấy y thấp nhất; trả [min, max] của y thấp nhất qua các khung, đơn vị m ở tỉ lệ 1. null nếu không có dữ liệu */
+  crowdFeet(): { id: string; child: boolean; clips: Record<string, [number, number]> }[] | null {
+    const d = crowdGet(); if (!d) return null;
+    const h = (k: number) => THREE.DataUtils.fromHalfFloat(d.animData[k]), W = d.animWidth;
+    return d.chars.map((c) => {
+      const pos = c.geometry.getAttribute('position'), bi = c.geometry.getAttribute('aBones'), aw = c.geometry.getAttribute('aW'), clips: Record<string, [number, number]> = {};
+      for (const [name, k] of Object.entries(c.clips)) {
+        let lo = Infinity, hi = -Infinity;
+        for (let f = k.loop ? 0 : k.frames - 1; f < k.frames; f++) {
+          const row = (k.row + f) * W * 4;
+          let low = Infinity;
+          for (let v = 0; v < pos.count; v++) {
+            const x = pos.getX(v), yv = pos.getY(v), z = pos.getZ(v), a = aw.getX(v);
+            const yOf = (b: number) => { const t = row + (b * 3 + 1) * 4; return h(t) * x + h(t + 1) * yv + h(t + 2) * z + h(t + 3); };   // hàng 1 (y) của ma trận 3×4 xương b
+            const y = a * yOf(bi.getX(v)) + (1 - a) * yOf(bi.getY(v));
+            if (y < low) low = y;
+          }
+          lo = Math.min(lo, low); hi = Math.max(hi, low);
+        }
+        clips[name] = [lo, hi];
+      }
+      return { id: c.id, child: c.child, clips };
     });
   }
 };
