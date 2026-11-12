@@ -710,6 +710,11 @@ const driveBase = {
     clearMargin: 2     // m — lề quanh mặt đường mới: nhà, cây, cột đèn, cọ lấn vào thì thu về scale 0 (environment/driveRoads.ts) (ước lượng)
   },
   tunnelFar: 2.5,      // hệ số nhân ngưỡng ẩn theo khoảng cách của Hầm khi đang lái: hr-road 650 → 1 625 m, cả công trình 1 500 → 3 750 m, để thấy mặt đường hầm ở nút giao với hai đường dọc mới (|x| ≈ 1 064 / 1 096) (ước lượng)
+  solids: {            // vật cản cứng (explore/drive/solids.ts, sceneSolids.ts)
+    yTol: 0.5,         // m — vật cản dọc mặt cầu / hầm dốc chia đoạn sao cho cao độ mặt đường trong mỗi đoạn lệch không quá số này; nhỏ hơn nhiều so với khoảng cách hai tầng đường (≥ 2 m) (ước lượng)
+    near: 12,          // m — nhà, chân đế địa danh cách mép ô đường không quá số này thì thành vật cản (cho cả camera sau xe); xa hơn bỏ để danh sách ngắn (ước lượng)
+    footTop: 40        // m — chiều cao chân đế địa danh tính từ mặt đất (riverfront footprints không có chiều cao) (ước lượng)
+  },
   spawn: { x: -150, lane: 8.625, gap: 9 },   // m — chỗ xuất phát trên Cầu Rồng: x giữa, |z| tim làn giữa chiều đi Đông, các slot cách nhau gap theo x (ước lượng)
   cam: {},             // camera sau xe (task sau điền)
   hud: {},             // đồng hồ, bản đồ nhỏ (task sau điền)
