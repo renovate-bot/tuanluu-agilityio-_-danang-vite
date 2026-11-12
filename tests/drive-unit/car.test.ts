@@ -5,7 +5,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import { CONFIG } from '../../src/config.ts';
-import { DrCar, drCarLoad, drCarSetLoader, drWheels } from '../../src/explore/drive/car.ts';
+import { DrCar, drCarLoad, drCarSetLoader, drCarSetWarm, drWheels } from '../../src/explore/drive/car.ts';
 import { drCars } from '../../src/explore/drive/cars.ts';
 
 const R = CONFIG.drive.car.wheelDia / 2;
@@ -80,6 +80,36 @@ test('tải lỗi hoặc quá giờ thì giữ hình tạm, không ném lỗi', 
     const old = CONFIG.drive.model.timeoutMs; CONFIG.drive.model.timeoutMs = 20;
     try { fresh(() => new Promise(() => {})); assert.equal(await drCarLoad(), null, 'quá giờ → null'); } finally { CONFIG.drive.model.timeoutMs = old; }
   } finally { console.warn = warn; }
+});
+
+test('làm nóng shader phủ thân, bánh instanced, hình tạm và tấm bóng', async () => {
+  const seen: THREE.Object3D[] = [];
+  drCarSetWarm(async (o) => { o.traverse((c) => seen.push(c)); });
+  try {
+    fresh(async () => fakeScene());
+    const scene = await drCarLoad();
+    const ims = seen.filter((o) => (o as THREE.InstancedMesh).isInstancedMesh) as THREE.InstancedMesh[];
+    assert.deepEqual(ims.map((m) => (m.material as THREE.Material).name).sort(), ['BANH', 'DEN_NHAM', 'Material.003'], 'mỗi vật liệu bánh một InstancedMesh (biến thể USE_INSTANCING)');
+    const names = new Set(seen.filter((o) => (o as THREE.Mesh).isMesh).map((o) => ((o as THREE.Mesh).material as THREE.Material).name));
+    for (const n of ['paint', 'lamp_head', 'lamp_tail', 'driveTemp', 'driveShadow']) assert.ok(names.has(n), `có ${n}`);
+    assert.equal(scene!.parent, null, 'cảnh nguồn trả về không còn cha');
+  } finally { drCarSetWarm(null); }
+});
+
+test('tải xong muộn hơn timeoutMs: drCarLoad trả null nhưng xe đang có vẫn đổi sang mô hình thật', async () => {
+  const warn = console.warn; console.warn = () => {};
+  const old = CONFIG.drive.model.timeoutMs; CONFIG.drive.model.timeoutMs = 20;
+  try {
+    let done: (o: THREE.Object3D) => void = () => {};
+    fresh(() => new Promise((r) => { done = r; }));
+    const c = new DrCar('#123456');
+    assert.equal(await drCarLoad(), null, 'quá giờ → null');
+    assert.equal(c.real, false);
+    done(fakeScene());
+    await tick(); await tick(); await tick();
+    assert.equal(c.real, true, 'tải xong muộn vẫn đổi');
+    c.dispose();
+  } finally { CONFIG.drive.model.timeoutMs = old; console.warn = warn; }
 });
 
 test('nạp một lần, nhớ đệm', async () => {

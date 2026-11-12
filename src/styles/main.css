@@ -313,6 +313,11 @@ body.explore h1,body.explore .eyebrow,body.explore #btnShadow,body.explore .audi
 body.explore:not(.ex-test) .stats{display:none;}   /* HUD giữ khi URL có ?test để test đo draw call */
 /* Đi dạo: dòng hướng dẫn và đồng hồ là của dù lượn nên ẩn; kéo chuột trên cảnh để xoay camera */
 body.explore.stroll #exHint,body.explore.stroll #exSpeed{display:none;}
+/* Lái xe (explore/drive): chữ và tốc độ của dù lượn ẩn; #drHud là khung HUD riêng (đồng hồ, bản đồ nhỏ, cảm ứng: task sau), chưa có gì nên ẩn */
+body.explore.drive #exHint,body.explore.drive #exSpeed{display:none;}
+#drHud{display:none;}
+body.drive #scene{cursor:grab;}
+body.drive #scene:active{cursor:grabbing;}
 /* Dòng hướng dẫn phím của đi dạo (#stHint): cùng chỗ và kiểu với #exHint, chỉ khi có chuột (hover:hover) và không ở chế độ xem; cảm ứng đã có cần gạt */
 #stHint{display:none;}
 @media (hover:hover){

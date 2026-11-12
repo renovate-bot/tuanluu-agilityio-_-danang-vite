@@ -11,6 +11,7 @@ import { exShowChooser } from './chooser';
 import { exNight, exNightBind, exNightStep } from './nightShows';
 import { exMulti } from './multi';
 import { stroll, setupStroll } from './stroll';
+import { drive, setupDrive } from './drive';
 import { stAvatars } from './stroll/avatars';
 import { exWatchShow, exWatchHide, exWatchRender, exFlyNotice } from './multi/watch';
 import { CONFIG } from '../config';
@@ -107,6 +108,7 @@ export const explore = {
     if (active()) advance(dt, inp);
   },
   exit(): void {
+    drive.stop();   // lái xe: trả hầm / lớp body / xe trước khi tải lại
     const u = new URL(location.href);
     u.searchParams.delete('explore'); u.searchParams.delete('chooser');
     if (u.href === location.href) location.reload();   // URL chỉ khác phần #ngôn-ngữ: replace chỉ là điều hướng fragment, không tải lại
@@ -117,10 +119,11 @@ export const explore = {
 export function setupExplore(ctrl: SwingController): void {
   exNightBind(ctrl);
   setupStroll(ctrl, () => explore.exit());
+  setupDrive(ctrl, () => explore.exit());
   window.addEventListener('keydown', (e) => {
-    if (!inGlider() && !stroll.inMode()) return;
-    if (e.key === 'Escape') { explore.exit(); return; }   // Esc thoát kể cả khi đang focus ô chọn (bay dù, đi dạo và hai chế độ xem)
-    if (watching || stroll.inMode()) return;   // xem: không lái; đi dạo: phím do stroll/index.ts ghi
+    if (!inGlider() && !stroll.inMode() && !drive.active()) return;
+    if (e.key === 'Escape') { explore.exit(); return; }   // Esc thoát kể cả khi đang focus ô chọn (bay dù, đi dạo, lái xe và hai chế độ xem)
+    if (watching || stroll.inMode() || drive.active()) return;   // xem: không lái; đi dạo / lái xe: phím do stroll/index.ts, drive/index.ts ghi
     if (e.ctrlKey || e.metaKey || e.altKey) return;   // phím tắt trình duyệt (Cmd+S...) không lái dù, tránh kẹt phím
     const t = e.target as HTMLElement | null;
     if (t && /^(SELECT|INPUT|TEXTAREA)$/.test(t.tagName)) return;   // phím trong ô chọn/nhập không lái dù
@@ -134,7 +137,7 @@ export function setupExplore(ctrl: SwingController): void {
     let byMouse = false;
     sel.addEventListener('pointerdown', () => { byMouse = true; });
     sel.addEventListener('keydown', () => { byMouse = false; });
-    sel.addEventListener('change', () => { if (byMouse && (active() || stroll.active())) sel.blur(); byMouse = false; });
+    sel.addEventListener('change', () => { if (byMouse && (active() || stroll.active() || drive.active())) sel.blur(); byMouse = false; });
   }
   const q = new URLSearchParams(location.search);
   exNight.enabled = !q.has('test');   // test bật tường minh qua __app.explore.nightShows
@@ -142,9 +145,11 @@ export function setupExplore(ctrl: SwingController): void {
   document.getElementById('btnExExit')?.addEventListener('click', () => explore.exit());
   if (q.get('explore') === 'glider') { explore.start(); return; }
   if (q.get('explore') === 'stroll') { stroll.start(); return; }   // đi dạo một mình, không qua slot
+  if (q.get('explore') === 'drive') { drive.start(true); return; }   // lái xe một mình
   if (!q.has('test') || q.has('chooser')) {
     document.querySelector('button[data-pick="walk"]')?.addEventListener('click', () => stAvatars.preload(0));   // chọn thẻ Đi dạo: nạp nhân vật của mình ngay, trong lúc ở sảnh
-    exShowChooser((choice) => { if (choice === 'glider') explore.start(); else if (choice === 'walk') stroll.start(); },
+    document.querySelector('button[data-pick="car"]')?.addEventListener('click', () => drive.preload());   // chọn thẻ Ô tô: nạp mô hình xe ngay
+    exShowChooser((choice) => { if (choice === 'glider') explore.start(); else if (choice === 'walk') stroll.start(); else if (choice === 'car') drive.start(true); },
       (choice) => { if (choice === 'walk') stroll.startWatching(); else explore.startWatching(); });   // 'guided': màn chọn tự ẩn, giao diện cũ
   }
 }

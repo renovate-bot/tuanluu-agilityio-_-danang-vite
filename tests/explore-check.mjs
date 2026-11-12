@@ -235,11 +235,11 @@ try {
   {
     const CARDS = ['glider', 'car', 'bike', 'walk', 'guided'];
     const vis = (page, sel) => page.evaluate((s) => { window.__app.ui?.reveal(document.querySelector(s)); const e = document.querySelector(s); return !!e && e.getClientRects().length > 0 && getComputedStyle(e).visibility !== 'hidden'; }, sel);
-    // 4a ?chooser: màn chọn hiện, 5 thẻ, thẻ chưa có disabled (thẻ Đi dạo đã mở: chế độ đi dạo)
+    // 4a ?chooser: màn chọn hiện, 5 thẻ, thẻ chưa có disabled (thẻ Đi dạo, Ô tô đã mở)
     const C = await openApp(browser, srv.url + '?chooser');
     await C.page.waitForSelector('#chooser', { state: 'visible', timeout: 240000 });
     const a4 = await C.page.evaluate(() => [...document.querySelectorAll('#chooser button[data-pick]')].map((b) => [b.dataset.pick, b.disabled]));
-    check(`4a #chooser hiện, thẻ: ${JSON.stringify(a4)}`, a4.length === 5 && CARDS.every((k) => a4.some(([n]) => n === k)) && a4.filter(([, d]) => d).map(([n]) => n).sort().join() === 'bike,car');
+    check(`4a #chooser hiện, thẻ: ${JSON.stringify(a4)}`, a4.length === 5 && CARDS.every((k) => a4.some(([n]) => n === k)) && a4.filter(([, d]) => d).map(([n]) => n).sort().join() === 'bike');
     const l4 = await C.page.evaluate(() => { const s = document.getElementById('exLang'); const r = s.getBoundingClientRect(); const top = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2); return { n: s.options.length, v: s.value, onTop: top === s }; });
     check(`4a chooser có ô ngôn ngữ riêng: ${l4.n} ngôn ngữ, giá trị ${l4.v}, không bị panel che ${l4.onTop}`, l4.n === 9 && l4.v === 'vi' && l4.onTop);
     const inertOn = await C.page.evaluate(() => { const o = document.querySelector('[data-bridge="tp"]'); return !!o.closest('[inert]') && !document.getElementById('chooser').closest('[inert]') && !document.getElementById('exLang').closest('[inert]'); });

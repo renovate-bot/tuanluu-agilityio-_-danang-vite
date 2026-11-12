@@ -92,6 +92,8 @@ export function updateCamera(dt: number) {
     /* tư thế do explore.update đặt ngay sau updateCamera; không gọi controls.update() */
   } else if (cam.mode === 'stroll') {
     /* tư thế do stroll.update đặt ngay sau updateCamera; không gọi controls.update() */
+  } else if (cam.mode === 'car') {
+    /* tư thế do drive.update (explore/drive) đặt ngay sau updateCamera; không gọi controls.update() */
   } else if (cam.mode === 'storm') {
     const sc = getWeather()?.scenario;
     if (sc?.running && sc.cameraOwned) { sc.pose(sc.t, camera.position, controls.target); camera.lookAt(controls.target); }

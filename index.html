@@ -226,7 +226,7 @@
     <p id="exMpLostNote" class="ex-mp-note" role="status" data-i18n="exMpLostChooser" hidden>Mất kết nối với bầu trời chung. Chọn Dù lượn để kết nối lại.</p>
     <div class="ex-cards">
       <button type="button" class="ex-card" data-pick="glider"><b data-i18n="exGlider">Dù lượn</b><span data-i18n="exGliderDesc">Bay tự do trên sông Hàn</span><i class="ex-note" data-i18n="exDesktopOnly" hidden>Chỉ dùng trên máy tính</i></button>
-      <button type="button" class="ex-card" data-pick="car" disabled><b data-i18n="exCar">Ô tô</b><i class="ex-note" data-i18n="exSoon">Sắp có</i></button>
+      <button type="button" class="ex-card" data-pick="car"><b data-i18n="exCar">Ô tô</b><span data-i18n="drCardDesc">Lái VinFast VF 3 qua các cầu sông Hàn</span></button>
       <button type="button" class="ex-card" data-pick="bike" disabled><b data-i18n="exBike">Xe máy</b><i class="ex-note" data-i18n="exSoon">Sắp có</i></button>
       <button type="button" class="ex-card" data-pick="walk"><b data-i18n="exWalk">Đi dạo</b><span data-i18n="exWalkDesc">Dạo bộ trên cầu và hai bờ sông</span></button>
       <button type="button" class="ex-card" data-pick="guided"><b data-i18n="exGuided">Tham quan có hướng dẫn</b><span data-i18n="exGuidedDesc">Tour, góc nhìn và thuyết minh</span></button>
@@ -268,6 +268,8 @@
   <div id="stFlash" aria-hidden="true"></div>
   <div id="stToast" class="panel" role="status" aria-live="polite" dir="auto" hidden></div>
 </div>
+
+<div id="drHud" dir="ltr"></div>
 
 <script type="module" src="/src/main.ts"></script>
 </body>

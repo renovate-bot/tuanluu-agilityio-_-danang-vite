@@ -1,7 +1,7 @@
 /* ===== Lái xe: hình chiếc VinFast VF 3 trong cảnh (D-034) =====
-   - drCarLoad(): import() động GLTFLoader, nạp public/car/vf3.glb một lần, nhớ đệm. Lỗi bất kỳ hoặc quá model.timeoutMs → console.warn, null; promise không bao giờ bị từ chối.
+   - drCarLoad(): import() động GLTFLoader, nạp public/car/vf3.glb một lần, nhớ đệm. Lỗi bất kỳ hoặc quá model.timeoutMs → console.warn, null; promise không bao giờ bị từ chối. Quá giờ mà sau đó nạp xong thì xe đang có vẫn đổi sang mô hình thật.
      Nguồn được chuẩn hóa một lần: lớp 1 (không vào phản chiếu nước), không đổ / nhận bóng; hai vật liệu đèn vá bằng onBeforeCompile (đọc shared.uNight, không PointLight);
-     chờ drCarSetWarm (compileAsync theo cảnh chính, ≤ model.warmMs) rồi mới trả nguồn.
+     chờ drCarSetWarm (compileAsync theo cảnh chính, ≤ model.warmMs; phủ cảnh nguồn, bánh instanced, hình tạm, tấm bóng) rồi mới trả nguồn.
    - Đèn: lamp_head có emissive map của nguồn, nhân hệ số theo uNight. lamp_tail không có: phát sáng = màu cơ bản (cả logo trong ảnh dán) nhân hệ số.
      Đèn phanh = bản vật liệu thứ hai cùng program (cùng customProgramCacheKey, chỉ khác uniform uBrake): đổi tham chiếu vật liệu của lưới đèn hậu, không biên dịch lại.
    - DrCar: group có ngay với hình tạm (một Mesh gộp hộp bo + bốn trụ bánh, màu theo slot) và tấm bóng mờ dưới gầm; nạp xong thì đổi sang bản sao `body` của mô hình
@@ -92,6 +92,21 @@ async function drCarWarm(o: THREE.Object3D): Promise<void> {
   finally { clearTimeout(timer); }
 }
 
+/* Làm nóng mọi thứ xe dùng, không chỉ cảnh nguồn: bánh vẽ bằng InstancedMesh (program USE_INSTANCING khác program của lưới thường),
+   hình tạm (driveTemp) và tấm bóng (driveShadow). Nhóm tạm gồm cảnh nguồn + một InstancedMesh 1 chỗ mỗi lưới bánh + một hình tạm + một tấm bóng;
+   gỡ cảnh nguồn ra (về không cha) và bỏ nhóm sau khi làm nóng. Đèn hậu phanh cùng program với đèn hậu (cùng khóa) nên không cần */
+async function drCarWarmAll(src: DrSource): Promise<void> {
+  if (!warm) return;
+  const g = new THREE.Group(), ims: THREE.InstancedMesh[] = [];
+  for (const m of src.wheelMeshes) { const im = new THREE.InstancedMesh(m.geometry, m.material, 1); im.layers.set(1); ims.push(im); g.add(im); }
+  const tg = drTempGeometry('#808080');
+  g.add(new THREE.Mesh(tg, drTempMaterial()));
+  drShadowShared(); g.add(new THREE.Mesh(shadowGeo!, shadowMat!));
+  g.add(src.scene);
+  try { await drCarWarm(g); }
+  finally { g.remove(src.scene); for (const im of ims) im.dispose(); tg.dispose(); }
+}
+
 async function drCarDefaultLoader(): Promise<THREE.Object3D> {
   const { GLTFLoader } = await import('three/addons/loaders/GLTFLoader.js');
   const gltf = await new GLTFLoader().loadAsync(import.meta.env.BASE_URL + M.url);
@@ -100,31 +115,33 @@ async function drCarDefaultLoader(): Promise<THREE.Object3D> {
 
 let loader: () => Promise<THREE.Object3D> = drCarDefaultLoader;
 let cache: Promise<THREE.Object3D | null> | null = null;
+let late: Promise<THREE.Object3D | null> | null = null;   // nạp không giới hạn giờ: DrCar đổi sang mô hình thật cả khi xong sau timeoutMs
 let sources = new WeakMap<THREE.Object3D, DrSource>();
 let gen = 0;
 
-/* Nạp mô hình xe. Không bao giờ ném / từ chối: lỗi hoặc quá model.timeoutMs → warn một lần, null */
+/* Nạp mô hình xe. Không bao giờ ném / từ chối: lỗi hoặc quá model.timeoutMs → warn một lần, null.
+   Quá giờ chỉ là câu trả lời của drCarLoad: việc nạp vẫn chạy tiếp, xe đang có (DrCar) đổi sang mô hình thật khi nó xong (late) */
 export function drCarLoad(): Promise<THREE.Object3D | null> {
   if (cache) return cache;
   const work = (async () => {
     const scene = await loader();
     const src = drCarSource(scene);
     sources.set(scene, src);
-    await drCarWarm(scene);
+    await drCarWarmAll(src);
     return scene as THREE.Object3D | null;
   })();
   let timer = 0;
   const p = Promise.race([work, new Promise<null>((r) => { timer = setTimeout(() => r(null), M.timeoutMs) as unknown as number; })])
     .catch((e) => { console.warn('Lái xe: không nạp được mô hình xe, dùng hình tạm', e); return null; })
     .finally(() => clearTimeout(timer));
-  work.catch(() => { /* lỗi đã xử lý ở nhánh race; chặn cảnh báo promise bị bỏ */ });
+  late = work.catch(() => null);   // lỗi đã báo ở nhánh race
   cache = p;
   return p;
 }
 
 /* Cho test: thay bộ nạp (null: mặc định), xóa đệm, bỏ bánh dùng chung */
 export function drCarSetLoader(fn: (() => Promise<THREE.Object3D>) | null): void {
-  loader = fn || drCarDefaultLoader; cache = null; sources = new WeakMap(); gen++;
+  loader = fn || drCarDefaultLoader; cache = null; late = null; sources = new WeakMap(); gen++;
   drWheels.reset();
 }
 
@@ -269,7 +286,8 @@ export class DrCar {
     this.shadow.position.y = M.shadow.lift;
     this.shadow.layers.set(1); this.shadow.castShadow = false; this.shadow.receiveShadow = false; this.shadow.renderOrder = 1;
     this.group.add(this.shadow);
-    drCarLoad().then((scene) => { if (scene && !this.disposed) this.swap(sources.get(scene)!); }, () => { /* drCarLoad không từ chối */ });
+    void drCarLoad();
+    late!.then((scene) => { const src = scene && sources.get(scene); if (src && !this.disposed) this.swap(src); });   // không bao giờ từ chối; nguồn của bộ nạp cũ (test đổi bộ nạp) thì bỏ
   }
 
   get real(): boolean { return this.body !== null; }
