@@ -333,7 +333,7 @@ try {
     check(`đi dạo ${tag}: Cần gạt, 📷 hiện; không còn #stJump (${await page.evaluate(() => !!document.getElementById('stJump'))})`, hud.length === 2 && !(await page.evaluate(() => !!document.getElementById('stJump'))));
     check(`đi dạo ${tag}: mỗi nút ≥ 44 × 44 px`, hud.every((b) => b.width >= 44 && b.height >= 44));
     check(`đi dạo ${tag}: nằm trọn trong khung nhìn`, hud.every((b) => b.left >= 0 && b.top >= 0 && b.right <= W && b.bottom <= H));
-    check(`đi dạo ${tag}: không chồng nút Thoát và danh sách người chơi / hai thông báo`, avoid.length === 2 && noOverlap([...hud, ...avoid]));
+    check(`đi dạo ${tag}: không chồng nút Thoát và danh sách người chơi`, avoid.length === 2 && noOverlap([...hud, ...avoid]));
     check(`đi dạo ${tag}: cả hai nút không bị lớp khác che`, (await Promise.all(STH.map((s) => topAtCenter(page, s)))).every(Boolean));
     return hud;
   };

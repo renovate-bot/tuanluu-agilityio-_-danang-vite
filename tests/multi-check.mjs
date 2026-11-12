@@ -8,6 +8,7 @@
 //          (nhân vật có xương, D-030: mô hình 1 + slot mod 4, trộn đoạn sprint); dù lượn đã vào bay thấy người đi dạo (1 nhân vật đếm bằng avatars.debug,
 //          mô hình 1 + slot mod 4, danh sách "Đi dạo 1/5 · Bay 1/5", nhãn, draw call tăng đúng số lưới của nhân vật); 5 bot đi dạo → chế độ xem, camera ≤ 8 m,
 //          gõ wasd trong ô lời mời không điều khiển gì, lời mời → vào đi, Esc; rời máy khi đi dạo → đếm ngược → xem.
+//   Mục 7 (lái xe, D-034): hai người lái thấy xe và tên nhau; người bay dù và người đi dạo thấy xe; draw call mỗi xe ≤ 6; 5 bot lái + người thứ 6 → chế độ xem; trả chỗ → lời mời → vào lái.
 //   Sửa sau review cuối: bot bay thẳng thì dù nội suy đi đều (Mục 1); ?multi= bị bỏ qua khi không có ?test (Mục 2b); Quay lại / Esc ở bước sảnh,
 //   Bay một mình hiện cả khi có máy chủ (Mục 3); bị giành chỗ ngay ở sảnh có báo (Mục 4); thông báo mất kết nối / nhường chỗ tự ẩn (Mục 4, 5).
 //   Tự spawn `wrangler dev` ở cổng 8799 và luôn kill khi xong hoặc lỗi.
@@ -55,6 +56,7 @@ function lineBot(name, v, oz) {
 let srv, browser, page;
 const bots = [];
 const wbots = [];   // bot đi dạo (Mục 6)
+const dbots = [];   // bot lái xe (Mục 7)
 try {
   for (let i = 0; i < 120; i++) { if (/Ready on/.test(log)) break; await sleep(500); }
   check('wrangler dev sẵn sàng', /Ready on/.test(log));
@@ -721,12 +723,146 @@ try {
   }
   wbots.splice(0).forEach((b) => b.close());
 
+  // Mục 7 (D-034, lái xe) — hai người lái thấy xe và tên nhau; người bay dù và người đi dạo thấy xe; draw call mỗi xe ≤ 6;
+  //   5 bot lái + người thứ 6 → chế độ xem; một bot rời → lời mời → vào lái. Bot lái: join kind 'drive', pos { x, y, z, yaw, v, st, ts }.
+  const driveBot = (name, x, z, yaw, v) => {
+    const ws = new WebSocket(`ws://${HOST}/sky`, { headers: { Origin: 'http://127.0.0.1' } });
+    const b = { ws, timer: null, name, slot: -1 };
+    ws.onopen = () => ws.send(JSON.stringify({ t: 'join', name, kind: 'drive' }));
+    ws.onmessage = (e) => {
+      const m = JSON.parse(e.data);
+      if (m.t === 'joined' && !b.timer) { b.slot = m.slot; b.timer = setInterval(() => ws.send(JSON.stringify({ t: 'pos', x, y: 2.6, z, yaw, v, st: 0, ts: Date.now() })), 200); }
+    };
+    b.close = () => { clearInterval(b.timer); try { ws.close(); } catch { /* bỏ qua */ } };
+    dbots.push(b);
+    return b;
+  };
+  const dropD = (b) => { b.close(); const i = dbots.indexOf(b); if (i >= 0) dbots.splice(i, 1); };
+  const carCard = async (pg) => { await pg.waitForSelector('#chooser', { state: 'visible', timeout: 240000 }); await pg.click('#chooser [data-pick="car"]'); };
+  const carTo = async (pg, name, seats) => {   // sảnh lái xe → nhập tên → Lái ngay → đang lái với slot
+    await pg.waitForFunction((re) => new RegExp(re).test(document.getElementById('exMpSeats')?.innerText || ''), seats, { timeout: 60000 }).catch(() => {});
+    await pg.fill('#exMpNameIn', name);
+    await pg.click('#exMpFly');
+    await pg.waitForFunction(() => window.__app.drive.active() && window.__app.multi.session && window.__app.multi.session.phase === 'flying', null, { timeout: 90000 }).catch(() => {});
+  };
+  /* Xe trong cảnh: nhóm drive-cars đã gắn vào cảnh, số xe (drive-car) và số xe đang hiện */
+  const carsIn = (pg) => pg.evaluate(() => {
+    const g = window.__app.scene.getObjectByName('drive-cars');
+    if (!g || !g.parent) return { n: 0, vis: 0 };
+    const c = g.children.filter((o) => o.name === 'drive-car');
+    return { n: c.length, vis: c.filter((o) => o.visible).length };
+  });
+  const waitCars = (pg, n) => pg.waitForFunction((n) => { const g = window.__app.scene.getObjectByName('drive-cars'); return !!g && !!g.parent && g.children.filter((o) => o.name === 'drive-car' && o.visible).length >= n; }, n, { timeout: 90000, polling: 500 }).catch(() => {});
+  const labelsOn = (pg) => pg.evaluate(() => [...document.querySelectorAll('#exMpLabels .ex-mp-label')].filter((e) => !e.hidden).map((e) => e.textContent));
+  const rosterOf = (pg) => pg.evaluate(() => document.getElementById('exMpRoster').innerText);
+  const callsOf = (pg) => pg.evaluate(() => { const { renderer, scene, camera } = window.__app; renderer.render(scene, camera); renderer.info.reset(); renderer.render(scene, camera); return renderer.info.render.calls; });
+  {
+    const bB = driveBot('LaiB', -120, 8.6, 0, 0), bC = driveBot('LaiC', -110, 8.6, 0, 0);
+    await sleep(2500);
+    // 7a — người lái thứ nhất: thẻ Ô tô → sảnh "Còn 3 trên 5 chỗ lái" → tên → lái; thấy hai xe bot + tên
+    const D1 = await openApp(browser, URLC + NOIDLE);
+    await carCard(D1.page);
+    await D1.page.waitForFunction(() => /Còn 3 trên 5 chỗ lái/.test(document.getElementById('exMpSeats')?.innerText || ''), null, { timeout: 60000 }).catch(() => {});
+    const seats = await D1.page.evaluate(() => ({ seats: document.getElementById('exMpSeats').innerText, go: document.getElementById('exMpFly').innerText, solo: document.getElementById('exMpSolo').innerText }));
+    check(`7a bấm thẻ Ô tô: sảnh "${seats.seats}" (Còn 3 trên 5 chỗ lái), nút "${seats.go}" (Lái ngay), "${seats.solo}" (Lái một mình)`, seats.seats === 'Còn 3 trên 5 chỗ lái' && seats.go === 'Lái ngay' && seats.solo === 'Lái một mình');
+    await carTo(D1.page, 'LaiA', 'Còn 3 trên 5 chỗ lái');
+    const me = await D1.page.evaluate(() => { const A = window.__app, s = A.multi.session, st = A.drive.state; return { kind: s.kind, slot: s.mySlot, x: st.x, z: st.z, hidden: document.getElementById('chooser').hidden, cls: document.body.classList.contains('drive') }; });
+    check(`7a vào lái: kind ${me.kind}, slot ${me.slot} (không trùng bot ${bB.slot}, ${bC.slot}), xuất phát (${me.x.toFixed(1)}, ${me.z.toFixed(2)}) theo slot, hộp đóng, body.drive`,
+      me.kind === 'drive' && me.slot >= 0 && me.slot !== bB.slot && me.slot !== bC.slot && Math.abs(me.x - (-150 + 9 * (me.slot - 2))) < 1e-6 && me.hidden && me.cls);
+    await waitCars(D1.page, 3);
+    await frames(D1.page, 3);
+    const c3 = await carsIn(D1.page), lab3 = await labelsOn(D1.page), ro3 = await rosterOf(D1.page);
+    check(`7a thấy xe của hai bot: ${c3.vis}/${c3.n} xe hiện (tính cả xe mình), danh sách "${ro3.replace(/\n/g, ' | ')}", nhãn tên (${lab3.join(' ; ')})`,
+      c3.vis === 3 && c3.n === 3 && /Lái xe 3\/5/.test(ro3) && ro3.includes('LaiB') && ro3.includes('LaiC') && ro3.includes('LaiA') && lab3.some((l) => /^Lai[BC] · \d+ m$/.test(l)));
+    // 7b — người lái thứ hai (trình duyệt khác cùng phòng): hai bên thấy xe và tên nhau
+    const D2 = await openApp(browser, URLC + NOIDLE);
+    await carCard(D2.page);
+    await carTo(D2.page, 'LaiD', 'Còn 2 trên 5 chỗ lái');
+    await Promise.all([waitCars(D1.page, 4), waitCars(D2.page, 4)]);
+    await frames(D1.page, 3); await frames(D2.page, 3);
+    const a1 = await carsIn(D1.page), a2 = await carsIn(D2.page), r1 = await rosterOf(D1.page), r2 = await rosterOf(D2.page), l1 = await labelsOn(D1.page);
+    check(`7b hai người lái thấy nhau: A ${a1.vis}/${a1.n} xe, danh sách "${r1.replace(/\n/g, ' | ')}" có LaiD; D ${a2.vis}/${a2.n} xe, danh sách có LaiA (${r2.includes('LaiA')}); nhãn trên máy A (${l1.join(' ; ')})`,
+      a1.vis === 4 && a2.vis === 4 && r1.includes('LaiD') && r2.includes('LaiA') && /Lái xe 4\/5/.test(r1) && /Lái xe 4\/5/.test(r2));
+    check('7b nhãn tên người lái LaiD hiện ở máy A (xe nằm phía trước, trong tầm nhìn) hoặc ít nhất một nhãn bot', l1.some((l) => /^Lai[BCD] · \d+ m$/.test(l)));
+    const c4 = await callsOf(D1.page);
+    // 7c — người bay dù và người đi dạo thấy xe
+    const G = await openApp(browser, URLC + NOIDLE);
+    await G.page.waitForSelector('#chooser', { state: 'visible', timeout: 240000 });
+    await G.page.click('#chooser [data-pick="glider"]');
+    await G.page.waitForFunction(() => /Còn \d trên 5 chỗ$/.test(document.getElementById('exMpSeats')?.innerText || ''), null, { timeout: 30000 }).catch(() => {});
+    await G.page.fill('#exMpNameIn', 'Phi7');
+    await G.page.click('#exMpFly');
+    await G.page.waitForFunction(() => window.__app.explore.active() && window.__app.multi.session.phase === 'flying', null, { timeout: 60000 }).catch(() => {});
+    await G.page.evaluate(() => { const s = window.__app.explore.state; const pin = () => { s.pos.set(-150, 18, 8.6); s.yaw = 0; s.bank = 0; requestAnimationFrame(pin); }; pin(); });
+    await waitCars(G.page, 4);
+    await frames(G.page, 3);
+    const gc = await carsIn(G.page), gr = await rosterOf(G.page);
+    check(`7c người bay dù thấy xe: ${gc.vis}/${gc.n} xe hiện, danh sách "${gr.replace(/\n/g, ' | ')}"`, gc.vis === 4 && /Lái xe 4\/5/.test(gr) && gr.includes('LaiA') && gr.includes('Phi7'));
+    check('7c lỗi console của trang bay dù = 0', G.errors.length === 0);
+    if (G.errors.length) console.log(G.errors.join('\n'));
+    await G.page.close();
+    const W = await openApp(browser, URLC + NOIDLE);
+    await walkCard(W.page);
+    await walkTo(W.page, 'Dao7');
+    await waitCars(W.page, 4);
+    await frames(W.page, 3);
+    const wc = await carsIn(W.page), wr = await rosterOf(W.page);
+    check(`7c người đi dạo thấy xe: ${wc.vis}/${wc.n} xe hiện, danh sách "${wr.replace(/\n/g, ' | ')}"`, wc.vis === 4 && /Lái xe 4\/5/.test(wr) && wr.includes('Dao7'));
+    check('7c lỗi console của trang đi dạo = 0', W.errors.length === 0);
+    if (W.errors.length) console.log(W.errors.join('\n'));
+    await W.page.close();
+    // 7d — draw call: mỗi xe thêm ≤ 6 (4 xe so với 1 xe sau khi D2 và hai bot rời)
+    await D2.page.close();
+    dropD(bB); dropD(bC);
+    await D1.page.waitForFunction(() => { const g = window.__app.scene.getObjectByName('drive-cars'); return !g || !g.parent || g.children.filter((o) => o.name === 'drive-car').length === 1; }, null, { timeout: 60000, polling: 500 }).catch(() => {});
+    await frames(D1.page, 3);
+    const c1 = await callsOf(D1.page), a1b = await carsIn(D1.page);
+    check(`7d draw call 4 xe ${c4} → 1 xe ${c1} (${a1b.n} xe): mỗi xe thêm ≤ 6 nên chênh ≤ 18`, a1b.n === 1 && c4 - c1 <= 18 && c4 - c1 >= 0);
+    check('7d lỗi console của trang lái A = 0', D1.errors.length === 0);
+    if (D1.errors.length) console.log(D1.errors.join('\n'));
+    await D1.page.close();
+    check('7d lỗi console của trang lái D = 0', D2.errors.length === 0);
+    if (D2.errors.length) console.log(D2.errors.join('\n'));
+    await sleep(2000);
+  }
+
+  // 7e — 5 bot lái giữ chỗ: người thứ 6 vào chế độ xem; một bot rời → lời mời → vào lái
+  {
+    const five = [0, 1, 2, 3, 4].map((i) => driveBot('Xe' + i, -140 + 8 * i, 8.6, 0, 0));
+    await sleep(2500);
+    const X = await openApp(browser, URLC + NOIDLE);
+    await carCard(X.page);
+    await X.page.waitForFunction(() => window.__app.drive.watching, null, { timeout: 60000 }).catch(() => {});
+    await X.page.waitForFunction(() => { const A = window.__app, s = A.multi.session; return s && s.watched >= 0; }, null, { timeout: 60000 }).catch(() => {});
+    await frames(X.page, 6);
+    const wv = await X.page.evaluate(() => { const A = window.__app, s = A.multi.session; return { watching: A.drive.watching, active: A.drive.active(), mode: A.cam.mode, phase: s.phase, kind: s.kind, text: document.getElementById('exMpWatch').innerText, cls: document.body.classList.contains('ex-watching'), drive: document.body.classList.contains('drive'), invite: document.getElementById('exMpInvite').getClientRects().length > 0 }; });
+    check(`7e 5 bot lái + người thứ 6: chế độ xem (${wv.mode}, ${wv.phase}), "${wv.text}", không lời mời, không lái (active ${wv.active})`,
+      wv.watching && !wv.active && wv.mode === 'car' && wv.phase === 'watching' && wv.kind === 'drive' && /^Đang xem: Xe\d$/.test(wv.text) && wv.cls && wv.drive && !wv.invite);
+    const gone = five[0];
+    dropD(gone);
+    await X.page.waitForFunction(() => document.getElementById('exMpInvite').getClientRects().length > 0, null, { timeout: 30000 }).catch(() => {});
+    const inv = await X.page.evaluate(() => ({ txt: document.getElementById('exMpInviteText').innerText, btn: document.getElementById('exMpInviteFly').innerText, input: document.getElementById('exMpInviteName').getClientRects().length > 0 }));
+    check(`7e một bot rời: lời mời "${inv.txt}" + nút "${inv.btn}", ô tên hiện`, inv.txt === 'Có chỗ trống. Bạn muốn lái xe không?' && inv.btn === 'Vào lái' && inv.input);
+    await X.page.fill('#exMpInviteName', 'Moi');
+    await X.page.click('#exMpInviteFly');
+    await X.page.waitForFunction(() => window.__app.drive.active() && window.__app.multi.session.phase === 'flying', null, { timeout: 60000 }).catch(() => {});
+    await frames(X.page, 3);
+    const jn = await X.page.evaluate(() => { const A = window.__app; return { act: A.drive.active(), watching: A.drive.watching, slot: A.multi.session.mySlot, cls: document.body.classList.contains('ex-watching'), roster: document.getElementById('exMpRoster').innerText }; });
+    check(`7e bấm lời mời: vào lái với slot ${jn.slot} (chỗ bot vừa rời ${gone.slot}), giao diện xem gỡ, danh sách có Moi`, jn.act && !jn.watching && jn.slot === gone.slot && !jn.cls && jn.roster.includes('Moi') && /Lái xe 5\/5/.test(jn.roster));
+    check('7e lỗi console của trang xem / lái = 0', X.errors.length === 0);
+    if (X.errors.length) console.log(X.errors.join('\n'));
+    await X.page.close();
+    dbots.splice(0).forEach((b) => b.close());
+    await sleep(2000);
+  }
+
   live.splice(0).forEach((b) => b.close());
 } catch (e) {
   check('ngoại lệ: ' + e.message, false);
 } finally {
   bots.forEach((b) => b.close());
   wbots.forEach((b) => b.close());
+  dbots.forEach((b) => b.close());
   try { await browser?.close(); } catch { /* bỏ qua */ }
   try { srv?.close(); } catch { /* bỏ qua */ }
   stop();

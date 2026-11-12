@@ -294,6 +294,21 @@ try {
     check('console sạch (4d/4h/4e)', D.errors.length === 0);
     if (D.errors.length) console.log(D.errors.join('\n'));
     await D.page.close();
+    // 4i (D-034) thẻ Ô tô bấm được: không máy chủ nên vào thẳng chế độ lái một mình; Esc thoát (tải lại, bỏ explore=)
+    const K = await openApp(browser, srv.url + '?chooser');
+    await K.page.waitForSelector('#chooser', { state: 'visible', timeout: 240000 });
+    await K.page.click('#chooser [data-pick="car"]');
+    await K.page.waitForFunction(() => document.body.classList.contains('drive') && window.__app.cam.mode === 'car' && window.__app.drive.state, null, { timeout: 240000, polling: 500 });
+    const i4 = await K.page.evaluate(() => ({ mode: window.__app.cam.mode, ex: document.body.classList.contains('explore'), dr: document.body.classList.contains('drive'), chooser: document.getElementById('chooser').hidden, hud: document.getElementById('drHud').getClientRects().length > 0 }));
+    check(`4i bấm thẻ Ô tô: cam.mode ${i4.mode}, body.explore ${i4.ex}, body.drive ${i4.dr}, hộp chọn đóng ${i4.chooser}, #drHud hiện ${i4.hud}`, i4.mode === 'car' && i4.ex && i4.dr && i4.chooser && i4.hud);
+    await K.page.evaluate(() => { window.__reloadMark = 1; });
+    await K.page.keyboard.press('Escape');
+    await K.page.waitForFunction(() => !window.__reloadMark, null, { timeout: 240000 });
+    await K.page.waitForURL((u) => !u.href.includes('explore=') && !u.href.includes('chooser'), { timeout: 240000, waitUntil: 'commit' });
+    check('4i Esc khi lái: tải lại thật, URL không còn chooser / explore=', !K.page.url().includes('explore=') && !K.page.url().includes('chooser'));
+    check('console sạch (4i)', K.errors.length === 0);
+    if (K.errors.length) console.log(K.errors.join('\n'));
+    await K.page.close();
     // 4f điện thoại: thẻ dù lượn bị khóa
     const M = await openApp(browser, srv.url + '?chooser', { mobile: true });
     await M.page.waitForSelector('#chooser', { state: 'visible', timeout: 240000 });
