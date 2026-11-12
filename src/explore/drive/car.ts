@@ -2,7 +2,7 @@
    - drCarLoad(): import() động GLTFLoader, nạp public/car/vf3.glb một lần, nhớ đệm. Lỗi bất kỳ hoặc quá model.timeoutMs → console.warn, null; promise không bao giờ bị từ chối. Quá giờ mà sau đó nạp xong thì xe đang có vẫn đổi sang mô hình thật.
      Nguồn được chuẩn hóa một lần: lớp 1 (không vào phản chiếu nước), không đổ / nhận bóng; hai vật liệu đèn vá bằng onBeforeCompile (đọc shared.uNight, không PointLight);
      chờ drCarSetWarm (compileAsync theo cảnh chính, ≤ model.warmMs; phủ cảnh nguồn, bánh instanced, hình tạm, tấm bóng) rồi mới trả nguồn.
-   - Đèn: lamp_head có emissive map của nguồn, nhân hệ số theo uNight. lamp_tail không có: phát sáng = màu cơ bản (cả logo trong ảnh dán) nhân hệ số.
+   - Đèn: lamp_head có emissive map của nguồn, nhân hệ số theo uNight. lamp_tail không có: phát sáng = màu cơ bản (cả logo trong ảnh dán) × model.tailTint (đỏ) × hệ số. Kính (Material.002) đặt nhám model.glassRough.
      Đèn phanh = bản vật liệu thứ hai cùng program (cùng customProgramCacheKey, chỉ khác uniform uBrake): đổi tham chiếu vật liệu của lưới đèn hậu, không biên dịch lại.
    - DrCar: group có ngay với hình tạm (một Mesh gộp hộp bo + bốn trụ bánh, màu theo slot) và tấm bóng mờ dưới gầm; nạp xong thì đổi sang bản sao `body` của mô hình
      (5 primitive = 5 lệnh vẽ, vật liệu `paint` nhân bản riêng để đặt màu slot). Bốn bánh KHÔNG thuộc group của xe: nằm trong drWheels, mỗi vật liệu của lưới bánh một
@@ -61,11 +61,12 @@ export function drCarSource(scene: THREE.Object3D): DrSource {
     if (mat.name === 'paint') paint = mat;
     else if (mat.name === 'lamp_head') head = mat;
     else if (mat.name === 'lamp_tail') tail = mat;
+    else if (mat.name === 'Material.002') mat.roughness = M.glassRough;   // kính: nguồn nhám 0 ⇒ điểm chói trăng loang xanh (cả bản sao thân dùng chung vật liệu này)
   });
   if (!paint || !head || !tail) throw new Error('thiếu vật liệu paint / lamp_head / lamp_tail');
   const h = head as THREE.MeshStandardMaterial, t = tail as THREE.MeshStandardMaterial;
   drLampPatch(h, 'drLampHead', M.headNight, 0);
-  t.emissive.set(0xffffff); t.emissiveMap = t.map; t.emissiveIntensity = 1;   // không emissive map: lấy chính ảnh màu cơ bản
+  t.emissive.set(M.tailTint); t.emissiveMap = t.map; t.emissiveIntensity = 1;   // không emissive map: lấy chính ảnh màu cơ bản, nhuộm đỏ (ảnh dán nhạt × trắng = hồng)
   drLampPatch(t, 'drLampTail', M.tailNight, 0);
   const tb = t.clone(); drLampPatch(tb, 'drLampTail', M.tailNight, M.tailBrake);   // cùng khóa program: chỉ khác uniform
   const wheels: DrSource['wheels'] = [], z = new THREE.Vector3();

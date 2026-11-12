@@ -748,7 +748,9 @@ const driveBase = {
     paintMetal: 0.25,  // độ kim loại sơn thân (nguồn để 0) (ước lượng)
     headNight: 1.6,    // hệ số nhân phát sáng mặt đèn pha (emissive map của nguồn) khi uNight = 1 (ước lượng)
     tailNight: 0.9,    // hệ số phát sáng mặt đèn hậu (nhân màu cơ bản) khi uNight = 1 (ước lượng)
-    tailBrake: 2.2,    // hệ số phát sáng mặt đèn hậu khi đạp phanh, cả ban ngày (ước lượng)
+    tailBrake: 4,      // hệ số phát sáng mặt đèn hậu khi đạp phanh, cả ban ngày; đủ lớn để vượt ngưỡng bloom 0,98 và khác rõ đèn hậu đêm (ước lượng)
+    tailTint: 0xff140d,   // màu phát sáng đèn hậu (nhân ảnh dán): đỏ, thay trắng vì ảnh dán nhạt làm đèn phanh đêm thành hồng nhạt; logo trong ảnh cũng đỏ theo (ước lượng)
+    glassRough: 0.3,   // độ nhám kính (vật liệu Material.002 của nguồn để 0 ⇒ điểm chói ánh trăng rất hẹp, rất sáng, loang xanh sau kính hậu ban đêm) (ước lượng)
     shadow: { pad: 0.45, opacity: 0.55, lift: 0.03 },   // tấm bóng mờ dưới gầm: m — phần nhô ra mỗi chiều so với thân xe; độ đục tối đa; m — nâng khỏi mặt đường (ước lượng)
     temp: { wheelWidth: 0.2 }   // m — bề rộng bánh của hình tạm (ước lượng)
   },

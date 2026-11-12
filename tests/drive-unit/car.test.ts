@@ -215,3 +215,25 @@ test('5 xe: 6 lệnh vẽ mỗi xe cộng 3 lệnh bánh chung', async () => {
   assert.equal(drWheels.meshes[0].count, 20);
   drCars.clear();
 });
+
+/* Sửa cuối D-034 (review mục E): đèn phanh ban đêm hồng nhạt vì emissive trắng nhân ảnh dán nhạt ⇒ nhuộm đỏ (model.tailTint), hệ số phanh vượt ngưỡng bloom;
+   kính Material.002 nhám 0 cho điểm chói trăng xanh sau kính hậu ⇒ model.glassRough. Màu thật vẫn phải xem bằng mắt */
+test('đèn hậu phát sáng đỏ (cả bản phanh, chung program), kính có độ nhám theo CONFIG', async () => {
+  fresh(async () => fakeScene());
+  const c = new DrCar('#fff');
+  await tick(); await tick();
+  const ms = meshes(c.group), M = CONFIG.drive.model;
+  const tail = ms.find((m) => (m.material as THREE.Material).name === 'lamp_tail')!.material as THREE.MeshStandardMaterial;
+  assert.ok(tail.emissive.r > 4 * tail.emissive.g && tail.emissive.r > 4 * tail.emissive.b, `emissive đèn hậu phải đỏ: ${tail.emissive.getHexString()}`);
+  assert.deepEqual(tail.emissive.toArray(), new THREE.Color(M.tailTint).toArray(), 'màu phát sáng lấy từ model.tailTint');
+  c.place(place({ braking: true }));
+  const brake = ms.find((m) => (m.material as THREE.Material).name === 'lamp_tail')!.material as THREE.MeshStandardMaterial;
+  assert.notEqual(brake, tail);
+  assert.ok(brake.emissive.equals(tail.emissive), 'bản phanh cùng màu phát sáng');
+  assert.equal(brake.customProgramCacheKey(), tail.customProgramCacheKey(), 'không đổi khóa program lúc chạy');
+  assert.ok(M.tailBrake >= 4, `hệ số phanh ${M.tailBrake} phải đủ lớn để vượt ngưỡng bloom`);
+  const glass = ms.find((m) => (m.material as THREE.Material).name === 'Material.002')!.material as THREE.MeshStandardMaterial;
+  assert.equal(glass.roughness, M.glassRough, 'kính Material.002 lấy độ nhám model.glassRough');
+  assert.ok(M.glassRough > 0, 'kính không còn nhám 0 (điểm chói trăng)');
+  c.dispose();
+});
