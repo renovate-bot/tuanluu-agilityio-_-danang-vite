@@ -763,8 +763,38 @@ const driveBase = {
     mouse: 0.005,      // rad/px — độ nhạy kéo chuột, như đi dạo (ước lượng)
     fov: 62            // độ — góc nhìn dọc khi lái (ước lượng)
   },
-  hud: {},             // đồng hồ, bản đồ nhỏ (task sau điền)
-  sound: {}            // tiếng mô tơ, còi (task sau điền)
+  hud: {               // đồng hồ tốc độ, bản đồ nhỏ, gợi ý phím (explore/drive/hud.ts)
+    hintMs: 6000,      // ms — gợi ý phím tự ẩn sau chừng này kể từ lúc vào chế độ (ước lượng)
+    mapMs: 100,        // ms — bản đồ nhỏ vẽ lại tối đa mỗi chừng này, tức 10 lần/giây (spec)
+    mapDesk: 200,      // px — cạnh dài của bản đồ nhỏ trên máy tính (ước lượng)
+    mapTouch: 128,     // px — cạnh dài của bản đồ nhỏ trên điện thoại (ước lượng)
+    colors: { river: '#1d3b55', land: '#16241f', road: '#9aa5a0', bridge: '#f0e4c4', tunnel: '#e08a3c', mark: '#e6bd6a', me: '#ffd34d', edge: 'rgba(255,255,255,.28)' },   // màu bản đồ nhỏ: nền sông, nền đất, đường, cầu, hầm (phương án đề xuất), chấm công trình, xe của mình, viền
+    roadMin: 1.5,      // px — bề rộng tối thiểu nét vẽ của một ô đường để đường hẹp không biến mất (ước lượng)
+    meR: 4.5,          // px — cỡ mũi tên chỉ xe của mình (ước lượng)
+    otherR: 3          // px — bán kính chấm xe người khác (ước lượng)
+  },
+  touch: {             // điều khiển cảm ứng (explore/drive/touch.ts): ngón trái cần gạt ngang, ngón phải GA và PHANH
+    padW: 180,         // px — bề rộng cần gạt ngang trên màn hình rộng (hẹp thì CSS thu theo bề rộng khung nhìn) (ước lượng)
+    padH: 72,          // px — bề cao cần gạt ngang (ước lượng)
+    knob: 56,          // px — đường kính núm cần gạt (ước lượng)
+    dead: 0.1,         // vùng chết của cần gạt, phần bán kính trượt (ước lượng)
+    gasW: 92,          // px — bề rộng nút GA (ước lượng)
+    gasH: 124,         // px — bề cao nút GA, to hơn PHANH (ước lượng)
+    brakeW: 76,        // px — bề rộng nút PHANH (ước lượng)
+    brakeH: 84,        // px — bề cao nút PHANH (ước lượng)
+    activityMs: 1000   // ms — giữ yên cần gạt hoặc bàn đạp thì báo "còn đó" mỗi chừng này (ước lượng)
+  },
+  sound: {             // tiếng mô tơ điện và còi, tổng hợp bằng Web Audio (explore/drive/sound.ts)
+    base: 70,          // Hz — tần số mô tơ khi xe đứng yên (ước lượng)
+    perMs: 9,          // Hz mỗi m/s — tần số tăng theo |v| (≈ 320 Hz ở 100 km/h) (ước lượng)
+    gainIdle: 0.02,    // âm lượng mô tơ khi đứng yên, trước nút âm lượng chung (ước lượng)
+    gainMax: 0.1,      // âm lượng mô tơ ở tốc độ tối đa (ước lượng)
+    lowpass: 900,      // Hz — lọc thông thấp mô tơ cho tiếng rì êm (ước lượng)
+    updateMs: 60,      // ms — cập nhật tham số âm thanh tối đa mỗi chừng này (mỗi lần là một sự kiện tự động hoá, D-018) (ước lượng)
+    smooth: 0.08,      // s — hằng số thời gian làm mượt tham số (ước lượng)
+    hornHz: [392, 494],   // Hz — hai nốt còi (Sol4, Si4) (ước lượng)
+    hornGain: 0.12     // âm lượng còi (ước lượng)
+  }
 };
 
 /* ------------------------- Tàu thuyền sông Hàn ------------------------- */

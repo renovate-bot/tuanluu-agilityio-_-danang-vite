@@ -1,11 +1,11 @@
 /* ============================ Lái xe: đầu vào từ bàn phím (thuần) ============================
    Tập phím theo vị trí vật lý (e.code: KeyW, ArrowUp, Space...) nên bố cục không Latin (ru, ar, th, hi) vẫn dùng WASD.
-   W/↑ ga, S/↓ phanh, A/← lái trái (steer +1), D/→ lái phải (steer −1), hai phím trái phải triệt nhau; Space phanh tay.
+   W/↑ ga, S/↓ phanh, A/← lái trái (steer +1), D/→ lái phải (steer −1), hai phím trái phải triệt nhau; Space phanh tay; H còi (không thuộc DrInput: index.ts đọc tập phím).
    Chỉ ánh xạ: lùi (giữ phanh khi xe đã đứng) do drStep (motion.ts) xử lý. Không cấp phát (gọi mỗi khung). */
 import type { DrInput } from './motion';
 
 /* Các e.code chế độ lái ghi vào tập phím (index.ts chặn hành vi mặc định của mũi tên và Space) */
-export const DR_KEYS = new Set(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space']);
+export const DR_KEYS = new Set(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space', 'KeyH']);
 
 export function drInputFromKeys(keys: Set<string>, out: DrInput): DrInput {
   out.gas = keys.has('KeyW') || keys.has('ArrowUp') ? 1 : 0;

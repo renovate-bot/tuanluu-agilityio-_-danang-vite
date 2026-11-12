@@ -269,7 +269,16 @@
   <div id="stToast" class="panel" role="status" aria-live="polite" dir="auto" hidden></div>
 </div>
 
-<div id="drHud" dir="ltr"></div>
+<div id="drHud" dir="ltr">
+  <div id="drLook"></div>
+  <canvas id="drMap" width="1" height="1" aria-hidden="true"></canvas>
+  <div id="drMapNote" class="panel" dir="auto" data-i18n="drMapTunnel">Hầm (phương án đề xuất)</div>
+  <div id="drSpeed" class="panel" aria-live="off"><b id="drKmh">0</b><span id="drSpeedUnit" dir="auto" data-i18n="drSpeedUnit">km/h</span></div>
+  <div id="drHint" class="panel" dir="auto" data-i18n="drHint">W A S D hoặc mũi tên: lái · Space: phanh tay · H: còi · kéo chuột: xoay camera · Esc: thoát</div>
+  <div id="drSteer"><div id="drKnob"></div></div>
+  <button id="drBrake" type="button" dir="auto" data-i18n="drBrake">PHANH</button>
+  <button id="drGas" type="button" dir="auto" data-i18n="drGas">GA</button>
+</div>
 
 <script type="module" src="/src/main.ts"></script>
 </body>

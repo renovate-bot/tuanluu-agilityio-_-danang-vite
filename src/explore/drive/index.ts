@@ -1,6 +1,6 @@
 /* ============================ Lái xe: điều phối chế độ (lái một mình, máy tính) ============================
    Nối mạng đường (net / roadData / solids / sceneSolids), chuyển động + va chạm (motion / collide), hình xe (car / cars),
-   camera sau xe (camera) với vòng animate, phím, chuột. Mẫu: explore/stroll/index.ts.
+   camera sau xe (camera) với vòng animate, phím, chuột, cảm ứng (touch), HUD (hud: đồng hồ, bản đồ nhỏ, gợi ý), tiếng mô tơ / còi (sound). Mẫu: explore/stroll/index.ts.
    `?explore=drive` vào thẳng, lái một mình; thẻ "Ô tô" ở màn chọn cũng lái một mình (sảnh nhiều người: Task 10–11).
    Esc và nút Thoát dùng explore.exit() (tải lại trang, D-020); trước đó drive.stop() trả lại các thứ đã đổi.
    - Mạng đường dựng MỘT lần ở lần đầu vào chế độ và giữ lại: ô tĩnh + vật cản tĩnh + nhà / chân đế thu từ cảnh (drCollectRuntime chỉ push,
@@ -14,6 +14,7 @@
    - Hầm: driveView.far = CONFIG.drive.tunnelFar khi đang lái để mặt đường hầm hiện ở nút giao với hai đường dọc mới; thoát trả 1.
    - Xe của mình là xe slot 0 của drCars (màu slot 0 khi lái một mình); xe và bánh chỉ vào cảnh khi vào chế độ (góc nhìn cũ không thêm lệnh vẽ).
    - Phím theo e.code (keys.ts), chỉ ghi khi đang lái, bỏ qua ô nhập và tổ hợp Ctrl / Meta / Alt; blur, ẩn tab, focus vào ô nhập thì nhả hết.
+   - Cảm ứng (touch.ts, #drHud): đọc SAU phím và gộp (giá trị có độ lớn lớn hơn), không xóa phím trên máy lai; reset() cùng chỗ nhả phím. Phím H: còi.
    Mỗi khung không cấp phát (D-018). */
 import type * as THREE from 'three';
 import { scene, camera, controls, canvas, renderer } from '../../core/renderer';
@@ -32,6 +33,9 @@ import { drCarLoad, drCarSetWarm } from './car';
 import { drCars } from './cars';
 import { drCamPlace, drCamDrag, type DrCam } from './camera';
 import { drInputFromKeys, drBindDrop, DR_KEYS } from './keys';
+import { drHudShow, drHudHide, drHudUpdate, type DrMapDot } from './hud';
+import { drTouchBind } from './touch';
+import { drSound } from './sound';
 import { exNightStep } from '../nightShows';
 import type { SwingController } from '../../bridges/song-han/SwingController';
 
@@ -58,6 +62,8 @@ let ctrl: SwingController | null = null;
 const drKeys = new Set<string>();  // e.code đang giữ
 const camS: DrCam = { yaw: 0, pitch: 0, idle: 0 };
 const _inp: DrInput = { gas: 0, brake: 0, steer: 0, hand: false };   // đầu vào tái dùng mỗi khung
+const NO_OTHERS: DrMapDot[] = [];  // xe người khác trên bản đồ nhỏ: Task 11 truyền; hiện không có
+let touch: ReturnType<typeof drTouchBind> | null = null;   // điều khiển cảm ứng (setupDrive dựng)
 const boxes: DrBox[] = [];         // hộp xe tự động gần xe, tái dùng mỗi khung (trNearby chỉ thêm phần tử khi phải nới)
 let saved: { fov: number; explore: boolean } | null = null;   // thứ start() đổi, stop() trả lại: fov camera, lớp body 'explore' đã có từ trước chưa
 
@@ -92,6 +98,7 @@ function advance(dt: number, inp: DrInput): void {
   drCars.place(DR_SELF, state!);
   drCamPlace(camera, state!, camS, net!, dt);
   controls.target.set(state!.x, state!.y, state!.z);   // tâm vùng bóng đổ (main.ts shadowCenter) theo xe
+  drHudUpdate(state!, NO_OTHERS); drSound.update(state!.v);
   exNightStep(dt, false);
 }
 
@@ -127,7 +134,8 @@ export const drive = {
     if (!drCars.group.parent) scene.add(drCars.group);
     drCars.place(DR_SELF, state);
     driveView.far = CONFIG.drive.tunnelFar;
-    drKeys.clear();
+    drKeys.clear(); touch?.reset();
+    drHudShow(n); drSound.start();
     if (!saved) saved = { fov: camera.fov, explore: document.body.classList.contains('explore') };
     cam.flight.then = null; cam.mode = 'car'; controls.enabled = false;
     camera.fov = CONFIG.drive.cam.fov; onResize();   // onResize cập nhật ma trận chiếu và hệ số cỡ điểm theo fov mới
@@ -139,14 +147,18 @@ export const drive = {
   startWatching(): void { drive.start(true); },
   update(dt: number): void {
     if (!active()) return;
-    advance(dt, drInputFromKeys(drKeys, _inp));
+    drInputFromKeys(drKeys, _inp);
+    if (touch) touch.read(_inp);   // gộp, không xóa phím
+    drSound.horn(drKeys.has('KeyH'));
+    advance(dt, _inp);
   },
   /* Gọi ngay sau lệnh vẽ khung chính (main.ts); chỗ cho HUD / chụp ảnh của task sau */
   afterRender(): void { /* chưa có việc */ },
   /* Rời chế độ: trả mọi thứ đã đổi (explore.exit tải lại trang ngay sau), kể cả khi cam.mode đã bị chỗ khác đổi khỏi 'car' */
   stop(): void {
     if (state === null) return;
-    state = null; drKeys.clear();
+    state = null; drKeys.clear(); touch?.reset();
+    drHudHide(); drSound.stop();
     drCars.clear(); drCars.group.removeFromParent();
     driveView.far = 1;
     document.body.classList.remove('drive');
@@ -180,8 +192,16 @@ export function setupDrive(c: SwingController, onExit: () => void): void {
     if (e.code === 'Space' && active() && !isField(e.target)) e.preventDefault();
   });
   const drop = drBindDrop(window, document, drKeys);
-  window.addEventListener('focusin', (e) => { if (active() && isField(e.target)) drop(); });
-  /* Kéo chuột trái trên canvas: xoay camera quanh xe (cảm ứng ở Task 9) */
+  window.addEventListener('focusin', (e) => { if (active() && isField(e.target)) { drop(); touch?.reset(); drSound.horn(false); } });
+  /* Tab ẩn hoặc mất tiêu điểm: vòng khung có thể dừng nên tắt còi ngay (phím đã nhả ở drBindDrop, cảm ứng tự reset trong touch.ts) */
+  window.addEventListener('blur', () => drSound.horn(false));
+  document.addEventListener('visibilitychange', () => { if (document.hidden) drSound.horn(false); });
+  const hud = document.getElementById('drHud');
+  if (hud) touch = drTouchBind(hud, {
+    look: (dx, dy) => { if (active()) drCamDrag(camS, dx, dy); },
+    activity: () => { /* Task 11: exMulti.activity() */ }
+  });
+  /* Kéo chuột trái trên canvas: xoay camera quanh xe (ngón tay vuốt #drLook trong touch.ts) */
   let dragId = -1, lx = 0, ly = 0;
   canvas.addEventListener('pointerdown', (e) => {
     if (!active() || e.pointerType === 'touch' || e.button !== 0) return;

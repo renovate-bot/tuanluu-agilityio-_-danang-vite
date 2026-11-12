@@ -487,5 +487,13 @@
   "stPhotoSaved": "写真を保存しました",
   "stPhotoFail": "写真を保存できませんでした",
   "stLostChooser": "接続が切れました。再接続するには「散歩」を選んでください。",
-  "stHint": "W A S D: 移動 · Shift 長押し: 走る · マウスドラッグ: カメラ回転 · P: 写真 · Esc: 終了"
+  "stHint": "W A S D: 移動 · Shift 長押し: 走る · マウスドラッグ: カメラ回転 · P: 写真 · Esc: 終了",
+  "drSpeedUnit": "km/h",
+  "drHint": "W A S D または矢印: 運転 · Space: サイドブレーキ · H: クラクション · マウスドラッグ: カメラ回転 · Esc: 終了",
+  "drGas": "アクセル",
+  "drBrake": "ブレーキ",
+  "drRoster": "運転",
+  "drMapTunnel": "トンネル（提案案）",
+  "drLostChooser": "接続が切れました。再接続するには「車」を選んでください。",
+  "drWatch": "観戦中: {name}"
 }

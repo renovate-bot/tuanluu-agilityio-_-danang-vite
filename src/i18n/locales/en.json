@@ -487,5 +487,13 @@
   "stPhotoSaved": "Photo saved",
   "stPhotoFail": "Couldn't save the photo",
   "stLostChooser": "Connection lost. Choose Stroll to reconnect.",
-  "stHint": "W A S D: walk · hold Shift: run · drag mouse: turn camera · P: photo · Esc: exit"
+  "stHint": "W A S D: walk · hold Shift: run · drag mouse: turn camera · P: photo · Esc: exit",
+  "drSpeedUnit": "km/h",
+  "drHint": "W A S D or arrows: drive · Space: handbrake · H: horn · drag mouse: turn camera · Esc: exit",
+  "drGas": "GAS",
+  "drBrake": "BRAKE",
+  "drRoster": "Driving",
+  "drMapTunnel": "Tunnel (proposed plan)",
+  "drLostChooser": "Connection lost. Choose Car to reconnect.",
+  "drWatch": "Watching: {name}"
 }

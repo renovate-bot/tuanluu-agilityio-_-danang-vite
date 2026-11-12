@@ -268,6 +268,9 @@ export function createAudio() {
       g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(v, t + 0.12); g.gain.setTargetAtTime(0.0001, t + 0.3, dur / 4);
       src.connect(lp).connect(g).connect(A.sfx); src.start(t, R() * 2); src.stop(t + dur + 0.5);
     },
+    /* Cổng cho hiệu ứng ngoài (tiếng xe của chế độ lái): ngữ cảnh + nút hiệu ứng, chỉ khi người xem đã bấm phát ít nhất một lần (chưa có ngữ cảnh thì null: không tạo ở đây).
+       Nút tắt tiếng chung (master) vẫn chặn mọi thứ nối vào đây; `on` cho biết tiếng đang bật */
+    sfxPort() { return A.ctx && A.sfx ? { ctx: A.ctx, out: A.sfx as AudioNode, on: A.on } : null; },
     pause() { if (A.ctx && A.on) { clearInterval(A.timer); A.ctx.suspend(); } },
     resume() { if (A.ctx && A.on) { A.ctx.resume(); A.nextTime = Math.max(A.nextTime, A.ctx.currentTime + 0.1); A.timer = window.setInterval(schedule, 60); } },
     /* Gọi mỗi khung hình: ngày/đêm, trạng thái trình diễn, khoảng cách camera tới đầu rồng */
