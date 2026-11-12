@@ -100,7 +100,7 @@ docs/superpowers/  # Spec (specs/) và plan (plans/) cho từng tính năng
 - **Không đổi chuỗi `rand()` có seed.** Giữ nguyên thứ tự dựng trong `main.ts`. Nếu cần ngẫu nhiên mới, dùng `rng(seed)` riêng để không làm thay đổi cảnh hiện có.
 - **Thông số mới đặt trong `src/config.ts`**, ghi rõ đơn vị và đánh dấu `(ước lượng)` hoặc nêu nguồn.
 - **Khóa i18n mới phải có đủ 9 ngôn ngữ.** Không để thiếu bản dịch.
-- **Không thêm thư viện runtime, ảnh ngoài hay đèn động.** Dự án giữ nhẹ và tự chứa; ánh sáng/hình ảnh được dựng bằng code.
+- **Không thêm thư viện runtime hay đèn động.** Dự án giữ nhẹ; ánh sáng dựng bằng code. Mô hình và texture ngoài được phép khi giấy phép cho phân phối lại trong repo công khai, có ghi nguồn + tệp `LICENSE-*` cạnh tài nguyên, có trần dung lượng được test kiểm và có đường lùi khi tải lỗi.
 - **Giữ ngân sách draw call.** Mọi thay đổi hình ảnh cần được đo bằng `npm run test:drawcalls` và so sánh với `tests/KET-QUA.md`.
 - **TypeScript phải sạch lỗi** (`npm run typecheck`).
 

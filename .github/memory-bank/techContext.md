@@ -34,4 +34,4 @@ Tất cả test (trừ typecheck) đọc `dist/` → `npm run build` trước. C
 ## Giới hạn
 - Bundle three ~ lớn → `chunkSizeWarningLimit: 900`.
 - Không có CI; kiểm tra chạy tay trên máy dev.
-- Không có ảnh/texture ngoài trong repo (trừ mp3 thuyết minh).
+- Tài nguyên ngoài trong repo: mp3 thuyết minh (`public/voice/`), mô hình + texture người Rocketbox (`public/people/`). Thêm mô hình / texture ngoài khác được phép theo điều kiện của D-033 (giấy phép, ghi nguồn, trần dung lượng, đường lùi).

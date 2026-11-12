@@ -14,6 +14,7 @@
 - [ ] Không đổi chuỗi `rand()` có seed (thứ tự dựng trong `main.ts` giữ nguyên; ngẫu nhiên mới dùng `rng(seed)`)
 - [ ] Thông số mới nằm trong `src/config.ts`, có đơn vị và `(ước lượng)`/nguồn
 - [ ] Khóa i18n mới có đủ 9 ngôn ngữ
-- [ ] Không thêm thư viện runtime, ảnh ngoài, đèn động
+- [ ] Không thêm thư viện runtime, đèn động
+- [ ] Mô hình / texture ngoài (nếu có): giấy phép cho phân phối lại, đã ghi nguồn + tệp `LICENSE-*`, có trần dung lượng và đường lùi khi tải lỗi
 - [ ] Đã cập nhật `.github/memory-bank/` (`activeContext.md`, `progress.md`, `decisions.md` nếu có quyết định mới)
 - [ ] README / `tests/KET-QUA.md` cập nhật nếu cần

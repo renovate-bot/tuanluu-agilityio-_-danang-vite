@@ -13,7 +13,7 @@ description: Quy tắc chung khi viết code Three.js trong src/
   - Chi tiết nhỏ → `details` (LOD) hoặc `farHide`; không cần phản chiếu → `noReflect` / `layers.set(1)`.
 - **Vật liệu:** tái dùng `MAT` (`core/materials.ts`) khi có thể; vật liệu riêng tạo trong `materials.ts` của công trình và dispose được.
 - **Ngày/đêm:** đọc `shared.uNight`; đèn bằng emissive/shader, không thêm `PointLight`/`SpotLight`.
-- **Texture:** vẽ bằng canvas (`common/textures.ts`, `core/textures.ts`), không nạp ảnh ngoài.
+- **Texture:** phần cảnh dựng bằng code vẽ texture bằng canvas (`common/textures.ts`, `core/textures.ts`). Mô hình ngoài và texture đi kèm được phép theo D-033 (`copilot-instructions.md` §3 mục 5): giấy phép, ghi nguồn, trần dung lượng có test, đường lùi khi tải lỗi.
 - **Hệ trục:** X Tây→Đông, −Z Bắc, mét; y = 0 mặt nước.
 - **Dispose:** mọi geometry/material/`CanvasTexture` tự tạo phải giải phóng được (theo `BridgeBase.dispose()`).
 - Comment tiếng Việt; khối tiêu đề `/* ===== ... ===== */` mô tả công trình/vị trí ở đầu file chính.
