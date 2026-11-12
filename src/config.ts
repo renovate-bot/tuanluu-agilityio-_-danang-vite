@@ -706,8 +706,10 @@ const driveBase = {
     tpX0: -1500,       // m — đầu Tây trục Thuận Phước (thuan-phuoc/deck.ts)
     endLen: 24,        // m — ô nút giao chỗ quay đầu ở cuối mỗi đường cụt, phủ cả hai chiều và dải giữa (ước lượng)
     slipDragon: { zIn: 21, zOut: 30, jLen: 21 },   // m — nhánh rẽ chân Cầu Rồng: |z| mép trong / mép ngoài (mép gờ mặt cầu |z| = 19), chiều dài ô nút giao ngay ngoài |x| = 333 (ước lượng)
-    slipTtl: { zIn: 20, zOut: 29, jLen: 21 }       // m — nhánh rẽ chân Trần Thị Lý: |z − 1300| mép trong / mép ngoài (mép đường đắp 17,25), chiều dài ô nút giao ngay ngoài x = −470 / +450 (ước lượng)
+    slipTtl: { zIn: 20, zOut: 29, jLen: 21 },      // m — nhánh rẽ chân Trần Thị Lý: |z − 1300| mép trong / mép ngoài (mép đường đắp 17,25), chiều dài ô nút giao ngay ngoài x = −470 / +450 (ước lượng)
+    clearMargin: 2     // m — lề quanh mặt đường mới: nhà, cây, cột đèn, cọ lấn vào thì thu về scale 0 (environment/driveRoads.ts) (ước lượng)
   },
+  tunnelFar: 2.5,      // hệ số nhân ngưỡng ẩn theo khoảng cách của Hầm khi đang lái: hr-road 650 → 1 625 m, cả công trình 1 500 → 3 750 m, để thấy mặt đường hầm ở nút giao với hai đường dọc mới (|x| ≈ 1 064 / 1 096) (ước lượng)
   spawn: { x: -150, lane: 8.625, gap: 9 },   // m — chỗ xuất phát trên Cầu Rồng: x giữa, |z| tim làn giữa chiều đi Đông, các slot cách nhau gap theo x (ước lượng)
   cam: {},             // camera sau xe (task sau điền)
   hud: {},             // đồng hồ, bản đồ nhỏ (task sau điền)

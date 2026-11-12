@@ -18,6 +18,7 @@ import { quality } from './core/quality';
 import { buildRiverBanks } from './environment/river';
 import { buildMountains } from './environment/mountains';
 import { buildStreets, finalizeRoads } from './environment/streets';
+import { drClearRoads } from './environment/driveRoads';
 import { buildCity } from './environment/city';
 import { buildTrees, buildStreetLamps, treesTest } from './environment/trees';
 import { buildTraffic, buildBoats, updateTraffic, updateBoats, boatsTest, trafficTest } from './environment/traffic';
@@ -93,6 +94,7 @@ scene.add(songHan.group);
 const hanTunnel = new HanTunnel();     // sau mọi lệnh dựng có dùng rand(): chỉ dọn nhà, cây trên tuyến bằng cách thu nhỏ instance
 scene.add(hanTunnel.group);
 const riverfront = buildRiverfront();    // sau HanTunnel: dọn nhà bị đè bằng scale 0, không đụng chuỗi rand()
+drClearRoads(thuanPhuoc.houses);         // sau buildRiverfront: dọn nhà / cây / đèn trên đường mới của chế độ lái (D-034) bằng scale 0, không đụng chuỗi rand()
 const sunWheel = new SunWheel();         // sau buildRiverfront, trước buildWeather: dọn nền bằng scale 0, không đụng chuỗi rand()
 scene.add(sunWheel.group);
 buildDragonPeople();                     // sau mọi lệnh dùng rand(), trước buildWeather: người Cầu Rồng dùng rng riêng

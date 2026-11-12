@@ -19,6 +19,7 @@ import { tpBuildTraffic, tpBuildBoats } from './life';
 export class ThuanPhuocBridge extends BridgeBase<TpMaterials> {
   declare traffic: Traffic;
   declare boats: Boats;
+  houses!: THREE.InstancedMesh;   // nhà quanh hai đầu cầu (site.ts), để drClearRoads dọn nhà trên đường dọc mới
 
   constructor() {
     super('ThuanPhuocBridge', 'tp', TP.z, new THREE.Vector3(0, 40, TP.z), TP.lodDistance);

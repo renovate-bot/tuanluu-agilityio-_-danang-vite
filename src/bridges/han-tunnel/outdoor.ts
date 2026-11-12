@@ -7,6 +7,7 @@ import { prepColored, extrudeAlongX, fillBlock, bentBox, boxAt, roadStrip, shado
 import { addLampPosts } from '../../common/deck';
 import { trPalmStaticGeo } from '../../common/trees/shapes';
 import { HR, hrRoadY } from './profile';
+import { drOnNewRoad } from '../../environment/driveRoadGeo';
 import type { HanTunnel } from './HanTunnel';
 
 /* [outdoor] Phần nhìn thấy trên mặt đất: máng hầm hở (sàn, tường, dải giữa), đoạn gờ chắn ngập, mái lam che nắng mưa,
@@ -121,6 +122,7 @@ function hrBuildDecor(bridge: HanTunnel) {
   const cp = bridge.concreteParts;
   palms.forEach(([x, z], i) => {
     const h = 8 + rnd() * 4, y = hrRoadY(x) < LAND ? LAND : hrRoadY(x) - 0.1, yaw = (Math.sin(i * 12.9898) * 43758.5453 % 1 + 1) % 1 * Math.PI * 2;
+    if (drOnNewRoad(x, z + HR.z, CONFIG.drive.roads.clearMargin)) return;   // cọ đứng trên đường dọc mới (chế độ lái, D-034): bỏ, sau khi đã lấy rnd() để chuỗi rng(7001) của cây khác giữ nguyên
     const g = trPalmStaticGeo(h).rotateY(yaw).translate(x, y, z);
     g.deleteAttribute('uv');                    // đã không indexed, có sẵn normal + color: không qua prepColored vì nó ghi đè màu đỉnh
     cp.push(g);

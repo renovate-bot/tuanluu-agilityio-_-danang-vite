@@ -7,6 +7,7 @@ import { shadowed, zPlane } from '../../common/geometry';
 import { TP } from './profile';
 import { passLodAdd } from '../../core/passLod';
 import { trShadeTrunkGeo, trShadeCrownLodGeo, trYaw } from '../../common/trees/shapes';
+import { drCutBoxes } from '../../environment/driveRoadGeo';
 import type { ThuanPhuocBridge } from './ThuanPhuocBridge';
 
 /* Mở rộng địa hình cửa sông quanh cầu: bờ đất, kè, đường ven sông, nhà, cây.
@@ -36,7 +37,7 @@ export function tpBuildSite(bridge: ThuanPhuocBridge) {
       for (let i = 0; i < uv.count; i++) uv.setX(i, p.getZ(i) / 12);
       roads.push(g);
     }
-    med.push(box(xc - 1.5, xc + 1.5, za, zb, Y, Y + 0.3));
+    med.push(...drCutBoxes(xc - 1.5, xc + 1.5, za, zb, Y, Y + 0.3, z0));   // mở dải giữa ở chỗ quay đầu cuối đường (chế độ lái, D-034)
   }
   const sr = shadowed(new THREE.Mesh(mergeGeometries(roads), MAT.road2), false, true);
   const sm = shadowed(new THREE.Mesh(mergeGeometries(med), MAT.grass), false, true);
@@ -58,8 +59,8 @@ export function tpBuildSite(bridge: ThuanPhuocBridge) {
     bm.setMatrixAt(i, m.compose(v.set(x, Y, z), q, sc.set(w, h, d)));
     bm.setColorAt(i, col.setHex(palette[Math.floor(rnd() * palette.length)]));
   });
-  bm.castShadow = bm.receiveShadow = true;
-  bridge.group.add(bm); bridge.noReflect.push(bm);
+  bm.castShadow = bm.receiveShadow = true; bm.name = 'tp-houses';
+  bridge.group.add(bm); bridge.noReflect.push(bm); bridge.houses = bm;   // drClearRoads (environment/driveRoads.ts) thu nhà nằm trên đường dọc mới về scale 0
   // cây dọc kè mới
   const trees: [number, number][] = [];
   for (const [xs, za, zb] of [[-1, wN + 10, wS], [1, eN + 10, eS]]) for (let z = za; z < zb; z += 15) {

@@ -132,9 +132,9 @@ try {
     return { inst: k.filter((o) => o.isInstancedMesh).length, mesh: k.filter((o) => o.isMesh && !o.isInstancedMesh).length, tris: (gg.index ? gg.index.count : gg.attributes.position.count) / 3 };
   });
   {
-    const want = MAIN_TUNNEL.tris + 224 * 138;   // 224 dừa cửa hầm × 138 tam giác tĩnh mỗi cây
+    const want = MAIN_TUNNEL.tris + 220 * 138;   // 220 dừa cửa hầm × 138 tam giác tĩnh mỗi cây (224, bỏ 4 cây đứng trên đường dọc mới của chế độ lái, D-034)
     check(tn.inst === MAIN_TUNNEL.inst && tn.mesh === MAIN_TUNNEL.mesh, `tunnelPalms: nhóm hầm ${tn.inst} InstancedMesh, ${tn.mesh} Mesh con (mốc ${MAIN_TUNNEL.inst}, ${MAIN_TUNNEL.mesh})`);
-    check(tn.tris === want, `tunnelPalms: hr-concrete ${tn.tris} tam giác = ${want} (mốc ${MAIN_TUNNEL.tris} + 224 × 138)`);
+    check(tn.tris === want, `tunnelPalms: hr-concrete ${tn.tris} tam giác = ${want} (mốc ${MAIN_TUNNEL.tris} + 220 × 138)`);
   }
 
   /* ---------- 10. ảnh ---------- */
