@@ -206,11 +206,17 @@ def pick_photo(sc, src, f0, f1):
 
 
 # ===== Gắn một đoạn vào bộ xương nhân vật =====
-def add_clip(sc, arm, base, clip, path, keep, info):
+def add_clip(sc, arm, base, clip, path, keep, info, rot_only=False):
+    """rot_only (crowd.py, trẻ em): chỉ chép góc quay thế giới từng xương + vị trí hông; nguồn thu theo tỉ lệ cao hông
+    (bộ xương nhỏ hơn người lớn, chép nguyên ma trận sẽ kéo giãn lưới). Mặc định False: hành vi cũ của convert.py."""
     name, _, _, kind = clip
     before = set(bpy.data.actions)
     bpy.ops.import_scene.fbx(filepath=path); sc.render.fps = FPS; sc.render.fps_base = 1
     src = next(o for o in bpy.data.objects if o not in base and o.type == 'ARMATURE')
+    if rot_only:
+        hz = lambda o: (o.matrix_world @ o.data.bones['Bip01 Pelvis'].head_local).z
+        k = hz(arm) / hz(src); e = bpy.data.objects.new('rt_scale', None); sc.collection.objects.link(e)
+        e.scale = (k, k, k); src.parent = e; bpy.context.view_layer.update()   # thu qua đối tượng cha: FBX có khóa biến đổi của chính src
     sact = src.animation_data.action
     f0, f1 = (int(round(x)) for x in sact.frame_range)
     sc.frame_start, sc.frame_end = f0, f1
@@ -237,7 +243,9 @@ def add_clip(sc, arm, base, clip, path, keep, info):
     # ràng buộc Copy Transforms từng xương cùng tên (bỏ xương mặt / ngón nếu đang nhường), rồi nướng visual keying
     for pb in arm.pose.bones:
         if pb.name in keep and pb.name in src.pose.bones:
-            c = pb.constraints.new('COPY_TRANSFORMS'); c.target = src; c.subtarget = pb.name
+            c = pb.constraints.new('COPY_ROTATION' if rot_only else 'COPY_TRANSFORMS'); c.target = src; c.subtarget = pb.name
+            if rot_only and pb.name == 'Bip01 Pelvis':
+                c = pb.constraints.new('COPY_LOCATION'); c.target = src; c.subtarget = pb.name
     bpy.ops.object.select_all(action='DESELECT'); arm.select_set(True); bpy.context.view_layer.objects.active = arm
     bpy.ops.object.mode_set(mode='POSE'); bpy.ops.pose.select_all(action='SELECT')
     bpy.ops.nla.bake(frame_start=a, frame_end=b, only_selected=False, visual_keying=True,
@@ -426,22 +434,23 @@ def write_license():
         f.write(txt)
 
 
-# ===== Chạy =====
-write_license()
-res = [convert(k) for k in ONLY]
-prev = {} if NO_PREVIEW else {k: preview(k) for k in ONLY}
-print('\n===== KẾT QUẢ =====')
-print(f'mức nhường dung lượng: {NHUONG}')
-total = 0
-for r in res:
-    total += r['bytes']
-    print(f"p{r['k']} {r['name']:16s} {r['bytes']:>9d} B  {r['tris']} tam giác  {r['bones']} xương  {r['prims']} primitive  cao {r['height']} m  {r['mats']}")
-    for nm, c in r['clips'].items():
-        print(f"    {nm:6s} {c['src']:22s} {c['dur']:6.3f}s  speed {c['speed']:5.2f} m/s  {c['note']}  hông lệch {c['hip_xy']} m  mũi chân z {c['toe_min']}..{c['toe_max']}")
-    if r['k'] in prev:
-        ch, sz = prev[r['k']]
-        print(f"    nạp lại glb: ảnh {sz}")
-        for nm, c in ch.items(): print(f"    nạp lại {nm:6s} {c}")
-        print(f"    ảnh xem trước: {os.path.join(PREV, 'p%d.jpg' % r['k'])}")
-all_sizes = sum(os.path.getsize(os.path.join(OUT, f'p{k}.glb')) for k in range(len(CHARS)) if os.path.exists(os.path.join(OUT, f'p{k}.glb')))
-print(f'tổng 5 file: {all_sizes} B (trần {CAP_ALL}); vượt trần từng file: {[r["k"] for r in res if r["bytes"] > CAP_FILE]}')
+# ===== Chạy (chỉ khi chạy trực tiếp; scripts/people/crowd.py nạp file này để dùng lại hàm) =====
+if __name__ == '__main__':
+    write_license()
+    res = [convert(k) for k in ONLY]
+    prev = {} if NO_PREVIEW else {k: preview(k) for k in ONLY}
+    print('\n===== KẾT QUẢ =====')
+    print(f'mức nhường dung lượng: {NHUONG}')
+    total = 0
+    for r in res:
+        total += r['bytes']
+        print(f"p{r['k']} {r['name']:16s} {r['bytes']:>9d} B  {r['tris']} tam giác  {r['bones']} xương  {r['prims']} primitive  cao {r['height']} m  {r['mats']}")
+        for nm, c in r['clips'].items():
+            print(f"    {nm:6s} {c['src']:22s} {c['dur']:6.3f}s  speed {c['speed']:5.2f} m/s  {c['note']}  hông lệch {c['hip_xy']} m  mũi chân z {c['toe_min']}..{c['toe_max']}")
+        if r['k'] in prev:
+            ch, sz = prev[r['k']]
+            print(f"    nạp lại glb: ảnh {sz}")
+            for nm, c in ch.items(): print(f"    nạp lại {nm:6s} {c}")
+            print(f"    ảnh xem trước: {os.path.join(PREV, 'p%d.jpg' % r['k'])}")
+    all_sizes = sum(os.path.getsize(os.path.join(OUT, f'p{k}.glb')) for k in range(len(CHARS)) if os.path.exists(os.path.join(OUT, f'p{k}.glb')))
+    print(f'tổng 5 file: {all_sizes} B (trần {CAP_ALL}); vượt trần từng file: {[r["k"] for r in res if r["bytes"] > CAP_FILE]}')

@@ -64,7 +64,7 @@ export function crowdGet(): CrowdData | null;                       // kết qu�
 
 Định dạng `crowd.bin` do task này quyết (little-endian; đầu tệp có magic + phiên bản + phần JSON mô tả + khối nhị phân); ghi mô tả định dạng trong comment đầu `crowdData.ts` và đầu `crowd.py`. Lưới trong tệp đã ở hệ: mét, mặt +X, chân y = 0.
 
-- [ ] **Bước 1:** viết `tests/people-unit/crowdData.test.ts` (đọc `public/people/crowd.bin` bằng `fs`, gọi `crowdParse`):
+- [x] **Bước 1:** viết `tests/people-unit/crowdData.test.ts` (đọc `public/people/crowd.bin` bằng `fs`, gọi `crowdParse`):
   - `chars.length === 10`; đúng 2 `child`; có cả `female` true và false; `id` không trùng; có đủ 5 id của D-030.
   - Mỗi lưới: có index; `index.count / 3 ≤ 1600` (bản `hat` ≤ 1 640); đủ attribute `position, normal, uv, aBones, aW` đúng `itemSize`; không NaN; `aBones < bones`; `0 ≤ aW ≤ 1`; `uv` trong [0, 1]; min y trong [−0,02; 0,02]; chiều cao lưới khớp `height` ±0,03; người lớn `1,5 < height < 1,95`, trẻ em `0,9 < height < 1,5`; đỉnh có x lớn nhất ở vùng y < 0,15 (mũi giày) có x > 0,1.
   - `hat`: người lớn khác null, trẻ em null; đỉnh cao nhất của `hat` cao hơn của `geometry`.
@@ -73,12 +73,12 @@ export function crowdGet(): CrowdData | null;                       // kết qu�
   - Dung lượng: theo trần ở Ràng buộc chung; `crowd.jpg` bắt đầu bằng `FF D8`.
   - `crowdParse(new ArrayBuffer(16))` ném lỗi.
   - Giấy phép: `LICENSE-Rocketbox.txt` có tên cả 10 nhân vật.
-- [ ] **Bước 2:** chạy `npm run test:people:unit`, thấy test mới hỏng vì chưa có tệp / hàm.
-- [ ] **Bước 3:** viết `scripts/people/crowd.py`. Dùng lại cách tải nguồn, ghim commit và nướng chuyển động của `convert.py` (import hàm nếu được, không sửa hành vi `convert.py`). Mỗi nhân vật: gộp 80 xương còn 22 (danh sách ở spec §3 / `spike-crowd/bake.py`), giữ 2 xương mỗi đỉnh, nướng tư thế ngón tay vào lưới, bỏ mảnh opacity, giản lược tới ≤ 1 600 tam giác có bảo vệ vùng đầu, xếp body + head vào một ô atlas 384², thêm bản đội nón lá (nón 10 cạnh, gắn cứng xương đầu, uv trỏ vào ô màu nón trong atlas). Chuyển động: `walk` / `idle` / `photo` 15 fps, `jog` 30 fps, `idle` khoảng 3 s, đã trừ quãng trôi của hông. Xuất ảnh xem trước từng nhân vật vào `scripts/people/.cache/preview-crowd/`. Chọn 3 người lớn + 2 trẻ em mới theo spec §4.2; nếu trẻ em không dùng được thì làm theo đường lùi trong spec và sửa test Bước 1 cho khớp (ghi rõ trong báo cáo).
-- [ ] **Bước 4:** chạy `npm run gen:crowd`; xem ảnh xem trước của cả 10 nhân vật (đúng hướng, không vỡ lưới, không hói, nón đúng chỗ).
-- [ ] **Bước 5:** viết `crowdData.ts` (`crowdParse`, `crowdLoad`, `crowdGet`) và `CONFIG.people.crowd`.
-- [ ] **Bước 6:** `npm run typecheck`, `npm run test:people:unit` đạt.
-- [ ] **Bước 7:** commit (`feat(people): dữ liệu đám đông người thật ...`). Ghi vào mục "Ghi chú để báo" cuối plan: 5 nhân vật mới, số tam giác / dung lượng thật, mọi lệch so với plan.
+- [x] **Bước 2:** chạy `npm run test:people:unit`, thấy test mới hỏng vì chưa có tệp / hàm.
+- [x] **Bước 3:** viết `scripts/people/crowd.py`. Dùng lại cách tải nguồn, ghim commit và nướng chuyển động của `convert.py` (import hàm nếu được, không sửa hành vi `convert.py`). Mỗi nhân vật: gộp 80 xương còn 22 (danh sách ở spec §3 / `spike-crowd/bake.py`), giữ 2 xương mỗi đỉnh, nướng tư thế ngón tay vào lưới, bỏ mảnh opacity, giản lược tới ≤ 1 600 tam giác có bảo vệ vùng đầu, xếp body + head vào một ô atlas 384², thêm bản đội nón lá (nón 10 cạnh, gắn cứng xương đầu, uv trỏ vào ô màu nón trong atlas). Chuyển động: `walk` / `idle` / `photo` 15 fps, `jog` 30 fps, `idle` khoảng 3 s, đã trừ quãng trôi của hông. Xuất ảnh xem trước từng nhân vật vào `scripts/people/.cache/preview-crowd/`. Chọn 3 người lớn + 2 trẻ em mới theo spec §4.2; nếu trẻ em không dùng được thì làm theo đường lùi trong spec và sửa test Bước 1 cho khớp (ghi rõ trong báo cáo).
+- [x] **Bước 4:** chạy `npm run gen:crowd`; xem ảnh xem trước của cả 10 nhân vật (đúng hướng, không vỡ lưới, không hói, nón đúng chỗ).
+- [x] **Bước 5:** viết `crowdData.ts` (`crowdParse`, `crowdLoad`, `crowdGet`) và `CONFIG.people.crowd`.
+- [x] **Bước 6:** `npm run typecheck`, `npm run test:people:unit` đạt.
+- [x] **Bước 7:** commit (`feat(people): dữ liệu đám đông người thật ...`). Ghi vào mục "Ghi chú để báo" cuối plan: 5 nhân vật mới, số tam giác / dung lượng thật, mọi lệch so với plan.
 
 ### Task 2 (Opus): vẽ bằng BatchedMesh, ghép vào `createPeople`, đường lùi
 
@@ -143,3 +143,16 @@ export interface People { list: Walker[]; mesh: THREE.InstancedMesh | THREE.Batc
 ## Ghi chú để báo
 
 (Các agent thực hiện điền: lệch so với plan, số đo thật, điều người dùng cần biết.)
+
+### Task 1 (2026-11-12)
+
+- **5 nhân vật mới** (Rocketbox commit `0943055`): `Male_Adult_09` (nam, áo phông đen, jean sáng, tóc dài buộc), `Female_Adult_17` (nữ, áo phông xanh lá, jean sáng, tóc búi), `Female_Adult_08` (nữ, áo phông xám, jean, tóc nâu dài), `Male_Child_01` (bé trai, áo len xanh dương, jean), `Female_Child_01` (bé gái, áo hồng tay trắng, jean). Người lớn 4 nam 4 nữ. Trẻ em dùng được (không cần đường lùi spec §4.2): bộ xương tên `Bip02` (đổi tên thành `Bip01` khi nhập), chép chuyển động người lớn bằng góc quay + vị trí hông thu theo tỉ lệ cao hông (0,79).
+- **Số thật:** mỗi người 1 499–1 500 tam giác (bản nón +20 = 1 519–1 520), 977–1 094 đỉnh (nón +60); cao người lớn 1,726–1,822 m, trẻ em 1,431 / 1,434 m (tỉ lệ 1, chưa nhân `heightScale`). `crowd.bin` 1 045 904 B, `crowd.jpg` 266 630 B (1920 × 768, ô 384², JPEG q85), tổng 1 312 534 B: trong trần, **không phải nhượng gì** (idle đủ ≈ 3,2–3,3 s, vị trí / pháp tuyến / uv để float32, index u16). Texture chuyển động 66 × 1 030 (RGBA half-float, 543 840 B).
+- **Tốc độ tự nhiên (m/s, tỉ lệ 1):** nam walk 1,048 / jog 2,88; nữ walk 1,214 / jog 2,765 (cùng đoạn nguồn nên mọi người lớn cùng giới giống nhau); bé trai 0,83 / 2,428; bé gái 1,003 / 2,405.
+- **Lệch plan:**
+  - `npm run gen:crowd` = `node scripts/people/blender.mjs scripts/people/crowd.py` (tệp mới `blender.mjs`), không cùng kiểu `gen:people`: npm 11 trên máy này chạy script qua cmd.exe và không gọi được đường dẫn exe có dấu cách trong ngoặc kép (`'C:/Program' is not recognized`). `gen:people` hiện cũng hỏng vì lý do này (chưa sửa, ngoài phạm vi). Đường dẫn Blender đổi được bằng biến môi trường `BLENDER`.
+  - `convert.py`: bọc khối chạy trong `if __name__ == '__main__':` (để `crowd.py` nạp làm thư viện) và thêm tham số `rot_only=False` cho `add_clip` (dùng cho trẻ em). Mặc định giữ nguyên hành vi; không chạy lại `gen:people`, 5 tệp `p*.glb` không đổi.
+  - Giản lược bảo vệ thêm cẳng tay + bàn tay (trọng số 0,5) và vùng miệng (0,02) ngoài vùng đầu (0,15): không có thì tay gập (chụp ảnh, chạy) thành hình quạt và răng / lưỡi lòi ra thành vệt xám ở miệng.
+  - Test đơn vị thêm kiểm ma trận xương khung đầu của walk là phép quay thuần (cột dài 1 ± 0,02) và kiểm phiên bản lạ bị từ chối.
+- **Còn thấy trong ảnh xem trước** (`scripts/people/.cache/preview-crowd/`): khi nhìn sát mặt, `Female_Adult_08` còn khe miệng tối, `Female_Adult_12` có khuyên môi; ở cỡ 120 px không thấy. Trẻ em chạy (`jog`) bay khỏi mặt đất ≈ 3,6 cm, nhưng trẻ em chỉ là người đi cùng (đi bộ) nên không dùng `jog`.
+- **Cho Task 2:** `uv` có v = 0 ở mép trên ảnh, atlas từ `crowdLoad` đã `flipY = false` (ImageBitmap). Lưới ở tư thế chữ T / A (tay dang), mặt +X, chân y = 0; khối cầu bao (đã `computeBoundingSphere`) bán kính ≈ 0,88–0,94 m người lớn, 0,74 m trẻ em, tâm y ≈ 0,86–0,91 / 0,72 m, chưa nới `cullPad`. Skin: 2 xương mỗi đỉnh, `aBones` (u8, chỉ số 0..21), `aW` = trọng số xương thứ nhất, xương thứ hai 1 − `aW`; ma trận xương b của khung r ở texel (b × 3 + j, r), j = 0..2 là ba hàng của ma trận 3×4 (đỉnh mới = dot(hàng, (p, 1))). Nón lá là lưới gắn cứng xương đầu (chỉ số 5) trong bản `hat`, 10 cạnh, bán kính vành 0,21 m, đỉnh cao hơn đỉnh đầu ≈ 0,1 m, có mặt trong. `maxVerts` 1 154, `maxIndices` 4 560 (bản nón). `crowdLoad` đọc `?crowd=off` qua `location.search`; khi preload trong `index.html` dùng `crossorigin` để khớp chế độ `fetch` mặc định.

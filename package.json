@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit",
     "gen:voice": "node scripts/gen-narration.mjs",
     "gen:people": "\"C:/Program Files/Blender Foundation/Blender 4.5/blender.exe\" -b --python scripts/people/convert.py",
+    "gen:crowd": "node scripts/people/blender.mjs scripts/people/crowd.py",
     "test:tour": "node tests/tour-check.mjs",
     "test:voice": "node tests/voice-check.mjs",
     "test:drawcalls": "node tests/drawcalls.mjs",
