@@ -1,6 +1,6 @@
 # Lái xe ô tô VinFast VF 3 (5 slot, camera sau xe) — thiết kế
 
-_2026-11-12 · Trạng thái: Đã triển khai trên nhánh (HEAD `7b31a4c`), chưa merge, chưa có PR; Worker chưa deploy; các test nặng chưa chạy theo lời người dùng, xem `activeContext.md` và `tests/KET-QUA.md` · Quyết định: D-034 (chế độ lái xe), D-033 (cho phép mô hình ngoài) · Nhánh: `feature/lai-xe-oto`_
+_2026-11-12 · Trạng thái: Đã triển khai trên nhánh (HEAD `7b31a4c`), chưa merge, PR #30; Worker chưa deploy; các test nặng chưa chạy theo lời người dùng, xem `activeContext.md` và `tests/KET-QUA.md` · Quyết định: D-034 (chế độ lái xe), D-033 (cho phép mô hình ngoài) · Nhánh: `feature/lai-xe-oto`_
 
 Mục có dấu **(ND)** là người dùng nói hoặc chọn. Mục có dấu **(Claude)** là Claude tự quyết, người dùng chưa nói tới. Còn lại là đề xuất của Claude mà người dùng đã đồng ý khi được trình bày (bản đồ, bố cục màn hình, danh sách hành vi).
 
