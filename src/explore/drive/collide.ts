@@ -199,7 +199,7 @@ export function drMove(net: DrNet, p: DrPose, dist: number, dyaw: number, boxes:
   CUR.x = p.x; CUR.y = p.y; CUR.z = p.z; CUR.yaw = p.yaw;
   mEsc = !drFits(net, CUR, boxes, nBoxes, IGN);                      // hộp chồng sẵn đã bỏ qua: không hợp lệ chỉ vì vật cản tĩnh / ra ngoài ô
   if (mEsc) { drBad(net, CUR); mBadN = BAD_N; mBadD = BAD_D; }
-  const n =Math.max(1, Math.ceil((Math.abs(dist) + Math.abs(dyaw) * REACH) / SIM.sub));
+  const n = Math.max(1, Math.ceil((Math.abs(dist) + Math.abs(dyaw) * REACH) / SIM.sub));
   const sd = dist / n, sy = dyaw / n;
   let done = 0;
   for (let k = 0; k < n; k++) {

@@ -492,7 +492,6 @@
   "drHint": "W A S D or arrows: drive · Space: handbrake · H: horn · drag mouse: turn camera · Esc: exit",
   "drGas": "GAS",
   "drBrake": "BRAKE",
-  "drRoster": "Driving",
   "drMapTunnel": "Tunnel (proposed plan)",
   "drLostChooser": "Connection lost. Choose Car to reconnect.",
   "drWatch": "Watching: {name}",

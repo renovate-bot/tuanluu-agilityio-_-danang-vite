@@ -118,7 +118,6 @@ let loader: () => Promise<THREE.Object3D> = drCarDefaultLoader;
 let cache: Promise<THREE.Object3D | null> | null = null;
 let late: Promise<THREE.Object3D | null> | null = null;   // nạp không giới hạn giờ: DrCar đổi sang mô hình thật cả khi xong sau timeoutMs
 let sources = new WeakMap<THREE.Object3D, DrSource>();
-let gen = 0;
 
 /* Nạp mô hình xe. Không bao giờ ném / từ chối: lỗi hoặc quá model.timeoutMs → warn một lần, null.
    Quá giờ chỉ là câu trả lời của drCarLoad: việc nạp vẫn chạy tiếp, xe đang có (DrCar) đổi sang mô hình thật khi nó xong (late) */
@@ -142,7 +141,7 @@ export function drCarLoad(): Promise<THREE.Object3D | null> {
 
 /* Cho test: thay bộ nạp (null: mặc định), xóa đệm, bỏ bánh dùng chung */
 export function drCarSetLoader(fn: (() => Promise<THREE.Object3D>) | null): void {
-  loader = fn || drCarDefaultLoader; cache = null; late = null; sources = new WeakMap(); gen++;
+  loader = fn || drCarDefaultLoader; cache = null; late = null; sources = new WeakMap();
   drWheels.reset();
 }
 

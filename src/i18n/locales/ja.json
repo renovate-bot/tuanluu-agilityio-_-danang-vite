@@ -492,7 +492,6 @@
   "drHint": "W A S D または矢印: 運転 · Space: サイドブレーキ · H: クラクション · マウスドラッグ: カメラ回転 · Esc: 終了",
   "drGas": "アクセル",
   "drBrake": "ブレーキ",
-  "drRoster": "運転",
   "drMapTunnel": "トンネル（提案案）",
   "drLostChooser": "接続が切れました。再接続するには「車」を選んでください。",
   "drWatch": "観戦中: {name}",
