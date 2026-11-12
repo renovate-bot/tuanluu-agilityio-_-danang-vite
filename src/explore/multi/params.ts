@@ -37,5 +37,13 @@ export const multiParams = {
     yMax: 20,            // m — cao độ cao nhất của người đi dạo, gồm mặt cầu (ước lượng)
     poseMax: 4           // dáng lớn nhất: 0 đứng, 1 đi, 2 chạy, 3 rơi (bản cũ: nhảy), 4 chụp ảnh
   },
+  drive: {               // chế độ lái xe (D-034): nhóm slot thứ ba; số chép tay vì file này không import gì, tests/drive-unit/params.test.ts giữ khớp mạng đường và CONFIG.drive
+    slots: 5,            // số chỗ lái cùng lúc, tách khỏi 5 chỗ bay và 5 chỗ đi dạo (theo thiết kế)
+    bounds: { x0: -1950, x1: 1530, z0: -3670, z1: 1450 }, // m — khung kẹp vị trí người lái: drBounds(mạng đường) (x −1900..1480, z −3620..1400) nới 50 m mỗi phía
+    yMin: -16.6,         // m — cao độ thấp nhất: đáy hầm −14,6 trừ 2 m
+    yMax: 33.6,          // m — cao độ cao nhất: đỉnh mặt cầu 31,6 cộng 2 m
+    vMax: 30,            // m/s — tốc độ có dấu lớn nhất máy chủ nhận: 100 km/h (27,78 m/s) cộng dư nhỏ (ước lượng)
+    steerMax: 0.56       // rad — góc lái lớn nhất máy chủ nhận: asin(2,075 / 4,05) ≈ 0,538 cộng dư nhỏ (ước lượng)
+  },
   clockSlewMs: 4        // ms tối đa độ lệch giờ người gửi → giờ khách được giảm mỗi mẫu (gói nhanh hơn tới), giữ dù không vọt (ước lượng)
 };

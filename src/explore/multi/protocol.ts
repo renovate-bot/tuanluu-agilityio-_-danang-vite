@@ -2,24 +2,26 @@
 import { multiParams } from './params';
 
 export type ClientMsg =
-  | { t: 'join'; name: string; kind?: 'walk' }   // kind: 'walk' = xin chỗ đi dạo; không có = chỗ bay (khách cũ)
+  | { t: 'join'; name: string; kind?: 'walk' | 'drive' }   // kind: 'walk' = xin chỗ đi dạo, 'drive' = chỗ lái xe; không có = chỗ bay (khách cũ)
   | { t: 'pos'; x: number; y: number; z: number; yaw: number; bank: number; ts?: number }   // ts: giờ gửi theo đồng hồ của khách (ms); máy chủ cũ bỏ qua
   | { t: 'pos'; x: number; y: number; z: number; yaw: number; pose: number; ts?: number }   // người đi dạo: pose (0 đứng, 1 đi, 2 chạy, 3 rơi (bản cũ: nhảy), 4 chụp ảnh), không có bank
+  | { t: 'pos'; x: number; y: number; z: number; yaw: number; v: number; st: number; ts?: number }   // người lái: v tốc độ có dấu (m/s), st góc lái (rad); không có bank / pose
   | { t: 'hb' }
   | { t: 'leave' };
 
 export interface Flyer { slot: number; name: string }
 
-export type Kind = 'fly' | 'walk';
+export type Kind = 'fly' | 'walk' | 'drive';
 
 // f: mỗi phần tử [slot, x, y, z, yaw, bank, giờ gửi (ms)]; chỉ gồm slot có vị trí mới. Giờ gửi = ts của khách, khách cũ không gửi ts thì là giờ máy chủ nhận;
 // mỗi slot một trục giờ riêng, khách nhận tự quy đổi. Máy chủ cũ (trước bản sửa giật) gửi 6 phần tử và phát lại vị trí cũ của mọi slot: khách mới nhận được cả hai dạng.
 // Đi dạo: lobby thêm walkers (flyers chỉ có người bay), pos thêm w (mỗi phần tử [slot, x, y, z, yaw, pose, giờ gửi]; f luôn có, có thể rỗng); khách cũ bỏ qua trường lạ
+// Lái xe: lobby thêm drivers, pos thêm d (mỗi phần tử [slot, x, y, z, yaw, v, st, giờ gửi]); máy chủ cũ không gửi drivers, khách mới thấy vậy thì lái một mình
 export type ServerMsg =
-  | { t: 'lobby'; flyers: Flyer[]; walkers?: Flyer[] }
-  | { t: 'joined'; slot: number; kind?: 'walk' }
-  | { t: 'rejected'; why: 'full' | 'name'; kind?: 'walk' }
-  | { t: 'pos'; f: number[][]; w?: number[][] }
+  | { t: 'lobby'; flyers: Flyer[]; walkers?: Flyer[]; drivers?: Flyer[] }
+  | { t: 'joined'; slot: number; kind?: 'walk' | 'drive' }
+  | { t: 'rejected'; why: 'full' | 'name'; kind?: 'walk' | 'drive' }
+  | { t: 'pos'; f: number[][]; w?: number[][]; d?: number[][] }   // d: [slot, x, y, z, yaw, v, st, giờ gửi]
   | { t: 'released' };
 
 // Ký tự trông như khoảng trống dù thuộc nhóm chữ/ký hiệu (chữ đệm Hangul, chữ nổi trống, nguyên âm ẩn Khmer): không tính là chữ thấy được

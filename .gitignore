@@ -9,3 +9,5 @@ docs/superpowers/specs/tham-chieu/
 .wrangler/
 # Nguồn Rocketbox (FBX, TGA) và ảnh kiểm tra của scripts/people/convert.py
 scripts/people/.cache/
+# Ảnh xem trước và ảnh trung gian của scripts/car/convert.py
+scripts/car/.cache/

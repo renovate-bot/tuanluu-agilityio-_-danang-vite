@@ -4,10 +4,20 @@ import { weatherFx, vanished } from '../core/shared';
 import { rng } from './math';
 import type { Profile } from './geometry';
 import { vhCreateFleet, vhSetInfo, vhSetVehicle, vhHide, vhCommit, type VehicleFleet } from './vehicles/fleet';
+import { VEHICLE_TYPES } from './vehicles/shapes';
+import { trRegister, trFleetSampler } from './trafficQuery';
 
 /* ---------- xe cộ dùng chung: kiểu xe + màu ở CONFIG.vehicles, hình + vật liệu ở common/vehicles/ ---------- */
 export type VehicleType = VehicleTypeId;
 export const _e = new THREE.Euler(), _q = new THREE.Quaternion();
+
+/* Đăng ký đội xe cho truy vấn của chế độ lái (common/trafficQuery.ts): chỉ đọc ma trận instance, không đổi cách xe chạy.
+   Gọi một lần lúc dựng; hàm shown tạo một lần, mỗi khung đi lên chuỗi cha không cấp phát */
+export function trRegisterFleet(f: VehicleFleet): void {
+  const mesh = f.mesh;
+  trRegister(trFleetSampler({ m: mesh.instanceMatrix.array, type: f.type.array, count: mesh.count, world: mesh.matrixWorld.elements,
+    shown: () => { for (let o: THREE.Object3D = mesh; o; o = o.parent) if (!o.visible) return false; return true; } }, VEHICLE_TYPES));
+}
 
 /* ---------- hệ xe của từng cầu ---------- */
 export interface LaneSpec { off: number; n: number; speed: number; bike?: number; bus?: number }
@@ -25,6 +35,7 @@ export function createTraffic(bridge: { life: THREE.Group }, { seed, x0, x1, lan
   });
   const T: Traffic = { list, x0, x1, fleet: vhCreateFleet(list.length, bridge.life, name) };   // 1 InstancedMesh = 1 lệnh vẽ cho cả hệ
   list.forEach((v, i) => vhSetInfo(T.fleet, i, v.type, v.color));
+  trRegisterFleet(T.fleet);                                  // chế độ lái: xe tự động chặn xe người chơi (chỉ đọc)
   return T;
 }
 /* closable: có theo lệnh đóng cầu của thời tiết (bão) không; Hầm vượt sông Hàn truyền false (hầm vẫn lưu thông) */

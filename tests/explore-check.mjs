@@ -235,11 +235,11 @@ try {
   {
     const CARDS = ['glider', 'car', 'bike', 'walk', 'guided'];
     const vis = (page, sel) => page.evaluate((s) => { window.__app.ui?.reveal(document.querySelector(s)); const e = document.querySelector(s); return !!e && e.getClientRects().length > 0 && getComputedStyle(e).visibility !== 'hidden'; }, sel);
-    // 4a ?chooser: màn chọn hiện, 5 thẻ, thẻ chưa có disabled (thẻ Đi dạo đã mở: chế độ đi dạo)
+    // 4a ?chooser: màn chọn hiện, 5 thẻ, thẻ chưa có disabled (thẻ Đi dạo, Ô tô đã mở)
     const C = await openApp(browser, srv.url + '?chooser');
     await C.page.waitForSelector('#chooser', { state: 'visible', timeout: 240000 });
     const a4 = await C.page.evaluate(() => [...document.querySelectorAll('#chooser button[data-pick]')].map((b) => [b.dataset.pick, b.disabled]));
-    check(`4a #chooser hiện, thẻ: ${JSON.stringify(a4)}`, a4.length === 5 && CARDS.every((k) => a4.some(([n]) => n === k)) && a4.filter(([, d]) => d).map(([n]) => n).sort().join() === 'bike,car');
+    check(`4a #chooser hiện, thẻ: ${JSON.stringify(a4)}`, a4.length === 5 && CARDS.every((k) => a4.some(([n]) => n === k)) && a4.filter(([, d]) => d).map(([n]) => n).sort().join() === 'bike');
     const l4 = await C.page.evaluate(() => { const s = document.getElementById('exLang'); const r = s.getBoundingClientRect(); const top = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2); return { n: s.options.length, v: s.value, onTop: top === s }; });
     check(`4a chooser có ô ngôn ngữ riêng: ${l4.n} ngôn ngữ, giá trị ${l4.v}, không bị panel che ${l4.onTop}`, l4.n === 9 && l4.v === 'vi' && l4.onTop);
     const inertOn = await C.page.evaluate(() => { const o = document.querySelector('[data-bridge="tp"]'); return !!o.closest('[inert]') && !document.getElementById('chooser').closest('[inert]') && !document.getElementById('exLang').closest('[inert]'); });
@@ -294,6 +294,21 @@ try {
     check('console sạch (4d/4h/4e)', D.errors.length === 0);
     if (D.errors.length) console.log(D.errors.join('\n'));
     await D.page.close();
+    // 4i (D-034) thẻ Ô tô bấm được: không máy chủ nên vào thẳng chế độ lái một mình; Esc thoát (tải lại, bỏ explore=)
+    const K = await openApp(browser, srv.url + '?chooser');
+    await K.page.waitForSelector('#chooser', { state: 'visible', timeout: 240000 });
+    await K.page.click('#chooser [data-pick="car"]');
+    await K.page.waitForFunction(() => document.body.classList.contains('drive') && window.__app.cam.mode === 'car' && window.__app.drive.state, null, { timeout: 240000, polling: 500 });
+    const i4 = await K.page.evaluate(() => ({ mode: window.__app.cam.mode, ex: document.body.classList.contains('explore'), dr: document.body.classList.contains('drive'), chooser: document.getElementById('chooser').hidden, hud: document.getElementById('drHud').getClientRects().length > 0 }));
+    check(`4i bấm thẻ Ô tô: cam.mode ${i4.mode}, body.explore ${i4.ex}, body.drive ${i4.dr}, hộp chọn đóng ${i4.chooser}, #drHud hiện ${i4.hud}`, i4.mode === 'car' && i4.ex && i4.dr && i4.chooser && i4.hud);
+    await K.page.evaluate(() => { window.__reloadMark = 1; });
+    await K.page.keyboard.press('Escape');
+    await K.page.waitForFunction(() => !window.__reloadMark, null, { timeout: 240000 });
+    await K.page.waitForURL((u) => !u.href.includes('explore=') && !u.href.includes('chooser'), { timeout: 240000, waitUntil: 'commit' });
+    check('4i Esc khi lái: tải lại thật, URL không còn chooser / explore=', !K.page.url().includes('explore=') && !K.page.url().includes('chooser'));
+    check('console sạch (4i)', K.errors.length === 0);
+    if (K.errors.length) console.log(K.errors.join('\n'));
+    await K.page.close();
     // 4f điện thoại: thẻ dù lượn bị khóa
     const M = await openApp(browser, srv.url + '?chooser', { mobile: true });
     await M.page.waitForSelector('#chooser', { state: 'visible', timeout: 240000 });

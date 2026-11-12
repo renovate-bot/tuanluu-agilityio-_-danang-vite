@@ -5,6 +5,7 @@ import { addDeckEdges, addJoints, addLampPosts } from '../../common/deck';
 import { flatY } from '../dragon/profile';
 import { TP, tpRoadY } from './profile';
 import type { ThuanPhuocBridge } from './ThuanPhuocBridge';
+import { drCutAlongX } from '../../environment/driveRoadGeo';
 
 /* [deck] dầm hộp thép khí động, mặt đường 4 làn, dải phân cách, lề, lan can, cột đèn */
 export function tpBuildDeck(bridge: ThuanPhuocBridge) {
@@ -33,7 +34,7 @@ export function tpBuildDeck(bridge: ThuanPhuocBridge) {
 
   // Dải phân cách (riêng cầu này); lề, gờ, lan can, khe co giãn, cột đèn dùng chung [common]
   const conc = [bentBox(2 * (E + R), 0.45, TP.median, 0, 0.22, 0, 700, tpRoadY)];
-  for (const [xa, xb] of [[x0, -E - R], [E + R, x1]]) conc.push(bentBox(xb - xa, 0.3, TP.median, (xa + xb) / 2, 0.15, 0, 4, flatY)); // phân cách trên bờ
+  for (const [xa, xb] of [[x0, -E - R], [E + R, x1]]) conc.push(...drCutAlongX(xa, xb, TP.z, TP.median / 2, 4, (len, xc, n) => bentBox(len, 0.3, TP.median, xc, 0.15, 0, n, flatY))); // phân cách trên bờ, mở tại nút giao chế độ lái (D-034)
   bridge.concreteParts.push(...conc.map((g) => prepColored(g, () => 0.9)));
   addDeckEdges(bridge, { x0: -E - R, x1: E + R, segs: 700, profile: tpRoadY, hw, sidewalk: TP.sidewalk });
   addJoints(bridge, { xs: [-E, -A, -TP.towerX, TP.towerX, A, E], profile: tpRoadY, width: TP.deckWidth - 0.6, mat: M.joint });

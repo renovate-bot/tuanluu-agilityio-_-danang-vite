@@ -117,6 +117,21 @@ Không kế thừa `BridgeBase`: module `index.ts` giữ một đối tượng `
 - `BridgeBase.dispose()` giải phóng texture riêng của `BatchedMesh` (thông số, màu); texture chuyển động và atlas dùng chung, không `dispose` theo từng cầu.
 - Pha chuyển động tính trong shader từ `mod(uTime, chu kỳ người)`; `crowdFrame` là bản CPU cùng công thức (double) dùng cho test. `uTime` là float32 nên chính xác giảm sau khoảng 24 giờ chạy liên tục (`ppMaterial` cũ cũng vậy).
 
+## Mẫu chế độ lái xe (`src/explore/drive/`, D-034)
+- Mạng đường là danh sách ô mặt đường chữ nhật thẳng trục, mỗi ô có hàm cao độ riêng (nhiều tầng: cầu, hầm, mặt đất chồng nhau). Truy vấn độ cao luôn kèm cao độ tham chiếu: `drGround(net, x, z, yRef)` chọn ô khớp `yRef`, trả `NaN` khi không có mặt đường; xe hợp lệ khi 9 điểm mẫu thân đều có mặt đường cùng tầng (`drFits`). Ô có cổng `gate` (barie Cầu sông Hàn) đóng / mở theo trạng thái cầu: chặn bằng cổng của ô, không thêm / xóa vật cản; `net.solids` chỉ được `push` (chỉ mục lưới lưu trong `WeakMap`).
+- Dữ liệu đường dựng từ `CONFIG` + hồ sơ cầu (`roadData.ts`), không cần cảnh, nên `environment/streets.ts` và test node dùng chung. Mặt đường trong cảnh nằm trong lưới đường cũ (+0 lệnh vẽ); dải giữa / vỉa của các trục cầu được **cắt đoạn** tại nút giao, không phủ tấm nổi (xe bám cao độ phẳng, tấm nổi làm bánh lún). Bảng mặt cắt đường cũ chép tay trong `driveRoadGeo.ts` (`drOld` / `drRaised`), không có test canh đồng bộ: đổi `streets.ts` / `site.ts` / cầu thì phải sửa theo.
+- `drCollectRuntime` (`sceneSolids.ts`) thu vật cản từ cảnh thật (nhà, địa danh) và chỉ được gọi **một lần** cho mỗi `net` (đã chặn ở `index.ts`); gọi hai lần nhân đôi vật cản.
+- `driveView.far`: ngoài chế độ lái bằng 1, đang lái 2,5 để nhóm hầm và mặt đường xa vẫn hiện; `stop()` phải trả về 1. Đặt `drive` trong `?test` qua `window.__app.drive`.
+- Xe AI (`common/trafficQuery.ts`, `trRegisterFleet`) chặn xe người chơi bằng danh sách hộp `boxes`; hộp đang chồng lên xe mình bị bỏ qua (`ignore`) tới khi tách hẳn nên xe AI chạy tới từ phía sau đi xuyên xe mình, không đẩy. Hệ xe của cầu cập nhật sau `drive.update`; không đọc ma trận xe về từ GPU (trễ 1 khung là chấp nhận).
+- `placeAt(x, z, yaw)` tạo **`DrState` mới**: đừng giữ tham chiếu `DrState` cũ trong test hoặc mã (đã gây một dòng LỖI giả ở `drive-check` mục 5). `slide` / `touch` đặt lại khi xe bị dịch chuyển không qua `drCreate`.
+- Bánh phải của `vf3.glb` là bánh trái xoay 180 độ quanh Y (4 bánh dùng chung một lưới), nên **góc quay bánh phải đổi dấu**; test canh lỗi đảo dấu bằng glb thật. Làm nóng shader (`drCarWarmAll`) phải phủ cả program `USE_INSTANCING` của 3 `InstancedMesh` bánh, hình tạm và bóng, không thì khung đầu khi vào chế độ giật.
+- Mô hình xe: sinh bằng `npm run gen:car` (`scripts/car/convert.py`, Blender 4.5); thân 5 primitive + bóng + 3 bánh chung ⇒ ≤ 6 lệnh vẽ mỗi xe. Hình tạm bằng code khi `vf3.glb` chậm / lỗi (`drCarLoad` không bao giờ ném). Url tương đối `car/vf3.glb` theo `BASE_URL`.
+- `src/explore/multi/params.ts` (dùng chung với Worker) **chép tay** khung lái `multiParams.drive.bounds` (x −1950..1530, z −3670..1450, y −16,6..33,6) từ `drBounds`; có test canh (`tests/drive-unit/params.test.ts`). Đổi mạng đường thì phải chép lại số + deploy Worker (hỏi người dùng).
+- Khách mới không gửi `join` kiểu drive tới Worker cũ (không có `drivers` trong sảnh); thứ tự deploy Worker / trang đều an toàn, nhưng phần nhiều người chỉ chạy khi Worker mới đã deploy.
+- `drClearRoads` dọn nhà / cây nằm trên mặt đường mới nên mốc vị trí cây bóng mát của `test:trees` đổi (đang `null` + cảnh báo, chụp lại ở lượt `test:trees` đầu tiên). Bất biến seed giữ: dựng đường sau mọi `rand()`, không thêm lời gọi `rand()`.
+- Khe thu nước đen ở x = 0 trong hầm (`bore.ts`, trạm bơm, `0x1b1d20`) có từ trước D-034, không phải lỗi; ảnh kiểm hầm đặt xe ở x = 30 để khỏi nhầm.
+- Giao diện: `body.explore.drive`; `#drLook` phủ màn hình ở z-index 4 nên danh sách / lời mời phải nằm trên nó; `#drHud` đặt `dir="ltr"` nên bàn đạp và cần gạt không lật khi `ar` (RTL); nút 🔊 `#drSoundBtn` ≥ 44 px, ẩn khi xem.
+
 ## Mẫu kiểm thử
 - `?test` → `window.__app` (renderer, scene, camera, cam, songHan, hr, tours, narration…). Thêm đối tượng mới vào `__app` khi cần kiểm.
 - `tests/lib.mjs`: `serveDir`, `launch` (SwiftShader), `openApp`, `frames`, `waitFlight`. Test đọc `dist/` → build trước.

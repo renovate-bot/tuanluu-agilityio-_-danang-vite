@@ -226,7 +226,7 @@
     <p id="exMpLostNote" class="ex-mp-note" role="status" data-i18n="exMpLostChooser" hidden>Mất kết nối với bầu trời chung. Chọn Dù lượn để kết nối lại.</p>
     <div class="ex-cards">
       <button type="button" class="ex-card" data-pick="glider"><b data-i18n="exGlider">Dù lượn</b><span data-i18n="exGliderDesc">Bay tự do trên sông Hàn</span><i class="ex-note" data-i18n="exDesktopOnly" hidden>Chỉ dùng trên máy tính</i></button>
-      <button type="button" class="ex-card" data-pick="car" disabled><b data-i18n="exCar">Ô tô</b><i class="ex-note" data-i18n="exSoon">Sắp có</i></button>
+      <button type="button" class="ex-card" data-pick="car"><b data-i18n="exCar">Ô tô</b><span data-i18n="drCardDesc">Lái VinFast VF 3 qua các cầu sông Hàn</span></button>
       <button type="button" class="ex-card" data-pick="bike" disabled><b data-i18n="exBike">Xe máy</b><i class="ex-note" data-i18n="exSoon">Sắp có</i></button>
       <button type="button" class="ex-card" data-pick="walk"><b data-i18n="exWalk">Đi dạo</b><span data-i18n="exWalkDesc">Dạo bộ trên cầu và hai bờ sông</span></button>
       <button type="button" class="ex-card" data-pick="guided"><b data-i18n="exGuided">Tham quan có hướng dẫn</b><span data-i18n="exGuidedDesc">Tour, góc nhìn và thuyết minh</span></button>
@@ -245,6 +245,7 @@
       <button type="button" id="exMpSolo" class="ex-mp-btn" data-i18n="exMpSolo">Bay một mình</button>
       <button type="button" id="exMpBack" class="ex-mp-btn ex-mp-alt" data-i18n="exMpBack">Quay lại</button>
     </section>
+    <p id="drCredit" class="ex-credit" dir="auto"><span data-i18n="drCreditLabel">Mô hình xe</span>: <a href="https://sketchfab.com/3d-models/vinfast-vf3-6a2caea4505347d18c47ef4d47840859" target="_blank" rel="noopener noreferrer">“Vinfast Vf3”</a> — <a href="https://sketchfab.com/danghoanghuy69" target="_blank" rel="noopener noreferrer">Hoàng Huy</a>, <a href="http://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a> (<a href="car/LICENSE-VF3.txt" target="_blank" rel="noopener noreferrer" data-i18n="drCreditMod">đã chỉnh sửa</a>). <span data-i18n="drCreditTm">VinFast, VF 3 là nhãn hiệu của chủ sở hữu; mô hình minh hoạ, không phải sản phẩm chính thức.</span></p>
   </div>
 </div>
 <div id="exHint" class="panel" data-i18n="exHint">W/S hoặc ↑/↓ để lên/xuống · A/D hoặc ←/→ để rẽ · Q/E để giảm/tăng tốc · Esc để thoát</div>
@@ -267,6 +268,18 @@
   <button id="stPhoto" type="button" data-i18n-aria="stPhoto" aria-label="Chụp ảnh">📷</button>
   <div id="stFlash" aria-hidden="true"></div>
   <div id="stToast" class="panel" role="status" aria-live="polite" dir="auto" hidden></div>
+</div>
+
+<div id="drHud" dir="ltr">
+  <div id="drLook"></div>
+  <canvas id="drMap" width="1" height="1" aria-hidden="true"></canvas>
+  <div id="drMapNote" class="panel" dir="auto" data-i18n="drMapTunnel">Hầm (phương án đề xuất)</div>
+  <div id="drSpeed" class="panel" aria-live="off"><b id="drKmh">0</b><span id="drSpeedUnit" dir="auto" data-i18n="drSpeedUnit">km/h</span></div>
+  <div id="drHint" class="panel" dir="auto" data-i18n="drHint">W A S D hoặc mũi tên: lái · Space: phanh tay · H: còi · kéo chuột: xoay camera · Esc: thoát</div>
+  <div id="drSteer"><div id="drKnob"></div></div>
+  <button id="drBrake" type="button" dir="auto" data-i18n="drBrake">PHANH</button>
+  <button id="drGas" type="button" dir="auto" data-i18n="drGas">GA</button>
+  <button id="drSoundBtn" type="button" data-i18n-aria="drSound" aria-label="Tiếng xe" aria-pressed="false">🔇</button>
 </div>
 
 <script type="module" src="/src/main.ts"></script>

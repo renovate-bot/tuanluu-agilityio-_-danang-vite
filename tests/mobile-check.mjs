@@ -5,6 +5,10 @@
 //   Buy me a coffee: URL an toàn, panel Cài đặt, vùng chạm, aria-label 9 ngôn ngữ.
 //   Mục 6: Đi dạo trên điện thoại: cần gạt + 📷 (không còn nút Nhảy, D-030) đủ lớn, trong khung, không chồng / bị che; cần gạt 40 % / 95 %,
 //          giữ cần gạt + vuốt camera cùng lúc (không rời đất), pointercancel, đổi cỡ khung; ar dọc; màn chọn cảm ứng.
+//   Mục 7: Lái xe trên điện thoại (D-034 Task 9): thẻ Ô tô bấm được từ màn chọn; cần gạt ngang + GA + PHANH đủ lớn, trong khung, không chồng / bị che;
+//          GA làm xe chạy, cần gạt bẻ lái, hai ngón độc lập (nhấc GA thì cần gạt giữ nguyên), vuốt vùng trống xoay camera, ar dọc không lật bàn đạp.
+//          Nhiều người (Task 11): danh sách người chơi (đủ ba loại) không chồng Thoát / bản đồ nhỏ / đồng hồ / bàn đạp, ở mọi bố cục và ar; máy tính ẩn cần gạt, GA, PHANH;
+//          đồng hồ, danh sách, ô FPS, bản đồ nhỏ không chồng nhau ở 1280×720.
 //
 //   npm run build && npm run test:mobile
 import fs from 'node:fs';
@@ -408,6 +412,97 @@ try {
   await CH.page.waitForFunction(() => document.body.classList.contains('stroll') && window.__app.cam.mode === 'stroll');
   check('màn chọn cảm ứng: chạm thẻ Đi dạo vào được chế độ đi dạo', true);
   allErrors.push(...CH.errors); await CH.page.close();
+
+  // Mục 7 — Lái xe trên điện thoại (D-034 Task 9): mở bằng thẻ Ô tô ở màn chọn cảm ứng
+  const CD = await openApp(browser, srv.url + '?chooser', { width: 844, height: 390, mobile: true });
+  CD.page.setDefaultTimeout(180000);
+  await CD.page.waitForFunction(() => !document.getElementById('chooser').hidden);
+  check('màn chọn cảm ứng: thẻ Ô tô không khóa', await CD.page.evaluate(() => !document.querySelector('[data-pick="car"]').disabled));
+  await CD.page.tap('[data-pick="car"]');
+  await CD.page.waitForFunction(() => document.body.classList.contains('drive') && window.__app.cam.mode === 'car' && window.__app.drive.state);
+  check('chạm thẻ Ô tô vào được chế độ lái (body.drive, cam.mode car)', true);
+  const DH = ['#drSteer', '#drGas', '#drBrake'];
+  /* Danh sách người chơi giả đầy nhất (đầu + 5 người lái) để thử chồng lấn ở chỗ xấu nhất; không đổi trạng thái chế độ */
+  const fillDriveRoster = (page) => page.evaluate(() => {
+    const r = document.getElementById('exMpRoster');
+    r.innerHTML = '<div class="ex-mp-head">Вождение 5/5 · Прогулка 5/5 · Полёт 5/5 (наблюдение)</div>' + Array.from({ length: 5 }, (_, i) => `<div class="ex-mp-row drive"><i></i>Tài xế ${i}</div>`).join('');
+    r.hidden = false;
+    /* hai thông báo chuỗi dài tiếng Nga: phải không đè danh sách / bản đồ nhỏ */
+    const n = document.getElementById('exMpNotice'), idle = document.getElementById('exMpIdle');
+    n.textContent = 'Игрок вышел из игры, освободилось место для вас'; n.hidden = false;
+    idle.textContent = 'Вы будете отключены через 15 секунд из-за бездействия'; idle.hidden = false;
+  });
+  const driveLayout = async (page, W, H, tag) => {
+    await fillDriveRoster(page); await frames(page, 2);
+    const hud = await rects(page, DH), avoid = await rects(page, ['#btnExExit', '#drMap', '#drSpeed', '#exMpRoster', '#exMpNotice', '#exMpIdle', '#drSoundBtn']);
+    const snd = avoid.find((b) => b.sel === '#drSoundBtn');   // nút tiếng xe 🔊 / 🔇 (sửa cuối D-034)
+    check(`lái xe ${tag}: cần gạt, GA, PHANH hiện`, hud.length === 3);
+    check(`lái xe ${tag}: mỗi nút ≥ 44 × 44 px (cả nút tiếng xe)`, hud.every((b) => b.width >= 44 && b.height >= 44) && !!snd && snd.width >= 44 && snd.height >= 44);
+    check(`lái xe ${tag}: nằm trọn trong khung nhìn (cả nút tiếng xe)`, [...hud, ...(snd ? [snd] : [])].every((b) => b.left >= 0 && b.top >= 0 && b.right <= W && b.bottom <= H));
+    check(`lái xe ${tag}: ba điều khiển + nút tiếng xe không chồng nhau và không chồng Thoát / bản đồ nhỏ / đồng hồ / danh sách người chơi / hai thông báo`, avoid.length === 7 && noOverlap([...hud, ...avoid]));
+    check(`lái xe ${tag}: nút tiếng xe không bị lớp khác che, có aria-label, aria-pressed`, (await topAtCenter(page, '#drSoundBtn')) && (await page.evaluate(() => { const b = document.getElementById('drSoundBtn'); return !!b.getAttribute('aria-label') && ['true', 'false'].includes(b.getAttribute('aria-pressed')); })));
+    check(`lái xe ${tag}: danh sách người chơi nằm trọn trong khung nhìn`, avoid.filter((b) => b.sel === '#exMpRoster').every((b) => b.left >= 0 && b.top >= 0 && b.right <= W && b.bottom <= H));
+    check(`lái xe ${tag}: không bị lớp khác che`, (await Promise.all(DH.map((s) => topAtCenter(page, s)))).every(Boolean));
+    const g = hud.find((b) => b.sel === '#drGas'), br = hud.find((b) => b.sel === '#drBrake'), st = hud.find((b) => b.sel === '#drSteer');
+    check(`lái xe ${tag}: PHANH nhỏ hơn GA và nằm bên trái GA; cần gạt ở nửa trái`, br.width * br.height < g.width * g.height && br.right <= g.left && st.left + st.width / 2 < W / 2 && g.left > W / 2);
+    return hud;
+  };
+  await driveLayout(CD.page, 844, 390, 'ngang 844×390');
+  const DV = (page) => page.evaluate(() => window.__app.drive.state.v);
+  const FD = await fingers(CD.page);
+  const [dpad] = await rects(CD.page, ['#drSteer']), [dgas] = await rects(CD.page, ['#drGas']);
+  const gx = dgas.left + dgas.width / 2, gy = dgas.top + dgas.height / 2, dpx = dpad.left + dpad.width / 2, dpy = dpad.top + dpad.height / 2;
+  await FD.down(1, gx, gy);
+  await CD.page.waitForFunction(() => window.__app.drive.state.v > 0.3, null, { polling: 'raf' });
+  check('giữ GA: xe chạy tới (v > 0,3 m/s)', (await DV(CD.page)) > 0.3);
+  check('đang giữ GA: nút GA sáng', await CD.page.evaluate(() => document.getElementById('drGas').classList.contains('on')));
+  await FD.up(1);
+  // hai ngón: ngón 2 giữ cần gạt sang trái, ngón 1 đạp GA; nhấc GA thì cần gạt giữ nguyên
+  await FD.down(2, dpx, dpy); await FD.move(2, dpx - dpad.width / 2 + 4, dpy);
+  await FD.down(1, gx, gy);
+  await CD.page.waitForFunction(() => window.__app.drive.state.steer > 0.05, null, { polling: 'raf' });
+  check('cần gạt sang trái: bẻ lái trái (steer > 0)', (await CD.page.evaluate(() => window.__app.drive.state.steer)) > 0.05);
+  await FD.up(1); await frames(CD.page, 3);
+  check('nhấc GA, cần gạt vẫn giữ: steer vẫn > 0 và nút GA tắt', await CD.page.evaluate(() => window.__app.drive.state.steer > 0.05 && !document.getElementById('drGas').classList.contains('on')));
+  await FD.up(2); await frames(CD.page, 3);
+  // vuốt vùng trống xoay camera
+  const yawD0 = await CD.page.evaluate(() => window.__app.drive.cam.yaw);
+  await FD.down(3, 500, 150); for (let i = 1; i <= 5; i++) await FD.move(3, 500 - 20 * i, 150); await frames(CD.page, 2);
+  check('vuốt vùng trống: camera.yaw đổi', Math.abs((await CD.page.evaluate(() => window.__app.drive.cam.yaw)) - yawD0) > 0.2);
+  await FD.up(3);
+  // pointercancel: nhả hết, núm về tâm
+  await FD.down(1, gx, gy); await FD.down(2, dpx, dpy); await FD.move(2, dpx - 40, dpy); await frames(CD.page, 2);
+  await FD.cancel(); await frames(CD.page, 3);
+  check('pointercancel: GA tắt, núm về tâm', await CD.page.evaluate(() => !document.getElementById('drGas').classList.contains('on') && document.getElementById('drKnob').style.transform === ''));
+  allErrors.push(...CD.errors); await CD.page.close();
+
+  const CP = await openApp(browser, srv.url + '?explore=drive', { width: 390, height: 844, mobile: true });
+  CP.page.setDefaultTimeout(180000);
+  await driveLayout(CP.page, 390, 844, 'dọc 390×844');
+  await pick(CP.page, '#langSelect', 'ar'); await CP.page.evaluate(() => window.__app.ui.closeSheets()); await frames(CP.page, 2);
+  const arD = await driveLayout(CP.page, 390, 844, 'ar dọc');
+  const arSt = arD.find((b) => b.sel === '#drSteer'), arGas = arD.find((b) => b.sel === '#drGas');
+  check('ar: cần gạt vẫn ở nửa trái, GA vẫn ở nửa phải (không lật)', !!arSt && !!arGas && arSt.left + arSt.width / 2 < 390 / 2 && arGas.left + arGas.width / 2 > 390 / 2);
+  check('lái xe trên cảm ứng: dòng gợi ý phím #drHint ẩn', await CP.page.evaluate(() => document.getElementById('drHint').getClientRects().length === 0));
+  const arTunnel = JSON.parse(fs.readFileSync(new URL('../src/i18n/locales/ar.json', import.meta.url), 'utf8')).drMapTunnel;
+  check('bản đồ nhỏ: chú thích Hầm (phương án đề xuất) dịch sang ar', !!arTunnel && (await CP.page.evaluate(() => document.getElementById('drMapNote').textContent)) === arTunnel);
+  allErrors.push(...CP.errors); await CP.page.close();
+
+  /* Máy tính 1280×720 (có chuột): cần gạt, GA, PHANH ẩn; đồng hồ (dưới phải), danh sách (trên phải), hai thông báo (giữa), ô FPS (có khi ?test), bản đồ nhỏ (dưới trái) và nút Thoát không chồng nhau; ar vẫn vậy */
+  const CK = await openApp(browser, srv.url + '?explore=drive', { width: 1280, height: 720 });
+  CK.page.setDefaultTimeout(180000);
+  const deskLayout = async (tag) => {
+    await fillDriveRoster(CK.page); await frames(CK.page, 2);
+    const all = await rects(CK.page, ['#btnExExit', '#drMap', '#drSpeed', '#exMpRoster', '.stats', '#exMpNotice', '#exMpIdle', '#drSoundBtn']);
+    check(`lái xe ${tag}: máy tính ẩn cần gạt, GA, PHANH`, await hiddenAll(CK.page, DH));
+    check(`lái xe ${tag}: đồng hồ, danh sách, ô FPS, bản đồ nhỏ, Thoát, nút tiếng xe đều hiện (${all.length}/8) và không chồng nhau`, all.length === 8 && noOverlap(all));
+    check(`lái xe ${tag}: nút tiếng xe ≥ 44 × 44 px, không bị che`, all.filter((b) => b.sel === '#drSoundBtn').every((b) => b.width >= 44 && b.height >= 44) && await topAtCenter(CK.page, '#drSoundBtn'));
+    check(`lái xe ${tag}: danh sách nằm trọn trong khung nhìn 1280×720`, all.filter((b) => b.sel === '#exMpRoster').every((b) => b.left >= 0 && b.top >= 0 && b.right <= 1280 && b.bottom <= 720));
+  };
+  await deskLayout('máy tính 1280×720');
+  await pick(CK.page, '#langSelect', 'ar'); await CK.page.evaluate(() => window.__app.ui.closeSheets()); await frames(CK.page, 2);
+  await deskLayout('ar máy tính');
+  allErrors.push(...CK.errors); await CK.page.close();
 
   check('console sạch', allErrors.length === 0);
   if (allErrors.length) console.log(allErrors.join('\n'));

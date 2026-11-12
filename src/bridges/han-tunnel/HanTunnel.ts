@@ -10,6 +10,7 @@ import { hrBuildOutdoor } from './outdoor';
 import { hrBuildRiverbed, type Riverbed } from './riverbed';
 import { hrClearCorridor } from './corridor';
 import { Cutaway } from './cutaway';
+import { driveView } from '../../environment/driveRoadGeo';
 import { ImmersionController, IM_STATES, type ImState } from './immersion';
 
 /* ======================================================================
@@ -107,8 +108,9 @@ export class HanTunnel extends BridgeBase<HrMaterials> {
     for (const b of list) if (b.z > boatKeepOut.z0 && b.z < boatKeepOut.z1) b.z = b.dir > 0 ? boatKeepOut.z0 : boatKeepOut.z1;
   }
   update(dt: number, elapsed: number, cam: THREE.Camera) {
+    this.farDistance = HR.farDistance * driveView.far;   // chế độ lái nới ngưỡng (CONFIG.drive.tunnelFar) để mặt đường hầm có ở nút giao với đường dọc mới; chế độ khác giữ ×1
     this.updateLod(cam); const c = this.ctrl, dist = cam.position.distanceTo(this.center);
-    this.group.visible = dist < HR.hideDistance;   // xa quá thì không vẽ gì (bê tông, thép gộp không có LOD riêng)
+    this.group.visible = dist < HR.hideDistance * driveView.far;   // xa quá thì không vẽ gì (bê tông, thép gộp không có LOD riêng)
     c.update(dt);
     hrUpdateLamps(this.mats, shared.uNight.value);
     const p = cam.position, inside = hrInside(p.x, p.y, p.z - 0);

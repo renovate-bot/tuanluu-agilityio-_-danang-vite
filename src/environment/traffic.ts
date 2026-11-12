@@ -6,7 +6,7 @@ import { rand } from '../common/math';
 import type { BoatTypeId } from '../config';
 import { btCreateFleet, btSetInfo, btSetBoat, btHideBoat, btCommit, btFleets, type BoatFleet } from './boats/fleet';
 import { btCrowdSlots, btCrowdTarget, btCrowdLevel, btCrowdShown, btInExclusion } from './boats/crowd';
-import { _e, _q, type VehicleType } from '../common/traffic';
+import { _e, _q, trRegisterFleet, type VehicleType } from '../common/traffic';
 import { vhCreateFleet, vhSetInfo, vhSetVehicle, vhHide, vhCommit, vhFleets, type VehicleFleet } from '../common/vehicles/fleet';
 import { vhMaterial } from '../common/vehicles/material';
 import { deckY } from '../bridges/dragon/profile';
@@ -50,6 +50,7 @@ export function buildTraffic() {
   // camera chính (renderer.ts) và bóng đổ (lights.ts: sun.shadow.camera, WebGLShadowMap lọc theo lớp của camera chính) vẫn bật lớp 1 nên xe vẫn vẽ và vẫn đổ bóng
   cityFleet.mesh.layers.set(1);
   vehicles.forEach((v, i) => vhSetInfo(cityFleet, i, v.type, v.color));
+  trRegisterFleet(cityFleet);                                // chế độ lái: xe tự động chặn xe người chơi (chỉ đọc)
 }
 const _p = new THREE.Vector3();
 /* Không cấp phát mỗi khung (D-018). Đèn pha/hậu bật trong shader theo uNight (common/vehicles/material.ts) */

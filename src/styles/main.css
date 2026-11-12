@@ -259,6 +259,9 @@ body.compact #swStormNote{top:calc(124px + env(safe-area-inset-top,0px));max-wid
 .ex-card:disabled{opacity:.55;cursor:not-allowed;}
 .ex-card:disabled .ex-note{color:var(--gold);}
 .ex-card:focus-visible{outline:2px solid var(--gold);outline-offset:2px;}
+/* Ghi công mô hình VF 3 (CC BY 4.0, public/car/LICENSE-VF3.txt): dòng nhỏ cuối hộp, hiện cả ở màn chọn lẫn sảnh */
+.ex-credit{margin:14px 0 0;font-size:11px;line-height:1.45;color:var(--muted);}
+.ex-credit a{color:inherit;text-decoration:underline;text-underline-offset:2px;}
 /* Bước chọn slot + nhập tên (dù lượn nhiều người): thay các thẻ trong cùng hộp thoại */
 .ex-cards[hidden],.ex-mp-lobby [hidden],.ex-mp-lobby[hidden]{display:none;}
 .ex-mp-lobby{display:flex;flex-direction:column;gap:10px;min-width:min(340px,100%);}
@@ -294,7 +297,8 @@ body.explore #exMpRoster:not([hidden]){display:flex;flex-direction:column;gap:3p
 .ex-mp-row{display:flex;align-items:center;gap:6px;}
 .ex-mp-row.me{font-weight:600;}
 .ex-mp-row i{width:9px;height:9px;border-radius:50%;flex:none;}
-.ex-mp-row.walk i{border-radius:2px;}   /* người đi dạo: chấm vuông, người bay: chấm tròn */
+.ex-mp-row.walk i{border-radius:2px;}   /* người đi dạo: chấm vuông, người bay: chấm tròn, người lái xe: chấm thoi */
+.ex-mp-row.drive i{border-radius:2px;transform:rotate(45deg) scale(.85);}
 body.explore #exMpNotice:not([hidden]){display:block;position:fixed;left:50%;transform:translateX(-50%);top:calc(100px + env(safe-area-inset-top,0px));padding:8px 14px;font-size:12px;color:var(--text);z-index:5;}
 /* Chế độ xem (hết chỗ hoặc vừa nhường chỗ): không có dù của mình nên ẩn dòng hướng dẫn lái và đồng hồ; hiện "Đang xem" và lời mời */
 body.ex-watching #exHint,body.ex-watching #exSpeed{display:none;}
@@ -313,6 +317,71 @@ body.explore h1,body.explore .eyebrow,body.explore #btnShadow,body.explore .audi
 body.explore:not(.ex-test) .stats{display:none;}   /* HUD giữ khi URL có ?test để test đo draw call */
 /* Đi dạo: dòng hướng dẫn và đồng hồ là của dù lượn nên ẩn; kéo chuột trên cảnh để xoay camera */
 body.explore.stroll #exHint,body.explore.stroll #exSpeed{display:none;}
+/* Lái xe (explore/drive): chữ và tốc độ của dù lượn ẩn; #drHud là khung HUD riêng (hud.ts, touch.ts): đồng hồ, bản đồ nhỏ, gợi ý phím, cần gạt + bàn đạp cảm ứng.
+   Lớp phủ trong suốt, chỉ các điều khiển nhận chạm; direction:ltr (dir="ltr" trên #drHud) để ar (RTL) vẫn giữ cần gạt bên trái, bàn đạp bên phải, không lật. */
+body.explore.drive #exHint,body.explore.drive #exSpeed{display:none;}
+#drHud,#drLook,#drSteer,#drGas,#drBrake{display:none;}
+body.drive #drHud{display:block;position:fixed;inset:0;z-index:4;pointer-events:none;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;}
+#drMap,#drMapNote,#drSpeed,#drHint{position:fixed;pointer-events:none;}
+#drMap{display:block;left:calc(14px + env(safe-area-inset-left,0px));bottom:calc(44px + env(safe-area-inset-bottom,0px));background:var(--panel);border:1px solid var(--panel-line);border-radius:6px;}   /* bản đồ nhỏ: dưới trái; Bắc ở trên */
+#drMapNote{left:calc(14px + env(safe-area-inset-left,0px));bottom:calc(14px + env(safe-area-inset-bottom,0px));padding:5px 9px 5px 22px;font-size:11px;line-height:1.2;color:var(--text);max-width:260px;box-sizing:border-box;}
+#drMapNote::before{content:"";position:absolute;left:8px;top:50%;width:9px;height:9px;margin-top:-4.5px;border-radius:50%;background:#e08a3c;}   /* cùng màu ô hầm trên bản đồ (CONFIG.drive.hud.colors.tunnel) */
+#drSpeed{right:calc(14px + env(safe-area-inset-right,0px));bottom:calc(14px + env(safe-area-inset-bottom,0px));padding:6px 14px;display:flex;align-items:baseline;gap:6px;color:var(--text);}   /* đồng hồ: dưới phải */
+#drKmh{font:700 34px/1 var(--font-display);color:var(--gold);min-width:3ch;text-align:right;font-variant-numeric:tabular-nums;}
+#drSpeedUnit{font-size:12px;}
+#drHint{display:none;}
+#drHint.off{opacity:0;transition:opacity .6s;}
+@media (hover:hover){
+  body.drive #drHint{display:block;left:50%;transform:translateX(-50%);top:calc(14px + env(safe-area-inset-top,0px));padding:8px 14px;font-size:12px;color:var(--text);text-align:center;max-width:calc(100vw - 200px);box-sizing:border-box;}
+}
+/* Lái xe nhiều người: danh sách người chơi lên góc trên phải, dưới nút Thoát (đáy phải dành cho đồng hồ tốc độ, đáy trái cho bản đồ nhỏ, đáy phải trên cảm ứng cho bàn đạp); ar vẫn ở bên phải.
+   Z-index 5 / 6 của danh sách và lời mời trên #drHud (4) nên bấm được trên lớp vuốt #drLook. Ô FPS (.stats, chỉ khi ?test) nhấc lên khỏi đồng hồ. Chế độ xem: không điều khiển, ẩn bàn đạp / cần gạt / gợi ý phím */
+body.drive #exMpRoster:not([hidden]){inset-inline-end:auto;right:calc(14px + env(safe-area-inset-right,0px));bottom:auto;top:calc(100px + env(safe-area-inset-top,0px));box-sizing:border-box;max-height:calc(100vh - 88px - var(--dr-gas-h,124px));overflow:hidden;}
+body.compact.drive #exMpRoster:not([hidden]){top:calc(56px + env(safe-area-inset-top,0px));}
+body.drive.ex-test .stats{inset-inline-end:auto;right:calc(14px + env(safe-area-inset-right,0px));bottom:calc(74px + env(safe-area-inset-bottom,0px));}   /* ar: vẫn ở phải (không sang trái đè bản đồ nhỏ) */
+/* Điện thoại (compact): danh sách hẹp lại, xuống dòng khi chuỗi dài (ru); hai thông báo dời khỏi dải giữa trên để không đè danh sách (trên phải) và bản đồ nhỏ (trên trái):
+   dọc: cột trái dưới bản đồ + chú thích; ngang: dải trái giữa bản đồ và danh sách, hẹp lại */
+@media (hover:none){
+  body.compact.drive #exMpRoster:not([hidden]){max-width:calc(50vw - 24px);}
+  body.compact.drive #exMpNotice:not([hidden]),body.compact.drive #exMpIdle:not([hidden]){left:calc(8px + env(safe-area-inset-left,0px));transform:none;max-width:calc(50vw - 24px);box-sizing:border-box;text-align:start;}
+  body.compact.drive #exMpNotice:not([hidden]){top:calc(60px + var(--dr-map-h,128px) + 76px + env(safe-area-inset-top,0px));}
+  body.compact.drive #exMpIdle:not([hidden]){top:calc(60px + var(--dr-map-h,128px) + 76px + 70px + env(safe-area-inset-top,0px));}
+}
+@media (hover:none) and (orientation:landscape){
+  body.compact.drive #exMpNotice:not([hidden]),body.compact.drive #exMpIdle:not([hidden]){left:calc(150px + env(safe-area-inset-left,0px));max-width:calc(50vw - 160px);}
+  body.compact.drive #exMpNotice:not([hidden]){top:calc(56px + env(safe-area-inset-top,0px));}
+  body.compact.drive #exMpIdle:not([hidden]){top:calc(120px + env(safe-area-inset-top,0px));}
+}
+body.drive.ex-watching #drSteer,body.drive.ex-watching #drGas,body.drive.ex-watching #drBrake,body.drive.ex-watching #drLook,body.drive.ex-watching #drHint{display:none;}
+@media (hover:none){
+  body.drive.ex-watching #drSpeed{display:none;}   /* đồng hồ giữa trên đè dòng "Đang xem" */
+}
+/* Nút tiếng xe 🔊 / 🔇 (explore/drive/sound.ts): vùng chạm 44 px. Máy tính: giữa đáy (bản đồ nhỏ trái, đồng hồ phải). Cảm ứng: trên cần gạt (đáy trái;
+   đáy giữa ở 390 px chỉ còn ≈ 32 px giữa cần gạt và PHANH). #drHud dir="ltr" nên ar không lật. Chế độ xem: không có xe của mình nên ẩn */
+#drSoundBtn{display:none;}
+body.drive:not(.ex-watching) #drSoundBtn{display:flex;align-items:center;justify-content:center;position:fixed;pointer-events:auto;left:50%;transform:translateX(-50%);bottom:calc(14px + env(safe-area-inset-bottom,0px));width:44px;height:44px;margin:0;padding:0;box-sizing:border-box;font-size:20px;line-height:1;color:var(--text);background:var(--panel);border:1px solid var(--panel-line);border-radius:50%;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
+body.drive #drSoundBtn[aria-pressed="true"]{border-color:var(--gold);}
+body.drive #drSoundBtn:focus-visible{outline:2px solid var(--gold);outline-offset:2px;}
+@media (hover:none){
+  body.drive:not(.ex-watching) #drSoundBtn{left:calc(16px + env(safe-area-inset-left,0px));transform:none;bottom:calc(36px + var(--dr-pad-h,72px) + env(safe-area-inset-bottom,0px));}
+}
+body.drive #scene{cursor:grab;}
+body.drive #scene:active{cursor:grabbing;}
+/* Cảm ứng (hover:none): ngón trái cần gạt ngang dưới trái; ngón phải GA (to) và PHANH (nhỏ hơn, bên trái GA) dưới phải; vuốt vùng trống xoay camera.
+   Kích thước từ CONFIG.drive.touch qua biến --dr-*; màn hẹp co theo bề rộng để ba nút không chồng nhau ở 390 px. Bản đồ nhỏ lên trái dưới hàng nút ⚙ / Thoát, đồng hồ giữa trên (đáy dành cho điều khiển) */
+@media (hover:none){
+  body.drive #drLook{display:block;position:fixed;pointer-events:auto;touch-action:none;left:0;right:0;bottom:0;top:calc(56px + env(safe-area-inset-top,0px));}
+  body.drive #drSteer{display:block;position:fixed;pointer-events:auto;touch-action:none;left:calc(16px + env(safe-area-inset-left,0px));bottom:calc(24px + env(safe-area-inset-bottom,0px));width:min(var(--dr-pad-w,180px),38vw);height:var(--dr-pad-h,72px);box-sizing:border-box;border-radius:999px;background:rgba(10,18,22,.4);border:2px solid var(--panel-line);}
+  #drKnob{position:absolute;left:50%;top:50%;width:var(--dr-knob,56px);height:var(--dr-knob,56px);margin:calc(var(--dr-knob,56px) / -2) 0 0 calc(var(--dr-knob,56px) / -2);border-radius:50%;background:rgba(230,189,106,.55);border:1px solid var(--gold);pointer-events:none;}
+  body.drive #drGas,body.drive #drBrake{display:flex;align-items:center;justify-content:center;position:fixed;pointer-events:auto;touch-action:none;margin:0;padding:0;box-sizing:border-box;color:var(--text);background:rgba(10,18,22,.5);border:2px solid var(--panel-line);border-radius:18px;font:700 14px/1.1 var(--font-body);text-align:center;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+  body.drive #drGas{right:calc(16px + env(safe-area-inset-right,0px));bottom:calc(24px + env(safe-area-inset-bottom,0px));width:min(var(--dr-gas-w,92px),24vw);height:var(--dr-gas-h,124px);}
+  body.drive #drBrake{right:calc(26px + min(var(--dr-gas-w,92px),24vw) + env(safe-area-inset-right,0px));bottom:calc(24px + env(safe-area-inset-bottom,0px));width:min(var(--dr-brake-w,76px),19vw);height:var(--dr-brake-h,84px);}
+  body.drive #drGas.on{background:rgba(230,189,106,.6);border-color:var(--gold);}
+  body.drive #drBrake.on{background:rgba(214,70,60,.6);border-color:#e86a5e;}
+  body.drive #drMap{left:calc(8px + env(safe-area-inset-left,0px));top:calc(56px + env(safe-area-inset-top,0px));bottom:auto;}   /* dưới hàng nút ⚙ / Thoát (hai góc trên; ar đổi chỗ hai nút) */
+  body.drive #drMapNote{left:calc(8px + env(safe-area-inset-left,0px));top:calc(60px + var(--dr-map-h,128px) + env(safe-area-inset-top,0px));bottom:auto;font-size:10px;max-width:calc(50vw - 24px);}
+  body.drive #drSpeed{right:auto;bottom:auto;left:50%;transform:translateX(-50%);top:calc(8px + env(safe-area-inset-top,0px));}
+}
 /* Dòng hướng dẫn phím của đi dạo (#stHint): cùng chỗ và kiểu với #exHint, chỉ khi có chuột (hover:hover) và không ở chế độ xem; cảm ứng đã có cần gạt */
 #stHint{display:none;}
 @media (hover:hover){

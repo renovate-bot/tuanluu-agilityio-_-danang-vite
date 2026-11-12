@@ -6,7 +6,7 @@ import { getLang, onChange, t } from '../i18n';
 import { exMulti } from './multi';
 import { exShowLobby } from './multi/lobby';
 
-export type ExChoice = 'glider' | 'guided' | 'walk';
+export type ExChoice = 'glider' | 'guided' | 'walk' | 'car';   // car: lái xe (có máy chủ thì qua sảnh 5 chỗ lái, không thì lái một mình)
 
 const el = () => document.getElementById('chooser');
 
@@ -46,8 +46,12 @@ export function exShowChooser(onPick: (choice: ExChoice) => void, onWatch: (choi
   lockGliderOnTouch(root);
   /* Lần trước mất kết nối khi đang xem (explore.exit tải lại trang): đọc cờ một lần rồi xóa, hiện exMpLostChooser */
   try {
-    const lost = sessionStorage.getItem('exMpNotice');   // 'lost' (xem bầu trời dù lượn) | 'lostWalk' (xem người đi dạo: câu nhắc chọn Đi dạo, vì thẻ Dù lượn bị khóa trên điện thoại)
-    if (lost === 'lost' || lost === 'lostWalk') { sessionStorage.removeItem('exMpNotice'); const n = document.getElementById('exMpLostNote'); if (n) { if (lost === 'lostWalk') { n.dataset.i18n = 'stLostChooser'; n.textContent = t('stLostChooser'); } n.hidden = false; } }
+    const lost = sessionStorage.getItem('exMpNotice');   // 'lost' (xem bầu trời dù lượn) | 'lostWalk' (xem người đi dạo: câu nhắc chọn Đi dạo, vì thẻ Dù lượn bị khóa trên điện thoại) | 'lostDrive' (xem xe: nhắc chọn Ô tô)
+    if (lost === 'lost' || lost === 'lostWalk' || lost === 'lostDrive') {
+      sessionStorage.removeItem('exMpNotice');
+      const n = document.getElementById('exMpLostNote');
+      if (n) { const k = lost === 'lostWalk' ? 'stLostChooser' : lost === 'lostDrive' ? 'drLostChooser' : ''; if (k) { n.dataset.i18n = k; n.textContent = t(k); } n.hidden = false; }
+    }
   } catch { /* bộ nhớ bị chặn */ }
   wireLang(root);
   /* Không dùng { once: true }: từ sảnh bấm Quay lại / Esc thì các thẻ phải chọn lại được. Hộp đã đóng (đã chọn xong) thì bỏ qua */
@@ -56,8 +60,8 @@ export function exShowChooser(onPick: (choice: ExChoice) => void, onWatch: (choi
     b.addEventListener('click', () => {
       if (root.hidden) return;
       const choice = b.dataset.pick as ExChoice;
-      /* Dù lượn / Đi dạo có máy chủ: sang bước chọn slot + nhập tên (mở kết nối ở đây, không sớm hơn); không có máy chủ: bay / đi một mình ngay như trước */
-      if ((choice === 'glider' || choice === 'walk') && exMulti.begin(() => {}, choice === 'walk' ? 'walk' : 'fly')) {
+      /* Dù lượn / Đi dạo / Ô tô có máy chủ: sang bước chọn slot + nhập tên (mở kết nối ở đây, không sớm hơn); không có máy chủ: bay / đi / lái một mình ngay như trước */
+      if ((choice === 'glider' || choice === 'walk' || choice === 'car') && exMulti.begin(() => {}, choice === 'walk' ? 'walk' : choice === 'car' ? 'drive' : 'fly')) {
         const solo = () => { exHideChooser(); onPick(choice); };
         exShowLobby(exMulti.session!, { onFly: solo, onWatch: () => { exHideChooser(); onWatch(choice); }, onSolo: solo, onBack: () => b.focus({ preventScroll: true }) });
         return;

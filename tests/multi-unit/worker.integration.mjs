@@ -74,6 +74,22 @@ try {
   await sleep(500);
   const wp = last(wk, 'pos');
   ok(wp && Array.isArray(wp.f) && wp.w && wp.w[0][1] === 400 && wp.w[0][5] === 2, 'pos đi dạo: f mảng, w kẹp x = 400, pose 2');
+
+  // Nhóm lái xe (D-034): join kind 'drive' nhận joined kind drive; lobby có drivers; pos kẹp khung / v / st, phát nhóm d 8 phần tử
+  const dv = client(); await dv.opened;
+  await sleep(300);
+  ok(dv.msgs[0] && Array.isArray(dv.msgs[0].drivers), 'lobby đầu có drivers (khách mới biết máy chủ hiểu lái xe)');
+  dv.send({ t: 'join', name: 'Lai', kind: 'drive' });
+  await sleep(800);
+  const dj = last(dv, 'joined'), dl = last(dv, 'lobby');
+  ok(dj && dj.kind === 'drive' && dj.slot === 0, 'join kind drive nhận joined kind drive slot 0');
+  ok(dl && dl.drivers && dl.drivers.length === 1 && dl.walkers.length === 1 && dl.flyers.length === 0, `lobby sau đó: drivers ${dl && dl.drivers ? dl.drivers.length : '?'}, walkers ${dl && dl.walkers ? dl.walkers.length : '?'}, flyers ${dl ? dl.flyers.length : '?'}`);
+  dv.send({ t: 'pos', x: 99999, y: 2.6, z: 0, yaw: 0, v: 99, st: -9, ts: 5 });
+  await sleep(500);
+  const dp = last(dv, 'pos'), wd = last(wk, 'pos');
+  ok(dp && Array.isArray(dp.f) && dp.d && dp.d[0].length === 8 && dp.d[0][1] === 1530 && dp.d[0][5] === 30 && dp.d[0][6] === -0.56 && dp.d[0][7] === 5, 'pos lái xe: f mảng, d 8 phần tử, kẹp x = 1530, v = 30, st = −0,56, giữ ts');
+  ok(wd && wd.d && wd.d[0][0] === 0, 'người khác (đi dạo) nhận nhóm d');
+  dv.ws.close();
   wk.ws.close();
 
   ok(await upgradeStatus('https://evil.example') === 403, 'Origin lạ -> 403');

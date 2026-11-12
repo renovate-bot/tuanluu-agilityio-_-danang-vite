@@ -4,6 +4,29 @@ Chromium + SwiftShader, khung 480×270. Draw call = renderer.info.render.calls (
 
 Khung test mặc định 480×270 khớp `(max-height: 500px)` nên cả bộ test chạy ở chế độ gọn (không blur): draw call không đổi; số hitch của `test:perf` không so sát được với mốc D-018 (đo khi còn blur).
 
+## Chế độ lái xe VF 3 (2026-11-12, nhánh `feature/lai-xe-oto`, D-034)
+
+Chế độ Lái xe (`src/explore/drive/`), mạng đường mới, mô hình `public/car/vf3.glb`, loại `drive` của Worker. Theo lời người dùng ("không cần chạy test nặng", "chạy 1 lượt thôi") **không chạy** `test:drawcalls` đủ bảng và các test trình duyệt nặng; dưới đây chỉ có số đã đo thật lúc làm và kết quả các lệnh nhanh. Bảng chuẩn ở các mục khác của tệp này chưa được sửa.
+
+| Phép đo | Kết quả |
+|---|---|
+| Lệnh vẽ 5 góc cũ sau Task 2 (đường mới, SwiftShader, `?test`, ban ngày, trung vị 5 khung): mặc định / overview / tpBay / tpDrive / hrDrive | 268 / 268 / 262 / 111 / 189, bằng đúng số trước khi thêm đường (+0). Chưa đo lại sau các Task 3-11 (chưa chạy `test:drawcalls`) |
+| Program (`renderer.info.programs.length`) khi vào chế độ lái (Task 7) | 178 (hình tạm) → 194 khi mô hình thật xuất hiện (16 program mới, tạo trong làm nóng); giữ 194 sau 5 s lái và ban đêm + phanh |
+| Lệnh vẽ góc xuất phát khi lái | 226 (hình tạm) → 235 (mô hình thật) |
+| Giữ ga 6 s từ chỗ xuất phát (Task 7, bước số) | 56,4 km/h (15,66 m/s), đi 47,5 m |
+| Lệnh vẽ trong hầm khi lái (`test:drive` lượt dở, 640×360, ban ngày) | 157 |
+| Dung lượng build (`7b31a4c`) | chunk `index` 605,75 → 677,80 kB, `three` 635,00 → 636,50 kB, css 36,46 kB; `public/car/vf3.glb` 879 388 byte |
+| `typecheck`, `build` | đạt |
+| `test:drive:unit` | 124/124 |
+| `test:multi:unit` | 82/82 |
+| `test:stroll:unit` | 86/87: trượt `hướng theo camYaw`, do `strollBase.walk` 1,6 chưa commit của người dùng (không thuộc nhánh) |
+| `test:traffic:unit` / `test:trees:unit` / `test:people:unit` / `test:boats:unit` | 11/11, 9/9, 35/35, 17/17 |
+| `test:multi:worker` | TẤT CẢ ĐẠT |
+| `test:drive` (một lượt tại `ff36e5e`, dừng giữa chừng vì máy thiếu bộ nhớ) | Đã chạy mục 1-7, 9, thẻ Ô tô, 8a; 5 dòng LỖI đều là lỗi test (tia xuống ô hầm ×2, barie giữ `DrState` cũ, điểm ảnh màu nước trong hầm, đèn phanh), đã sửa test, chưa chạy lại; chưa chạy 8b, 10, 11 |
+| `test:mobile` (Task 9, `3bec44e`) | Mục 7 lái xe 25 kiểm đạt; 2 kiểm Mục 6 đi dạo trượt do `strollBase.walk` 1,6 chưa commit; Mục 7 đã sửa thêm, chưa chạy lại |
+
+Chưa chạy: `test:drawcalls` (cần bảng mới, góc cũ phải +0), `test:perf -- --strict`, `test:gpu`, `test:tour`, `test:trees` (ba mốc cây bóng mát phải chụp lại: `drClearRoads` dọn 6-12 cây dọc trục Cầu Rồng), `test:riverfront`, `test:tunnel`, `test:traffic`, `test:boats`, `test:people`, `test:stroll`, `test:weather`, `test:sunwheel`, `test:voice`, `test:citynight` (cần `-- --baseline`), `test:explore`, `test:multi`.
+
 ## Tối ưu thời gian vẽ trên GPU (2026-11-12, nhánh `feature/toi-uu-hieu-nang`, D-031)
 
 Lần đầu đo trên GPU thật: Intel Arc, Chromium headless ANGLE D3D11, 1920×1080, pixelRatio 1, bậc chất lượng 0, góc mặc định Cầu Rồng, bộ đếm `EXT_disjoint_timer_query_webgl2`. Mốc là bản build `main` `a309fa8`.

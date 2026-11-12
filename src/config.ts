@@ -664,6 +664,149 @@ const strollBase = {
   }
 };
 
+/* ------------------------- Lái xe VinFast VF 3 -------------------------
+   Chế độ lái xe (docs/superpowers/specs/2026-11-12-lai-xe-oto-design.md, D-034). Mạng đường dựng ở explore/drive/roadData.ts.
+   Số liệu xe: spec §5.1 và §12 (VinFast, Bonbanh, VnExpress, auto-data.net, vinfastauto.id, Autofun). */
+const driveBase = {
+  car: {
+    length: 3.19,      // m — chiều dài (VinFast / Bonbanh / VnExpress)
+    width: 1.679,      // m — chiều rộng (như trên)
+    height: 1.622,     // m — chiều cao (như trên)
+    wheelbase: 2.075,  // m — chiều dài cơ sở (như trên)
+    wheelDia: 0.669,   // m — đường kính ngoài bánh, tính từ cỡ lốp 175/75 R16 (Bonbanh)
+    clearance: 0.191   // m — khoảng sáng gầm (VnExpress; nguồn khác ghi 0,175)
+  },
+  perf: {
+    vMax: 27.78,       // m/s — tốc độ tối đa 100 km/h (auto-data.net, Bonbanh)
+    t50: 5.3,          // s — 0–50 km/h (vinfastauto.id)
+    t100: 19.3,        // s — 0–100 km/h (Bonbanh bản Eco 2026, Autofun)
+    turnRadius: 4.05,  // m — bán kính quay vòng tối thiểu (Bonbanh bản Plus 2026)
+    coast: 1.5,        // m/s² — giảm tốc khi nhả ga, mô phỏng hãm tái sinh (ước lượng)
+    brake: 7,          // m/s² — phanh (ước lượng)
+    handBrake: 9,      // m/s² — phanh tay, không gây trượt (ước lượng)
+    reverseMax: 5.56,  // m/s — tốc độ lùi tối đa 20 km/h (ước lượng)
+    latMax: 5.9,       // m/s² — trần gia tốc ngang ≈ 0,6 g, giới hạn góc lái theo tốc độ (ước lượng)
+    steerRate: 2.2,    // 1/s — tốc độ bẻ lái bằng phím, phần góc lái tối đa mỗi giây (ước lượng)
+    steerReturn: 3.5,  // 1/s — tốc độ tự trả lái khi nhả phím, phần góc lái tối đa mỗi giây (ước lượng)
+    scrape: 3          // m/s² — hãm thêm khi thân xe cọ dọc vật cản (sau khi đã mất phần tốc độ hướng vào vật cản) (ước lượng)
+  },
+  sim: {               // bước mô phỏng và va chạm (explore/drive/motion.ts, collide.ts)
+    sub: 0.4,          // m — bước con lớn nhất khi dời thân xe (cả quãng góc xe quét khi xoay); nhỏ hơn thân xe nhiều nên không nhảy qua lan can mỏng (ước lượng)
+    dt: 0.1,           // s — bước thời gian lớn nhất; khung dài hơn chia nhiều bước (ước lượng)
+    steps: 60,         // số bước tối đa mỗi khung (6 s); phần dư của khung dài hơn bỏ (tab ẩn lâu) (ước lượng)
+    revV: 0.3,         // m/s — dưới tốc độ này, giữ phanh mà không đạp ga thì xe lùi (ước lượng)
+    floor: 0.1,        // m — vật cản thấp hơn mặt đường + số này không chặn thân xe (mép ô đã là bó vỉa) (ước lượng)
+    touch: 0.2         // s — không bị chặn quá chừng này mới coi là đã rời vật cản (bỏ qua bước lẻ khép khe hở khi đang cọ) (ước lượng)
+  },
+  stepMax: 0.6,        // m — hai mặt đường chênh không quá số này coi là cùng tầng (đường ven sông dưới dốc cầu cách ≥ 2 m, nối ô chênh ≤ 0,1) (ước lượng)
+  roads: {             // mạng đường lái được (spec §4); mặt cắt đường mới như đường ven sông streets.ts: hai dải 9 m, dải giữa 3 m
+    westX: -1064,      // m — tim đường dọc mới bờ Tây, cột lưới bỏ trống ix = −30 của buildCity (hành lang không nhà x −1082,5..−1045,5) (ước lượng)
+    eastX: 1096,       // m — tim đường dọc mới bờ Đông, cột ix = 30 (hành lang x 1077,5..1114,5) (ước lượng)
+    half: 9,           // m — bề rộng mặt đường mỗi chiều của đường mới (2 làn), bằng đường ven sông (ước lượng)
+    median: 3,         // m — dải giữa đường mới, bằng đường ven sông; tổng 21 m ≤ 24 m để lọt hành lang (ước lượng)
+    riverX: 299,       // m — |x| tim đường ven sông Bạch Đằng / Trần Hưng Đạo, mặt cắt như đường mới (streets.ts, thuan-phuoc/site.ts)
+    linkWestZ: -2560,  // m — tim đường nối Bạch Đằng – đường dọc Tây, trong dải trống giữa khu phố và nhà quanh Thuận Phước (ước lượng)
+    linkEastZ: -2260,  // m — tim đường nối Trần Hưng Đạo – đường dọc Đông (ước lượng)
+    southZ: 1400,      // m — đường ven sông phía Nam Trần Thị Lý dừng ở đây (ranh mềm) (ước lượng)
+    northW: -3170,     // m — đầu Bắc đường ven sông bờ Tây (mặt đường site.ts tới −3210), ô cuối là chỗ quay đầu (ước lượng)
+    northE: -3620,     // m — đầu Bắc đường ven sông bờ Đông (mặt đường tới −3660) (ước lượng)
+    axisX0: -1900,     // m — đầu Tây các trục ngang z = 0, −1080, +1300, −1700 (streets.ts, song-han/fixedSpans.ts, tran-thi-ly/deck.ts, han-tunnel/outdoor.ts)
+    axisX1: 1480,      // m — đầu Đông các trục ngang (như trên, cả thuan-phuoc/deck.ts)
+    tpX0: -1500,       // m — đầu Tây trục Thuận Phước (thuan-phuoc/deck.ts)
+    endLen: 24,        // m — ô nút giao chỗ quay đầu ở cuối mỗi đường cụt, phủ cả hai chiều và dải giữa (ước lượng)
+    slipDragon: { zIn: 21, zOut: 30, jLen: 21 },   // m — nhánh rẽ chân Cầu Rồng: |z| mép trong / mép ngoài (mép gờ mặt cầu |z| = 19), chiều dài ô nút giao ngay ngoài |x| = 333 (ước lượng)
+    slipTtl: { zIn: 20, zOut: 29, jLen: 21 },      // m — nhánh rẽ chân Trần Thị Lý: |z − 1300| mép trong / mép ngoài (mép đường đắp 17,25), chiều dài ô nút giao ngay ngoài x = −470 / +450 (ước lượng)
+    clearMargin: 2     // m — lề quanh mặt đường mới: nhà, cây, cột đèn, cọ lấn vào thì thu về scale 0 (environment/driveRoads.ts) (ước lượng)
+  },
+  tunnelFar: 2.5,      // hệ số nhân ngưỡng ẩn theo khoảng cách của Hầm khi đang lái: hr-road 650 → 1 625 m, cả công trình 1 500 → 3 750 m, để thấy mặt đường hầm ở nút giao với hai đường dọc mới (|x| ≈ 1 064 / 1 096) (ước lượng)
+  solids: {            // vật cản cứng (explore/drive/solids.ts, sceneSolids.ts)
+    yTol: 0.5,         // m — vật cản dọc mặt cầu / hầm dốc chia đoạn sao cho cao độ mặt đường trong mỗi đoạn lệch không quá số này; nhỏ hơn nhiều so với khoảng cách hai tầng đường (≥ 2 m) (ước lượng)
+    near: 12,          // m — nhà, chân đế địa danh cách mép ô đường không quá số này thì thành vật cản (cho cả camera sau xe); xa hơn bỏ để danh sách ngắn (ước lượng)
+    footTop: 40        // m — chiều cao chân đế địa danh tính từ mặt đất (riverfront footprints không có chiều cao) (ước lượng)
+  },
+  spawn: { x: -150, lane: 8.625, gap: 9 },   // m — chỗ xuất phát trên Cầu Rồng: x giữa, |z| tim làn giữa chiều đi Đông, các slot cách nhau gap theo x (ước lượng)
+  ai: { radius: 40 },  // m — bán kính lấy hộp xe tự động quanh xe người chơi mỗi khung (common/trafficQuery.ts trNearby) (ước lượng)
+  remote: {            // xe của người chơi khác (explore/multi/remoteDrive.ts, labels.ts)
+    labelAbove: 0.6,   // m — nhãn tên đặt cao hơn nóc xe chừng này (nóc = car.height) (spec)
+    brakeDecel: 3,     // m/s² — tốc độ |v| giảm nhanh hơn mức này thì coi là đang phanh, bật đèn phanh; cao hơn coast (1,5) để nhả ga không sáng đèn (ước lượng)
+    pitchTau: 0.15,    // s — hằng số thời gian làm mượt độ nghiêng dọc suy từ cao độ nội suy giữa hai khung (ước lượng)
+    pitchMax: 0.5,     // rad — độ nghiêng dọc lớn nhất của xe người khác, kẹp để một bước nhảy vị trí không dựng xe thẳng đứng (ước lượng)
+    pitchMinMove: 0.05, // m — một khung dời ngang ít hơn chừng này thì giữ độ nghiêng cũ (xe đứng yên, tránh nhiễu) (ước lượng)
+    staleMs: 1000      // ms — quá chừng này không nhận gói mới thì coi v = 0 (bánh thôi quay, đèn phanh tắt); ExTrack kẹp ở mẫu cuối nên xe đứng nhưng v cũ vẫn giữ (ước lượng)
+  },
+  evac: {              // sơ tán xe khỏi nhịp quay Cầu sông Hàn khi cầu rời CLOSED (explore/drive/motion.ts drEvacStep)
+    speed: 15,         // m/s — tốc độ trượt mong muốn (≈ 54 km/h): từ giữa nhịp (x = 0) ra ngoài barie ≈ 70 m mất ≈ 4,7 s (ước lượng)
+    minTime: 0.5,      // s — thời gian trượt ngắn nhất, để đoạn ngắn không giật như dịch chuyển tức thời (ước lượng)
+    share: 0.8,        // phần thời gian còn lại tới lúc nhịp bắt đầu xoay (ROTATING_OPEN) dành cho trượt; tốc độ quay 30× chỉ còn ≈ 1,07 s nên trượt nhanh hơn speed (ước lượng)
+    gap: 0.5           // m — đuôi xe cách barie chừng này ở chỗ dừng sau sơ tán (ước lượng)
+  },
+  model: {             // hình xe trong cảnh (explore/drive/car.ts), mô hình public/car/vf3.glb (scripts/car/convert.py)
+    url: 'car/vf3.glb',   // đường dẫn tương đối BASE_URL tới mô hình xe
+    timeoutMs: 8000,   // ms — nạp quá chừng này thì bỏ, giữ hình tạm (ước lượng)
+    warmMs: 1500,      // ms — chờ biên dịch sẵn shader của mô hình vừa nạp tối đa chừng này, quá thì vẫn dùng mô hình (D-018) (ước lượng)
+    paintRough: 0.35,  // độ nhám sơn thân (nguồn để 0 nên như gương) (ước lượng)
+    paintMetal: 0.25,  // độ kim loại sơn thân (nguồn để 0) (ước lượng)
+    headNight: 1.6,    // hệ số nhân phát sáng mặt đèn pha (emissive map của nguồn) khi uNight = 1 (ước lượng)
+    tailNight: 0.9,    // hệ số phát sáng mặt đèn hậu (nhân màu cơ bản) khi uNight = 1 (ước lượng)
+    tailBrake: 4,      // hệ số phát sáng mặt đèn hậu khi đạp phanh, cả ban ngày; đủ lớn để vượt ngưỡng bloom 0,98 và khác rõ đèn hậu đêm (ước lượng)
+    tailTint: 0xff140d,   // màu phát sáng đèn hậu (nhân ảnh dán): đỏ, thay trắng vì ảnh dán nhạt làm đèn phanh đêm thành hồng nhạt; logo trong ảnh cũng đỏ theo (ước lượng)
+    glassRough: 0.3,   // độ nhám kính (vật liệu Material.002 của nguồn để 0 ⇒ điểm chói ánh trăng rất hẹp, rất sáng, loang xanh sau kính hậu ban đêm) (ước lượng)
+    shadow: { pad: 0.45, opacity: 0.55, lift: 0.03 },   // tấm bóng mờ dưới gầm: m — phần nhô ra mỗi chiều so với thân xe; độ đục tối đa; m — nâng khỏi mặt đường (ước lượng)
+    temp: { wheelWidth: 0.2 }   // m — bề rộng bánh của hình tạm (ước lượng)
+  },
+  cam: {               // camera sau xe (explore/drive/camera.ts)
+    dist: 7.5,         // m — camera lùi sau tâm xe theo mặt bằng (ước lượng)
+    height: 2.8,       // m — camera cao hơn mặt đường dưới xe (ước lượng)
+    lookAhead: 2,      // m — điểm nhìn ở trước tâm xe chừng này theo hướng xe (ước lượng)
+    look: 1.2,         // m — điểm nhìn và gốc đoạn kiểm vật cản cao hơn mặt đường dưới xe (ước lượng)
+    lag: 6,            // 1/s — tốc độ hướng camera bám theo hướng xe khi rẽ, cũng là tốc độ nở lại khoảng cách / độ cao (ước lượng)
+    returnAfter: 2.5,  // s — thôi kéo chuột chừng này thì góc lệch tự về sau xe (ước lượng)
+    returnRate: 2,     // 1/s — tốc độ góc lệch về 0 (ước lượng)
+    tunnelDist: 5,     // m — khoảng lùi khi xe trong ô hầm (ước lượng)
+    tunnelHeight: 1.9, // m — độ cao camera khi xe trong ô hầm hoặc khi vướng vật cản (ước lượng)
+    minDist: 2.5,      // m — vướng vật cản thì kéo gần nhưng không dưới số này (ước lượng)
+    gap: 0.3,          // m — lùi khỏi chỗ đoạn xe → camera chạm vật cản (ước lượng)
+    roof: 0.5,         // m — camera thấp hơn trần ống hầm (hrRoadY + hanTunnel.clear) ít nhất chừng này (ước lượng)
+    floor: 0.3,        // m — camera cao hơn mặt đường tại chỗ nó ít nhất chừng này (ước lượng)
+    pitchMin: -0.2,    // rad — kéo chuột lên: góc hạ camera nhỏ nhất (ước lượng)
+    pitchMax: 0.9,     // rad — kéo chuột xuống: góc nâng camera lớn nhất (ước lượng)
+    mouse: 0.005,      // rad/px — độ nhạy kéo chuột, như đi dạo (ước lượng)
+    fov: 62            // độ — góc nhìn dọc khi lái (ước lượng)
+  },
+  hud: {               // đồng hồ tốc độ, bản đồ nhỏ, gợi ý phím (explore/drive/hud.ts)
+    hintMs: 6000,      // ms — gợi ý phím tự ẩn sau chừng này kể từ lúc vào chế độ (ước lượng)
+    mapMs: 100,        // ms — bản đồ nhỏ vẽ lại tối đa mỗi chừng này, tức 10 lần/giây (spec)
+    mapDesk: 200,      // px — cạnh dài của bản đồ nhỏ trên máy tính (ước lượng)
+    mapTouch: 128,     // px — cạnh dài của bản đồ nhỏ trên điện thoại (ước lượng)
+    colors: { river: '#1d3b55', land: '#16241f', road: '#9aa5a0', bridge: '#f0e4c4', tunnel: '#e08a3c', mark: '#e6bd6a', me: '#ffd34d', edge: 'rgba(255,255,255,.28)' },   // màu bản đồ nhỏ: nền sông, nền đất, đường, cầu, hầm (phương án đề xuất), chấm công trình, xe của mình, viền
+    roadMin: 1.5,      // px — bề rộng tối thiểu nét vẽ của một ô đường để đường hẹp không biến mất (ước lượng)
+    meR: 4.5,          // px — cỡ mũi tên chỉ xe của mình (ước lượng)
+    otherR: 3          // px — bán kính chấm xe người khác (ước lượng)
+  },
+  touch: {             // điều khiển cảm ứng (explore/drive/touch.ts): ngón trái cần gạt ngang, ngón phải GA và PHANH
+    padW: 180,         // px — bề rộng cần gạt ngang trên màn hình rộng (hẹp thì CSS thu theo bề rộng khung nhìn) (ước lượng)
+    padH: 72,          // px — bề cao cần gạt ngang (ước lượng)
+    knob: 56,          // px — đường kính núm cần gạt (ước lượng)
+    dead: 0.1,         // vùng chết của cần gạt, phần bán kính trượt (ước lượng)
+    gasW: 92,          // px — bề rộng nút GA (ước lượng)
+    gasH: 124,         // px — bề cao nút GA, to hơn PHANH (ước lượng)
+    brakeW: 76,        // px — bề rộng nút PHANH (ước lượng)
+    brakeH: 84,        // px — bề cao nút PHANH (ước lượng)
+    activityMs: 1000   // ms — giữ yên cần gạt hoặc bàn đạp thì báo "còn đó" mỗi chừng này (ước lượng)
+  },
+  sound: {             // tiếng mô tơ điện và còi, tổng hợp bằng Web Audio (explore/drive/sound.ts)
+    base: 70,          // Hz — tần số mô tơ khi xe đứng yên (ước lượng)
+    perMs: 9,          // Hz mỗi m/s — tần số tăng theo |v| (≈ 320 Hz ở 100 km/h) (ước lượng)
+    gainIdle: 0.02,    // âm lượng mô tơ khi đứng yên, trước nút âm lượng chung (ước lượng)
+    gainMax: 0.1,      // âm lượng mô tơ ở tốc độ tối đa (ước lượng)
+    lowpass: 900,      // Hz — lọc thông thấp mô tơ cho tiếng rì êm (ước lượng)
+    updateMs: 60,      // ms — cập nhật tham số âm thanh tối đa mỗi chừng này (mỗi lần là một sự kiện tự động hoá, D-018) (ước lượng)
+    smooth: 0.08,      // s — hằng số thời gian làm mượt tham số (ước lượng)
+    hornHz: [392, 494],   // Hz — hai nốt còi (Sol4, Si4) (ước lượng)
+    hornGain: 0.12     // âm lượng còi (ước lượng)
+  }
+};
+
 /* ------------------------- Tàu thuyền sông Hàn ------------------------- */
 /* docs/superpowers/specs/2026-11-10-tau-thuyen-song-han-design.md — mọi số là ước lượng (không có số liệu công bố cho từng tàu) */
 export type BoatTypeId = 'A' | 'B' | 'C' | 'D' | 'E';
@@ -845,6 +988,7 @@ export const CONFIG = {
   tourAll: tourAllBase,
   explore: { ...exploreBase, multi: multiParams },
   stroll: strollBase,
+  drive: driveBase,
   vehicles: vehiclesBase,
   trees: treesBase,
   people: peopleBase

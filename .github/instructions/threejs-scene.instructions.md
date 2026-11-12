@@ -13,7 +13,7 @@ description: Quy tắc chung khi viết code Three.js trong src/
   - Chi tiết nhỏ → `details` (LOD) hoặc `farHide`; không cần phản chiếu → `noReflect` / `layers.set(1)`.
 - **Vật liệu:** tái dùng `MAT` (`core/materials.ts`) khi có thể; vật liệu riêng tạo trong `materials.ts` của công trình và dispose được.
 - **Ngày/đêm:** đọc `shared.uNight`; đèn bằng emissive/shader, không thêm `PointLight`/`SpotLight`.
-- **Texture:** vẽ bằng canvas (`common/textures.ts`, `core/textures.ts`), không nạp ảnh ngoài.
+- **Texture:** phần cảnh dựng bằng code vẽ texture bằng canvas (`common/textures.ts`, `core/textures.ts`). Mô hình ngoài và texture đi kèm được phép theo D-033 (`copilot-instructions.md` §3 mục 5): giấy phép, ghi nguồn, trần dung lượng có test, đường lùi khi tải lỗi.
 - **Hệ trục:** X Tây→Đông, −Z Bắc, mét; y = 0 mặt nước.
 - **Dispose:** mọi geometry/material/`CanvasTexture` tự tạo phải giải phóng được (theo `BridgeBase.dispose()`).
 - Comment tiếng Việt; khối tiêu đề `/* ===== ... ===== */` mô tả công trình/vị trí ở đầu file chính.
@@ -21,3 +21,4 @@ description: Quy tắc chung khi viết code Three.js trong src/
 - **Đèn (D-031):** không đặt `visible` của đèn ngoài `core/lights.ts`; cường độ ghi trước `stepLights()` trong `animate()`. Đèn cường độ 0 vẫn tốn shader mọi điểm ảnh.
 - **Lưới nặng có đổ bóng / phản chiếu:** cân nhắc bản thưa qua `core/passLod.ts` thay vì vẽ đủ chi tiết ở cả ba lượt (bóng, phản chiếu, chính).
 - **Người đi bộ thật (D-032, `src/common/people/crowd*.ts`):** mỗi hệ một `THREE.BatchedMesh` (r165), mỗi người một `addGeometry`; phải `setColorAt` cho mọi id; chỉ dựng khi `crowdUsable(crowdGet(), có WEBGL_multi_draw)`, thiếu `WEBGL_multi_draw` thì r165 vẽ mỗi người một lệnh nên phải dùng hình khối cũ. Chọn nhân vật bằng băm chỉ số, không `rand()` / `rng`. Ẩn người bằng `setVisibleAt`. Mọi lưới / vật liệu / texture tạo lúc dựng; texture trong uniform phải `renderer.initTexture`. Làm nóng `BatchedMesh` phải qua `bmUncull` trong `core/prewarm.ts` (tạm tắt `perObjectFrustumCulled` và đặt `_visibilityChanged`), nếu không mọi id bị cắt thì three bỏ lệnh vẽ. Vật liệu hình khối `peopleWalk` vẫn cần trong cảnh cho hình tạm của Đi dạo (`stBlocky`). Chi tiết: `systemPatterns.md` mục "Mẫu đám đông người thật".
+- Chế độ Lái xe (D-034, `src/explore/drive/`): mặt đường mới, dải giữa / vỉa đã cắt đoạn, vật cản đọc từ cảnh qua `drCollectRuntime` (một lần mỗi `net`). Thêm / dời / xóa công trình, nhà, đường thì xem lại `driveRoadGeo.ts` (bảng mặt cắt chép tay), `roadData.ts`, `drClearRoads` (dọn nhà / cây trên đường mới, dựng SAU mọi `rand()`) và `test:drive:unit`; xe người chơi dùng số thật của VF 3 (`CONFIG.drive`), không bóp mô hình để vừa đường. Xem `systemPatterns.md` mục "Mẫu chế độ lái xe".

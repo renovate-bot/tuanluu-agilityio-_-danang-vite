@@ -1,5 +1,5 @@
-/* ===== Dù lượn và đi dạo nhiều người: giao diện chế độ xem và các thông báo =====
-   Chữ theo session.kind: khóa exMp* (dù lượn) hoặc st* (đi dạo); tên người đang xem lấy từ exRemotes hoặc stAvatars.
+/* ===== Dù lượn, đi dạo và lái xe nhiều người: giao diện chế độ xem và các thông báo =====
+   Chữ theo session.kind (multi/keys.ts): khóa exMp* (dù lượn), st* (đi dạo) hoặc dr* (lái xe); tên người đang xem lấy từ exRemotes, stAvatars hoặc exDrivers.
    #exMpWatch "Đang xem: tên", #exMpInvite (lời mời khi còn chỗ: ô tên nếu chưa có tên hợp lệ + nút vào bay), #exMpNotice (late / released / lost).
    late tự ẩn sau lateMs, released (khi xem) và lost (khi bay) tự ẩn sau noticeMs; nameBad giữ tới khi gõ tên khác.
    Không điều khiển camera hay phiên: explore/index.ts gọi exWatchShow / exWatchRender / exWatchHide và tự xử lý chuyển pha.
@@ -9,6 +9,9 @@ import { t, onChange as onLang } from '../../i18n';
 import { exSanitizeName } from './protocol';
 import { exRemotes } from './remote';
 import { stAvatars } from '../stroll/avatars';
+import { exDrivers } from './remoteDrive';
+import { exMpKeys } from './keys';
+import type { Kind } from './protocol';
 import { loadName, saveName } from './lobby';
 import type { MultiSession } from './session';
 
@@ -59,9 +62,10 @@ function accept(): void {
 }
 
 /* Lời mời: ghi chữ theo loại và nhớ khóa ở data-i18n để đổi ngôn ngữ dịch đúng */
-function inviteKeys(walk: boolean): void {
-  for (const [id, fly, st] of [['exMpInviteText', 'exMpInvite', 'stInvite'], ['exMpInviteFly', 'exMpInviteFly', 'stInviteGo']]) {
-    const el = $(id), key = walk ? st : fly;
+function inviteKeys(kind: Kind): void {
+  const K = exMpKeys(kind);
+  for (const [id, key] of [['exMpInviteText', K.invite], ['exMpInviteFly', K.inviteGo]]) {
+    const el = $(id);
     if (el.dataset.i18n !== key) { el.dataset.i18n = key; el.textContent = t(key); }
   }
 }
@@ -70,11 +74,11 @@ export function exWatchRender(): void {
   const s = session;
   if (!s || s.phase !== 'watching') return;
   /* Dòng "Đang xem" */
-  const walk = s.kind === 'walk';
-  const nm = s.watched >= 0 ? (walk ? stAvatars.name(s.watched) : exRemotes.name(s.watched)) : null;
+  const K = exMpKeys(s.kind);
+  const nm = s.watched >= 0 ? (s.kind === 'walk' ? stAvatars.name(s.watched) : s.kind === 'drive' ? exDrivers.name(s.watched) : exRemotes.name(s.watched)) : null;
   const w = $('exMpWatch');
   w.hidden = nm === null;
-  w.textContent = nm === null ? '' : t(walk ? 'stWatch' : 'exMpWatching', { name: '\u2068' + nm + '\u2069' });
+  w.textContent = nm === null ? '' : t(K.watching, { name: '\u2068' + nm + '\u2069' });
   /* Thông báo từ phiên: nút đã có trả lời thì mở khóa */
   if (pending && (s.notice === 'late' || s.notice === 'nameBad')) {
     unlock();
@@ -86,18 +90,18 @@ export function exWatchRender(): void {
     $<HTMLInputElement>('exMpInviteName').value = '';
   }
   let key = '';
-  if (s.notice === 'late') key = performance.now() < lateUntil ? (walk ? 'stLate' : 'exMpLate') : '';
+  if (s.notice === 'late') key = performance.now() < lateUntil ? K.late : '';
   else if (s.notice === 'released') {
     const now = performance.now();
     if (!relUntil) { relUntil = now + CONFIG.explore.multi.noticeMs; clearTimeout(relTimer); relTimer = window.setTimeout(exWatchRender, CONFIG.explore.multi.noticeMs + 50); }
-    key = now < relUntil ? (walk ? 'stReleased' : 'exMpReleased') : '';
+    key = now < relUntil ? K.released : '';
   }
   else if (s.notice === 'nameBad') key = 'exMpNameBad';
   exWatchNotice(key);
   /* Lời mời */
   const inv = $('exMpInvite'), input = $<HTMLInputElement>('exMpInviteName'), btn = $<HTMLButtonElement>('exMpInviteFly');
   inv.hidden = !s.invite;
-  inviteKeys(walk);
+  inviteKeys(s.kind);
   const needName = knownName() === null;
   input.hidden = !needName;
   btn.disabled = pending || (needName && exSanitizeName(input.value) === null);
