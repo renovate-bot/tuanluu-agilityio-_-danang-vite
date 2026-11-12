@@ -1,6 +1,6 @@
-/* ===== Dù lượn và đi dạo nhiều người: bước chọn slot và nhập tên (trong hộp thoại #chooser) =====
-   Hiện sau khi bấm thẻ Dù lượn (hoặc Đi dạo) lúc có máy chủ: 5 chấm + "Còn N trên 5 chỗ", tên những người cùng loại (session.peers), ô tên, nút Bay ngay / Đi dạo ngay.
-   Chữ chọn theo session.kind (khóa exMp* cho dù lượn, st* cho đi dạo); tên nhớ dùng chung cho hai loại.
+/* ===== Dù lượn, đi dạo và lái xe nhiều người: bước chọn slot và nhập tên (trong hộp thoại #chooser) =====
+   Hiện sau khi bấm thẻ Dù lượn (hoặc Đi dạo) lúc có máy chủ: 5 chấm + "Còn N trên 5 chỗ", tên những người cùng loại (session.peers), ô tên, nút Bay ngay / Đi dạo ngay / Lái ngay.
+   Chữ chọn theo session.kind (multi/keys.ts: exMp* cho dù lượn, st* cho đi dạo, dr* cho lái xe); tên nhớ dùng chung cho ba loại.
    Cập nhật trực tiếp theo MultiSession; tên người khác chỉ ghi bằng textContent. Tên của mình nhớ ở localStorage.
    Pha lobby: cho nhập tên và giành chỗ. Pha solo (không kết nối được): báo ngoại tuyến. Nút Bay một mình hiện ở cả hai pha (đóng phiên rồi bay một mình).
    Pha flying: gọi onFly. Pha watching (hết chỗ): gọi onWatch (chế độ xem do Task 7 làm).
@@ -10,6 +10,7 @@ import { CONFIG } from '../../config';
 import { t, onChange as onLang } from '../../i18n';
 import { exMulti } from './index';
 import { exSanitizeName } from './protocol';
+import { exMpKeys, exMpSlots } from './keys';
 import type { MultiSession } from './session';
 
 export interface LobbyCallbacks { onFly: () => void; onWatch: () => void; onSolo: () => void; onBack: () => void }
@@ -63,16 +64,16 @@ function setKey(id: string, key: string): void {
 
 function render(): void {
   if (!cur) return;
-  const session = cur.session, cb = cur.cb, walk = session.kind === 'walk';
+  const session = cur.session, cb = cur.cb, K = exMpKeys(session.kind);
   const fly = $<HTMLButtonElement>('exMpFly'), soloBtn = $<HTMLButtonElement>('exMpSolo'), input = $<HTMLInputElement>('exMpNameIn');
   const ph = session.phase;
   if (ph === 'flying') { finish(cb.onFly); return; }
   if (ph === 'watching') { finish(cb.onWatch); return; }
-  /* Chữ theo loại sảnh: bầu trời (dù lượn) hoặc sông Hàn (đi dạo) */
-  setKey('exMpSky', walk ? 'stSky' : 'exMpSky');
-  setKey('exMpFly', walk ? 'stGo' : 'exMpFly');
-  setKey('exMpSolo', walk ? 'stSolo' : 'exMpSolo');
-  setKey('exMpOffline', walk ? 'stOffline' : 'exMpOffline');
+  /* Chữ theo loại sảnh: bầu trời (dù lượn) hoặc sông Hàn (đi dạo, lái xe) */
+  setKey('exMpSky', K.sky);
+  setKey('exMpFly', K.go);
+  setKey('exMpSolo', K.solo);
+  setKey('exMpOffline', K.offline);
   const offline = ph === 'solo';
   $('exMpOnline').hidden = offline;
   $('exMpOffline').hidden = !offline;
@@ -80,8 +81,8 @@ function render(): void {
   if (offline) { if (document.activeElement !== soloBtn) soloBtn.focus({ preventScroll: true }); return; }
   const ready = ph === 'lobby';
   const peers = session.peers;
-  const free = (walk ? M.stroll.slots : M.slots) - peers.length;
-  $('exMpSeats').textContent = !ready ? '…' : walk && free <= 0 ? t('stFull') : t(walk ? 'stSeats' : 'exMpSeats', { n: free });
+  const free = exMpSlots(session.kind) - peers.length;
+  $('exMpSeats').textContent = !ready ? '…' : K.full && free <= 0 ? t(K.full) : t(K.seats, { n: free });
   $('exMpNameHint').textContent = t('exMpNameMax', { n: M.nameMax });
   const taken = new Set(peers.map(f => f.slot));
   $('exMpDots').querySelectorAll<HTMLElement>('i').forEach((d, i) => {

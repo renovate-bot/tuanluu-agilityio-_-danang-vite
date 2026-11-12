@@ -23,6 +23,12 @@ export const drCars = {
     for (const [s, c] of cars) if (!want.has(s)) { c.dispose(); cars.delete(s); }
   },
   place(slot: number, p: DrPlace): void { cars.get(slot)?.place(p); },
+  /* Số xe đang có (0 = group không có gì để vẽ, người gọi gỡ khỏi cảnh) */
+  get count(): number { return cars.size; },
+  /* Ẩn / hiện thân xe của slot (xe người khác chưa có mẫu vị trí đầu thì chưa hiện; bánh chỉ có sau lần place đầu) */
+  show(slot: number, on: boolean): void { const c = cars.get(slot); if (c) c.group.visible = on; },
+  /* Gỡ xe của một slot (slot đổi chủ: xe mới không trượt từ chỗ người cũ) */
+  remove(slot: number): void { const c = cars.get(slot); if (c) { c.dispose(); cars.delete(slot); } },
   /* Vị trí xe của slot vào out; false nếu không có xe */
   pos(slot: number, out: THREE.Vector3): boolean {
     const c = cars.get(slot);

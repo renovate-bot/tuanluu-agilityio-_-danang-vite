@@ -495,5 +495,16 @@
   "drRoster": "Lái xe",
   "drMapTunnel": "Hầm (phương án đề xuất)",
   "drLostChooser": "Mất kết nối. Chọn Ô tô để kết nối lại.",
-  "drWatch": "Đang xem: {name}"
+  "drWatch": "Đang xem: {name}",
+  "drRosterAll": "Lái xe {d}/5 · Đi dạo {w}/5 · Bay {f}/5",
+  "drSeats": "Còn {n} trên 5 chỗ lái",
+  "drFull": "Đã đủ 5 người lái",
+  "drGo": "Lái ngay",
+  "drSolo": "Lái một mình",
+  "drOffline": "Không kết nối được máy chủ. Bạn vẫn lái được, nhưng một mình.",
+  "drInvite": "Có chỗ trống. Bạn muốn lái xe không?",
+  "drInviteGo": "Vào lái",
+  "drLate": "Đã có người nhanh hơn.",
+  "drReleased": "Bạn đã nhường chỗ.",
+  "drLost": "Mất kết nối. Bạn vẫn lái được, nhưng một mình."
 }

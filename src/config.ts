@@ -726,6 +726,13 @@ const driveBase = {
   },
   spawn: { x: -150, lane: 8.625, gap: 9 },   // m — chỗ xuất phát trên Cầu Rồng: x giữa, |z| tim làn giữa chiều đi Đông, các slot cách nhau gap theo x (ước lượng)
   ai: { radius: 40 },  // m — bán kính lấy hộp xe tự động quanh xe người chơi mỗi khung (common/trafficQuery.ts trNearby) (ước lượng)
+  remote: {            // xe của người chơi khác (explore/multi/remoteDrive.ts, labels.ts)
+    labelAbove: 0.6,   // m — nhãn tên đặt cao hơn nóc xe chừng này (nóc = car.height) (spec)
+    brakeDecel: 3,     // m/s² — tốc độ |v| giảm nhanh hơn mức này thì coi là đang phanh, bật đèn phanh; cao hơn coast (1,5) để nhả ga không sáng đèn (ước lượng)
+    pitchTau: 0.15,    // s — hằng số thời gian làm mượt độ nghiêng dọc suy từ cao độ nội suy giữa hai khung (ước lượng)
+    pitchMax: 0.5,     // rad — độ nghiêng dọc lớn nhất của xe người khác, kẹp để một bước nhảy vị trí không dựng xe thẳng đứng (ước lượng)
+    pitchMinMove: 0.05 // m — một khung dời ngang ít hơn chừng này thì giữ độ nghiêng cũ (xe đứng yên, tránh nhiễu) (ước lượng)
+  },
   evac: {              // sơ tán xe khỏi nhịp quay Cầu sông Hàn khi cầu rời CLOSED (explore/drive/motion.ts drEvacStep)
     speed: 15,         // m/s — tốc độ trượt mong muốn (≈ 54 km/h): từ giữa nhịp (x = 0) ra ngoài barie ≈ 70 m mất ≈ 4,7 s (ước lượng)
     minTime: 0.5,      // s — thời gian trượt ngắn nhất, để đoạn ngắn không giật như dịch chuyển tức thời (ước lượng)

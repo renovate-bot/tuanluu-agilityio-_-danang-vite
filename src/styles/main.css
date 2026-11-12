@@ -294,7 +294,8 @@ body.explore #exMpRoster:not([hidden]){display:flex;flex-direction:column;gap:3p
 .ex-mp-row{display:flex;align-items:center;gap:6px;}
 .ex-mp-row.me{font-weight:600;}
 .ex-mp-row i{width:9px;height:9px;border-radius:50%;flex:none;}
-.ex-mp-row.walk i{border-radius:2px;}   /* người đi dạo: chấm vuông, người bay: chấm tròn */
+.ex-mp-row.walk i{border-radius:2px;}   /* người đi dạo: chấm vuông, người bay: chấm tròn, người lái xe: chấm thoi */
+.ex-mp-row.drive i{border-radius:2px;transform:rotate(45deg) scale(.85);}
 body.explore #exMpNotice:not([hidden]){display:block;position:fixed;left:50%;transform:translateX(-50%);top:calc(100px + env(safe-area-inset-top,0px));padding:8px 14px;font-size:12px;color:var(--text);z-index:5;}
 /* Chế độ xem (hết chỗ hoặc vừa nhường chỗ): không có dù của mình nên ẩn dòng hướng dẫn lái và đồng hồ; hiện "Đang xem" và lời mời */
 body.ex-watching #exHint,body.ex-watching #exSpeed{display:none;}
@@ -329,6 +330,15 @@ body.drive #drHud{display:block;position:fixed;inset:0;z-index:4;pointer-events:
 #drHint.off{opacity:0;transition:opacity .6s;}
 @media (hover:hover){
   body.drive #drHint{display:block;left:50%;transform:translateX(-50%);top:calc(14px + env(safe-area-inset-top,0px));padding:8px 14px;font-size:12px;color:var(--text);text-align:center;max-width:calc(100vw - 200px);box-sizing:border-box;}
+}
+/* Lái xe nhiều người: danh sách người chơi lên góc trên phải, dưới nút Thoát (đáy phải dành cho đồng hồ tốc độ, đáy trái cho bản đồ nhỏ, đáy phải trên cảm ứng cho bàn đạp); ar vẫn ở bên phải.
+   Z-index 5 / 6 của danh sách và lời mời trên #drHud (4) nên bấm được trên lớp vuốt #drLook. Ô FPS (.stats, chỉ khi ?test) nhấc lên khỏi đồng hồ. Chế độ xem: không điều khiển, ẩn bàn đạp / cần gạt / gợi ý phím */
+body.drive #exMpRoster:not([hidden]){inset-inline-end:auto;right:calc(14px + env(safe-area-inset-right,0px));bottom:auto;top:calc(100px + env(safe-area-inset-top,0px));box-sizing:border-box;max-height:calc(100vh - 88px - var(--dr-gas-h,124px));overflow:hidden;}
+body.compact.drive #exMpRoster:not([hidden]){top:calc(56px + env(safe-area-inset-top,0px));}
+body.drive.ex-test .stats{bottom:calc(74px + env(safe-area-inset-bottom,0px));}
+body.drive.ex-watching #drSteer,body.drive.ex-watching #drGas,body.drive.ex-watching #drBrake,body.drive.ex-watching #drLook,body.drive.ex-watching #drHint{display:none;}
+@media (hover:none){
+  body.drive.ex-watching #drSpeed{display:none;}   /* đồng hồ giữa trên đè dòng "Đang xem" */
 }
 body.drive #scene{cursor:grab;}
 body.drive #scene:active{cursor:grabbing;}

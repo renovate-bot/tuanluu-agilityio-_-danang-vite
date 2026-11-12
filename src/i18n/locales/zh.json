@@ -495,5 +495,16 @@
   "drRoster": "驾驶",
   "drMapTunnel": "隧道（建议方案）",
   "drLostChooser": "连接已断开。请选择“汽车”重新连接。",
-  "drWatch": "正在观看：{name}"
+  "drWatch": "正在观看：{name}",
+  "drRosterAll": "驾驶 {d}/5 · 散步 {w}/5 · 飞行 {f}/5",
+  "drSeats": "5个驾驶名额，还剩{n}个",
+  "drFull": "5个驾驶名额已满",
+  "drGo": "立即驾驶",
+  "drSolo": "独自驾驶",
+  "drOffline": "无法连接服务器。你仍可独自驾驶。",
+  "drInvite": "有空位。想去驾驶吗？",
+  "drInviteGo": "加入驾驶",
+  "drLate": "有人比你更快。",
+  "drReleased": "你已让出位置。",
+  "drLost": "连接已断开。你仍可独自驾驶。"
 }

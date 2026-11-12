@@ -495,5 +495,16 @@
   "drRoster": "運転",
   "drMapTunnel": "トンネル（提案案）",
   "drLostChooser": "接続が切れました。再接続するには「車」を選んでください。",
-  "drWatch": "観戦中: {name}"
+  "drWatch": "観戦中: {name}",
+  "drRosterAll": "運転 {d}/5 · 散歩 {w}/5 · 飛行 {f}/5",
+  "drSeats": "運転の枠 5 つのうち残り {n}",
+  "drFull": "運転の枠 5 つが埋まっています",
+  "drGo": "今すぐ運転",
+  "drSolo": "一人で運転",
+  "drOffline": "サーバーに接続できません。一人で運転することはできます。",
+  "drInvite": "枠が空きました。運転しますか？",
+  "drInviteGo": "運転に参加",
+  "drLate": "他の人が先でした。",
+  "drReleased": "枠を譲りました。",
+  "drLost": "接続が切れました。一人で運転を続けられます。"
 }

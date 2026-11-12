@@ -93,8 +93,8 @@ export function drHudHide(): void {
   net = null; ctx = null;
 }
 
-/* Mỗi khung: số km/h (ghi DOM khi đổi), bản đồ nhỏ (tối đa mapMs một lần); others: xe người khác (Task 11) */
-export function drHudUpdate(s: DrState, others: DrMapDot[]): void {
+/* Mỗi khung: số km/h (ghi DOM khi đổi), bản đồ nhỏ (tối đa mapMs một lần); others: xe người khác (exDrivers.dots) */
+export function drHudUpdate(s: Pick<DrState, 'x' | 'z' | 'yaw' | 'v'>, others: DrMapDot[]): void {
   if (!el || !net) return;
   const k = drKmh(s.v);
   if (k !== lastKmh) { lastKmh = k; if (el.kmh) el.kmh.textContent = String(k); }

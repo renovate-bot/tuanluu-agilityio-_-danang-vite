@@ -1,6 +1,6 @@
-/* ===== Dù lượn và đi dạo nhiều người: điều phối phía khách =====
-   Nối MultiSession (kết nối, phiên) với exRemotes (dù người khác), stAvatars (người đi dạo khác), nhãn tên và danh sách người chơi.
-   Người bay thấy người đi dạo và ngược lại; mỗi phiên chỉ giữ một loại chỗ (session.kind).
+/* ===== Dù lượn, đi dạo và lái xe nhiều người: điều phối phía khách =====
+   Nối MultiSession (kết nối, phiên) với exRemotes (dù người khác), stAvatars (người đi dạo khác), exDrivers (xe người khác), nhãn tên và danh sách người chơi.
+   Cả ba loại thấy nhau; mỗi phiên chỉ giữ một loại chỗ (session.kind). drCars.group chỉ ở trong cảnh khi có xe (exDrivers.onCars), không thì 0 lệnh vẽ.
    Chỉ mở kết nối khi có người gọi begin(); ?test mà không có multi= thì url() rỗng nên không bao giờ mở WebSocket. */
 import { scene, camera } from '../../core/renderer';
 import { CONFIG } from '../../config';
@@ -11,9 +11,12 @@ import { exRemotes } from './remote';
 import { exLabelsUpdate, exLabelsClear } from './labels';
 import { ExIdle } from './idle';
 import { stAvatars } from '../stroll/avatars';
+import { exDrivers } from './remoteDrive';
+import { drCars } from '../drive/cars';
 import type { Kind } from './protocol';
 import type { GliderState } from '../flight';
 import type { StState } from '../stroll/motion';
+import type { DrState } from '../drive/motion';
 
 const M = CONFIG.explore.multi;
 let session: MultiSession | null = null;
@@ -66,29 +69,29 @@ function idleStop(): void {
   idleShow('');
 }
 
-/* Danh sách người chơi ở góc màn hình: đầu "Đi dạo n/5 · Bay n/5", rồi nhóm người đi dạo (chấm vuông) và nhóm người bay (chấm tròn),
+/* Danh sách người chơi ở góc màn hình: đầu "Lái xe n/5 · Đi dạo n/5 · Bay n/5", rồi nhóm người lái (chấm thoi), người đi dạo (chấm vuông) và người bay (chấm tròn),
    mỗi người một dòng có chấm màu theo slot; dòng của mình đậm. Dùng textContent */
 function renderRoster(): void {
   const box = document.getElementById('exMpRoster');
   if (!box) return;
-  const flyers = session ? session.flyers : [], walkers = session ? session.walkers : [];
-  const head = t('stRoster', { w: walkers.length, f: flyers.length });
+  const flyers = session ? session.flyers : [], walkers = session ? session.walkers : [], drivers = session ? session.drivers : [];
+  const head = t('drRosterAll', { d: drivers.length, w: walkers.length, f: flyers.length });
   const kind = session ? session.kind : 'fly', mine = session ? session.mySlot : -1;
-  const key = walkers.map(f => f.slot + ':' + f.name).join('|') + '#' + flyers.map(f => f.slot + ':' + f.name).join('|') + '#' + kind + mine + '#' + head;
+  const key = drivers.map(f => f.slot + ':' + f.name).join('|') + '#' + walkers.map(f => f.slot + ':' + f.name).join('|') + '#' + flyers.map(f => f.slot + ':' + f.name).join('|') + '#' + kind + mine + '#' + head;
   if (key === rosterKey) return;
   rosterKey = key;
   box.hidden = !session || session.phase === 'solo';
   box.textContent = '';
   const h = document.createElement('div'); h.className = 'ex-mp-head'; h.textContent = head; box.appendChild(h);
-  const group = (list: typeof flyers, k: 'fly' | 'walk') => {
+  const group = (list: typeof flyers, k: 'fly' | 'walk' | 'drive') => {
     for (const f of list) {
-      const row = document.createElement('div'); row.className = 'ex-mp-row' + (k === 'walk' ? ' walk' : '') + (k === kind && f.slot === mine ? ' me' : '');
+      const row = document.createElement('div'); row.className = 'ex-mp-row' + (k === 'walk' ? ' walk' : k === 'drive' ? ' drive' : '') + (k === kind && f.slot === mine ? ' me' : '');
       const dot = document.createElement('i'); dot.style.background = M.colors[f.slot % M.colors.length];
       const nm = document.createElement('span'); nm.textContent = f.name;
       row.append(dot, nm); box.appendChild(row);
     }
   };
-  group(walkers, 'walk'); group(flyers, 'fly');
+  group(drivers, 'drive'); group(walkers, 'walk'); group(flyers, 'fly');
 }
 
 /* Người đi dạo hiện cho cả người bay: dựng nhóm nhân vật (lười) lần đầu phòng có người đi dạo; mô hình có xương nạp khi slot đầu tiên hiện */
@@ -96,6 +99,12 @@ function stEnsureAvatars(): void {
   const mesh = stAvatars.build();
   if (!mesh.parent) scene.add(mesh);
 }
+
+/* Xe người lái hiện cho cả người bay và người đi dạo: gắn / gỡ nhóm xe theo số xe (không có xe thì không ở trong cảnh) */
+exDrivers.onCars = (n: number): void => {
+  const g = drCars.group;
+  if (n > 0) { if (!g.parent) scene.add(g); } else if (g.parent) g.removeFromParent();
+};
 
 export const exMulti = {
   /* Địa chỉ máy chủ: có ?test thì ?multi= nếu có, không có thì rỗng (không mở mạng); không có ?test thì luôn là địa chỉ cấu hình (người ngoài không đổi được máy chủ qua URL) */
@@ -107,7 +116,7 @@ export const exMulti = {
   get session(): MultiSession | null { return session; },
   onChange: (() => {}) as () => void,   // móc cho giao diện sảnh (Task 6) và test
 
-  /* Mở phiên loại kind ('fly' giành chỗ bay, 'walk' giành chỗ đi dạo); onReady gọi một lần khi có thông tin đầu tiên (sảnh hoặc ngoại tuyến). Trả false nếu không có địa chỉ */
+  /* Mở phiên loại kind ('fly' giành chỗ bay, 'walk' giành chỗ đi dạo, 'drive' giành chỗ lái xe); onReady gọi một lần khi có thông tin đầu tiên (sảnh hoặc ngoại tuyến). Trả false nếu không có địa chỉ */
   begin(onReady: () => void, kind: Kind = 'fly'): boolean {
     const url = exMulti.url();
     if (!url || session) return false;
@@ -115,9 +124,11 @@ export const exMulti = {
     let ready = false;
     s.onPos = f => exRemotes.onPos(f, performance.now());
     s.onWalkPos = w => stAvatars.onPos(w, performance.now());
+    s.peersDrive = d => exDrivers.onPos(d, performance.now());
     s.onChange = () => {
       exRemotes.sync(s.flyers, s.kind === 'fly' ? s.mySlot : -1);   // slot đi dạo và slot bay là hai nhóm: số slot của mình chỉ loại trừ trong nhóm của mình
       if (s.walkers.length || stAvatars.mesh) { stEnsureAvatars(); stAvatars.sync(s.walkers, s.kind === 'walk' ? s.mySlot : -1); }
+      exDrivers.sync(s.drivers, s.kind === 'drive' ? s.mySlot : -1);
       if (s.phase === 'solo') exLabelsClear();
       renderRoster();
       if (s.phase === 'flying') idleStart(); else idleStop();
@@ -133,16 +144,17 @@ export const exMulti = {
     if (!session) return;
     session.dispose(); session = null;
     exMulti.onChange = () => {};
-    idleStop(); exRemotes.clear(); stAvatars.clear(); exLabelsClear();
+    idleStop(); exRemotes.clear(); stAvatars.clear(); exDrivers.clear(); exLabelsClear();
     rosterKey = ''; renderRoster();
   },
 
-  /* Mỗi khung (bay, đi dạo hoặc xem): dù người khác, người đi dạo khác, nhãn; đang bay thì gửi vị trí sendHz lần/s (state = null: không gửi) */
-  update(_dt: number, nowMs: number, state: GliderState | null): void {
+  /* Mỗi khung (bay, đi dạo, lái xe hoặc xem): dù người khác, người đi dạo khác, xe người khác, nhãn; đang bay thì gửi vị trí sendHz lần/s (state = null: không gửi) */
+  update(dt: number, nowMs: number, state: GliderState | null): void {
     if (!session) return;
     exRemotes.update(nowMs);
     if (stAvatars.mesh) stAvatars.update(nowMs);   // người đi dạo khác, kể cả khi mình bay dù
-    exLabelsUpdate(camera, exRemotes, nowMs, stAvatars);
+    exDrivers.update(nowMs, dt);   // xe người khác, kể cả khi mình bay dù hoặc đi dạo
+    exLabelsUpdate(camera, exRemotes, nowMs, stAvatars, exDrivers);
     if (state && session.kind === 'fly' && session.phase === 'flying' && nowMs - sentAt >= 1000 / M.sendHz) {
       sentAt = nowMs;
       const p = state.pos, r = (v: number) => Math.round(v * 10) / 10, a = (v: number) => Math.round(v * 1000) / 1000;
@@ -156,6 +168,14 @@ export const exMulti = {
     sentAt = nowMs;
     const r = (v: number) => Math.round(v * 100) / 100, a = (v: number) => Math.round(v * 1000) / 1000;
     session.sendWalk(r(s.x), r(s.y), r(s.z), a(s.yaw), s.pose, Math.round(nowMs));
+  },
+
+  /* Mỗi khung khi lái xe có chỗ: gửi vị trí + vận tốc + góc lái sendHz lần/s (s = null: không gửi). Cả lúc đang sơ tán khỏi nhịp quay Cầu sông Hàn */
+  updateDrive(nowMs: number, s: DrState | null): void {
+    if (!session || !s || session.kind !== 'drive' || session.phase !== 'flying' || nowMs - sentAt < 1000 / M.sendHz) return;
+    sentAt = nowMs;
+    const r = (v: number) => Math.round(v * 100) / 100, a = (v: number) => Math.round(v * 1000) / 1000;
+    session.sendDrive({ x: r(s.x), y: r(s.y), z: r(s.z), yaw: a(s.yaw), v: r(s.v), st: a(s.steer), ts: Math.round(nowMs) });
   },
 
   /* Người chơi vừa bấm phím điều khiển: đếm lại thời gian rời máy */
@@ -173,6 +193,11 @@ export const exMulti = {
   /* Trạng thái người đi dạo đang xem (hết chỗ đi dạo); null nếu không xem ai */
   watchWalker(): { x: number; y: number; z: number; yaw: number; pose: number } | null {
     return session && session.kind === 'walk' && session.phase === 'watching' && session.watched >= 0 ? stAvatars.slotState(session.watched) : null;
+  },
+
+  /* Trạng thái xe đang xem (hết chỗ lái); null nếu không xem ai hoặc xe chưa có mẫu */
+  watchDriver(): { x: number; y: number; z: number; yaw: number; v: number } | null {
+    return session && session.kind === 'drive' && session.phase === 'watching' && session.watched >= 0 ? exDrivers.slotState(session.watched) : null;
   }
 };
 

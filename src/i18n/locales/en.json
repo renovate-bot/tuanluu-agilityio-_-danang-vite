@@ -495,5 +495,16 @@
   "drRoster": "Driving",
   "drMapTunnel": "Tunnel (proposed plan)",
   "drLostChooser": "Connection lost. Choose Car to reconnect.",
-  "drWatch": "Watching: {name}"
+  "drWatch": "Watching: {name}",
+  "drRosterAll": "Driving {d}/5 · Walking {w}/5 · Flying {f}/5",
+  "drSeats": "{n} of 5 driving spots free",
+  "drFull": "All 5 driving spots are taken",
+  "drGo": "Start driving",
+  "drSolo": "Drive alone",
+  "drOffline": "Can't reach the server. You can still drive, but alone.",
+  "drInvite": "A spot is free. Want to drive?",
+  "drInviteGo": "Join the drive",
+  "drLate": "Someone was quicker.",
+  "drReleased": "You gave up your spot.",
+  "drLost": "Connection lost. You can still drive, but alone."
 }

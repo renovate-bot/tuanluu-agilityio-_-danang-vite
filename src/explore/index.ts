@@ -121,9 +121,9 @@ export function setupExplore(ctrl: SwingController): void {
   setupStroll(ctrl, () => explore.exit());
   setupDrive(ctrl, () => explore.exit());
   window.addEventListener('keydown', (e) => {
-    if (!inGlider() && !stroll.inMode() && !drive.active()) return;
+    if (!inGlider() && !stroll.inMode() && !drive.inMode()) return;
     if (e.key === 'Escape') { explore.exit(); return; }   // Esc thoát kể cả khi đang focus ô chọn (bay dù, đi dạo, lái xe và hai chế độ xem)
-    if (watching || stroll.inMode() || drive.active()) return;   // xem: không lái; đi dạo / lái xe: phím do stroll/index.ts, drive/index.ts ghi
+    if (watching || stroll.inMode() || drive.inMode()) return;   // xem: không lái; đi dạo / lái xe: phím do stroll/index.ts, drive/index.ts ghi
     if (e.ctrlKey || e.metaKey || e.altKey) return;   // phím tắt trình duyệt (Cmd+S...) không lái dù, tránh kẹt phím
     const t = e.target as HTMLElement | null;
     if (t && /^(SELECT|INPUT|TEXTAREA)$/.test(t.tagName)) return;   // phím trong ô chọn/nhập không lái dù
@@ -145,11 +145,11 @@ export function setupExplore(ctrl: SwingController): void {
   document.getElementById('btnExExit')?.addEventListener('click', () => explore.exit());
   if (q.get('explore') === 'glider') { explore.start(); return; }
   if (q.get('explore') === 'stroll') { stroll.start(); return; }   // đi dạo một mình, không qua slot
-  if (q.get('explore') === 'drive') { drive.start(true); return; }   // lái xe một mình
+  if (q.get('explore') === 'drive') { drive.start(); return; }   // lái xe một mình
   if (!q.has('test') || q.has('chooser')) {
     document.querySelector('button[data-pick="walk"]')?.addEventListener('click', () => stAvatars.preload(0));   // chọn thẻ Đi dạo: nạp nhân vật của mình ngay, trong lúc ở sảnh
     document.querySelector('button[data-pick="car"]')?.addEventListener('click', () => drive.preload());   // chọn thẻ Ô tô: nạp mô hình xe ngay
-    exShowChooser((choice) => { if (choice === 'glider') explore.start(); else if (choice === 'walk') stroll.start(); else if (choice === 'car') drive.start(true); },
-      (choice) => { if (choice === 'walk') stroll.startWatching(); else explore.startWatching(); });   // 'guided': màn chọn tự ẩn, giao diện cũ
+    exShowChooser((choice) => { if (choice === 'glider') explore.start(); else if (choice === 'walk') stroll.start(); else if (choice === 'car') drive.start(); },
+      (choice) => { if (choice === 'walk') stroll.startWatching(); else if (choice === 'car') drive.startWatching(); else explore.startWatching(); });   // 'guided': màn chọn tự ẩn, giao diện cũ
   }
 }

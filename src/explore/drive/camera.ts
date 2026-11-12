@@ -34,7 +34,7 @@ function drInTunnel(net: DrNet, x: number, z: number, y: number): boolean {
   return false;
 }
 
-export function drCamPlace(camera: THREE.PerspectiveCamera, s: DrState, c: DrCam, net: DrNet, dt: number, snap?: boolean): void {
+export function drCamPlace(camera: THREE.PerspectiveCamera, s: Pick<DrState, 'x' | 'y' | 'z' | 'yaw'>, c: DrCam, net: DrNet, dt: number, snap?: boolean): void {
   const K = CONFIG.drive.cam;
   /* 1) lệch do kéo tự về sau returnAfter giây */
   if (!snap && dt > 0) {

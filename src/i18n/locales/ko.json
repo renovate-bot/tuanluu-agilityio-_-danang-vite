@@ -495,5 +495,16 @@
   "drRoster": "운전",
   "drMapTunnel": "터널 (제안 계획)",
   "drLostChooser": "연결이 끊어졌습니다. 다시 연결하려면 자동차를 선택하세요.",
-  "drWatch": "관전 중: {name}"
+  "drWatch": "관전 중: {name}",
+  "drRosterAll": "운전 {d}/5 · 산책 {w}/5 · 비행 {f}/5",
+  "drSeats": "운전 자리 5개 중 {n}개 남음",
+  "drFull": "운전 자리 5개가 모두 찼습니다",
+  "drGo": "바로 운전",
+  "drSolo": "혼자 운전",
+  "drOffline": "서버에 연결할 수 없습니다. 혼자서는 운전할 수 있습니다.",
+  "drInvite": "빈자리가 있습니다. 운전하시겠어요?",
+  "drInviteGo": "운전 참가",
+  "drLate": "다른 사람이 더 빨랐습니다.",
+  "drReleased": "자리를 양보했습니다.",
+  "drLost": "연결이 끊어졌습니다. 혼자서는 계속 운전할 수 있습니다."
 }
