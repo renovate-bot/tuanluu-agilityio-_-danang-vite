@@ -3,6 +3,8 @@
 //   Mục 2: bố cục gọn — thanh trên, thanh dưới, hai sheet (Cài đặt, Góc nhìn).
 //   Mục 3: chữ hướng dẫn cảm ứng, ẩn Đi bộ, sheet tự đóng khi Tour/bão, vệt mờ cuộn của hàng chip.
 //   Buy me a coffee: URL an toàn, panel Cài đặt, vùng chạm, aria-label 9 ngôn ngữ.
+//   Mục 6: Đi dạo trên điện thoại: cần gạt + 📷 (không còn nút Nhảy, D-030) đủ lớn, trong khung, không chồng / bị che; cần gạt 40 % / 95 %,
+//          giữ cần gạt + vuốt camera cùng lúc (không rời đất), pointercancel, đổi cỡ khung; ar dọc; màn chọn cảm ứng.
 //
 //   npm run build && npm run test:mobile
 import fs from 'node:fs';
@@ -313,22 +315,22 @@ try {
   const RIDE = { vi: 'Kéo chuột để nhìn quanh · Esc để xuống cabin', en: 'Drag to look around · Esc to step off', ko: '드래그하여 둘러보기 · Esc로 내리기', ja: 'ドラッグで見回す · Esc で降ります', zh: '拖动鼠标环顾四周 · 按 Esc 下车', th: 'ลากเมาส์เพื่อมองรอบตัว · กด Esc เพื่อลง', ar: 'اسحب للنظر حولك · اضغط Esc للنزول', hi: 'चारों ओर देखने के लिए खींचें · उतरने के लिए Esc दबाएँ', ru: 'Перетаскивайте мышь, чтобы осмотреться · Esc — выйти из кабины' };
   check('swRideHint không nhắc nút', Object.entries(RIDE).every(([l, v]) => JSON.parse(fs.readFileSync(new URL(`../src/i18n/locales/${l}.json`, import.meta.url), 'utf8')).swRideHint === v));
 
-  // Mục 6 — Đi dạo trên điện thoại (Task 8): cần gạt, Nhảy, 📷, vuốt camera; mở bằng ?explore=stroll (đi một mình)
+  // Mục 6 — Đi dạo trên điện thoại (Task 8): cần gạt, 📷, vuốt camera; mở bằng ?explore=stroll (đi một mình). Nút Nhảy đã bỏ (D-030)
   /* Danh sách người chơi giả đầy đủ nhất (đầu + 5 dòng) để thử chồng lấn ở chỗ xấu nhất; không đổi trạng thái chế độ */
   const fillRoster = (page) => page.evaluate(() => {
     const r = document.getElementById('exMpRoster');
     r.innerHTML = '<div class="ex-mp-head">Đang đi n/5</div>' + Array.from({ length: 5 }, (_, i) => `<div class="ex-mp-row walk"><i></i>Người ${i}</div>`).join('');
     r.hidden = false;
   });
-  const STH = ['#stPad', '#stJump', '#stPhoto'];
+  const STH = ['#stPad', '#stPhoto'];
   const strollLayout = async (page, W, H, tag) => {
     await fillRoster(page); await frames(page, 2);
     const hud = await rects(page, STH), avoid = await rects(page, ['#btnExExit', '#exMpRoster']);
-    check(`đi dạo ${tag}: Cần gạt, Nhảy, 📷 hiện`, hud.length === 3);
+    check(`đi dạo ${tag}: Cần gạt, 📷 hiện; không còn #stJump (${await page.evaluate(() => !!document.getElementById('stJump'))})`, hud.length === 2 && !(await page.evaluate(() => !!document.getElementById('stJump'))));
     check(`đi dạo ${tag}: mỗi nút ≥ 44 × 44 px`, hud.every((b) => b.width >= 44 && b.height >= 44));
     check(`đi dạo ${tag}: nằm trọn trong khung nhìn`, hud.every((b) => b.left >= 0 && b.top >= 0 && b.right <= W && b.bottom <= H));
     check(`đi dạo ${tag}: không chồng nút Thoát và danh sách người chơi`, avoid.length === 2 && noOverlap([...hud, ...avoid]));
-    check(`đi dạo ${tag}: cả ba nút không bị lớp khác che`, (await Promise.all(STH.map((s) => topAtCenter(page, s)))).every(Boolean));
+    check(`đi dạo ${tag}: cả hai nút không bị lớp khác che`, (await Promise.all(STH.map((s) => topAtCenter(page, s)))).every(Boolean));
     return hud;
   };
   /* Ngón tay thật qua CDP: mỗi lệnh gửi toàn bộ điểm đang chạm (đa điểm) */
@@ -350,8 +352,8 @@ try {
   SL.page.setDefaultTimeout(180000);
   await strollLayout(SL.page, 844, 390, 'ngang 844×390');
   await SL.page.evaluate(() => { document.getElementById('exMpRoster').hidden = true; });
-  const [pad] = await rects(SL.page, ['#stPad']), [jb] = await rects(SL.page, ['#stJump']), R = pad.width / 2;
-  const px = pad.left + R, py = pad.top + R, jx = jb.left + jb.width / 2, jy = jb.top + jb.height / 2;
+  const [pad] = await rects(SL.page, ['#stPad']), R = pad.width / 2;
+  const px = pad.left + R, py = pad.top + R;
   const F = await fingers(SL.page);
   await F.down(1, px, py - 0.4 * R); await frames(SL.page, 4);
   const v40 = await SP(SL.page);
@@ -360,16 +362,14 @@ try {
   await F.move(1, px, py - 0.95 * R); await frames(SL.page, 4);
   const v95 = await SP(SL.page);
   check(`cần gạt 95 %: tốc độ tới run (${v95.toFixed(2)} so 10 ± 0,3)`, Math.abs(v95 - 10) <= 0.3);
-  // giữ cần gạt (1), vuốt nửa phải (2), chạm Nhảy (3) cùng lúc
+  // giữ cần gạt (1), vuốt nửa phải (2) cùng lúc; không có nút Nhảy nên nhân vật không rời đất
   await SL.page.evaluate(() => { window.__sawAir = false; const f = () => { if (window.__app.stroll.stroll.state?.air) window.__sawAir = true; requestAnimationFrame(f); }; f(); });
   const yaw0 = await SL.page.evaluate(() => window.__app.stroll.stroll.cam.yaw);
   await F.down(2, 700, 300); for (let i = 1; i <= 5; i++) await F.move(2, 700 - 20 * i, 300); await frames(SL.page, 2);
   const yaw1 = await SL.page.evaluate(() => window.__app.stroll.stroll.cam.yaw);
   check(`vuốt nửa phải 100 px: camera.yaw đổi (${yaw0.toFixed(3)} → ${yaw1.toFixed(3)}), nhân vật vẫn đi`, Math.abs(yaw1 - yaw0) > 0.3 && (await SP(SL.page)) > 3);
-  await F.down(3, jx, jy); await frames(SL.page, 4);
-  check('chạm Nhảy khi hai ngón kia còn giữ: nhảy (air = true)', await SL.page.evaluate(() => window.__sawAir));
-  check('sau khi nhảy cần gạt vẫn đang giữ (tốc độ > 3)', (await SP(SL.page)) > 3);
-  await F.up(3); await F.up(2);
+  check('giữ cần gạt + vuốt camera: nhân vật không rời đất (air chưa từng true)', !(await SL.page.evaluate(() => window.__sawAir)));
+  await F.up(2);
   // pointercancel: dừng, núm về tâm
   await F.cancel(); await waitStill(SL.page); await frames(SL.page, 2);
   check('pointercancel: tốc độ về 0, núm về tâm', (await SP(SL.page)) < 0.05 && await knobOff(SL.page));

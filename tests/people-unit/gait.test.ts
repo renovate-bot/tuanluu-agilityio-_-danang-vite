@@ -50,19 +50,3 @@ test('tay ngược dấu chân cùng bên ở φ = π/2', () => {
 test('đứng yên: không vung hông, gối thẳng', () => {
   for (const f of phases) { const a = ppAngles('legL', 0, f); assert.ok(Math.abs(a.root) < 1e-12 && Math.abs(a.joint) < 1e-12, `φ ${f}`); }
 });
-
-test('nhảy: cùng tư thế ở mọi pha, gối gập (< −0,6), vai đưa lên (> 0,8)', () => {
-  for (const amp of [0, P.walk.amp, P.run.amp]) for (const part of ['legL', 'legR', 'armL', 'armR'] as const) {
-    const a0 = ppAngles(part, amp, 0, true);
-    for (const f of phases) { const a = ppAngles(part, amp, f, true); assert.ok(a.root === a0.root && a.joint === a0.joint, `${part} amp ${amp} φ ${f}`); }
-    if (part === 'legL' || part === 'legR') assert.ok(a0.joint < -0.6, `${part} gối ${a0.joint}`);
-    else assert.ok(a0.root > 0.8, `${part} vai ${a0.root}`);
-  }
-});
-
-test('jump = false (mặc định) giữ nguyên dáng cũ', () => {
-  for (const amp of [0, P.walk.amp, P.run.amp]) for (const part of ['legL', 'legR', 'armL', 'armR'] as const) for (const f of phases) {
-    const a = ppAngles(part, amp, f), b = ppAngles(part, amp, f, false);
-    assert.ok(a.root === b.root && a.joint === b.joint, `${part} amp ${amp} φ ${f}`);
-  }
-});

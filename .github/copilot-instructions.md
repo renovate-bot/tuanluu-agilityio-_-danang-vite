@@ -27,7 +27,7 @@ Memory bank ghi **cái code không tự nói ra được**: lý do, trạng thá
 2. **Draw call.** Bảng chuẩn ở `tests/KET-QUA.md`. Góc nhìn cũ không được tăng quá ngưỡng mà spec của tính năng cho phép (mặc định: 0). Gộp hình học (`mergeGeometries`), dùng `InstancedMesh`, LOD, `noReflect`/layer 1.
 3. **Mọi thông số ở `src/config.ts`.** Mỗi dòng: chú thích tiếng Việt, đơn vị, `(ước lượng)` nếu không có nguồn. Số đã công bố thì ghi nguồn.
 4. **i18n đủ 9 ngôn ngữ.** Khóa mới phải có trong cả `src/i18n/locales/{vi,en,ko,ja,zh,th,ar,hi,ru}.json`. `ar` là RTL.
-5. **Không thêm thư viện runtime, không thêm ảnh ngoài.** Texture vẽ bằng canvas. Không thêm `PointLight`/`SpotLight` mới; đèn đêm làm bằng emissive, đọc `shared.uNight`. Đèn cường độ 0 vẫn tốn shader mọi điểm ảnh: đèn hiện có thuộc ba bộ `day` / `night` / `full` của `core/lights.ts` (D-031), không ẩn / hiện đèn ở chỗ khác.
+5. **Không thêm thư viện runtime, không thêm ảnh ngoài.** Texture vẽ bằng canvas. **Ngoại lệ duy nhất (D-030):** mô hình và texture ngoài cho *nhân vật người* của chế độ Đi dạo (`public/people/*.glb`, Microsoft Rocketbox, MIT), điều kiện giấy phép cho để trong repo công khai và ghi nguồn; không mở cho thứ khác. Không thêm `PointLight`/`SpotLight` mới; đèn đêm làm bằng emissive, đọc `shared.uNight`. Đèn cường độ 0 vẫn tốn shader mọi điểm ảnh: đèn hiện có thuộc ba bộ `day` / `night` / `full` của `core/lights.ts` (D-031), không ẩn / hiện đèn ở chỗ khác.
 6. **Công trình chưa xây phải nói rõ là "phương án đề xuất"** trong UI và thuyết minh.
 
 ## 4. Hệ tọa độ
@@ -61,12 +61,13 @@ npm run test:trees:unit # cây: hình học cây bóng mát / dừa, trần tam 
 npm run test:trees     # cây: 6 lưới, vị trí + chuỗi rand() giữ nguyên, dọn cây, cây đổ dựng lại, gió bám thân, dừa cửa hầm, ảnh; đọc dist/
 npm run test:people:unit # người đi bộ: dáng đi / chạy, hình học ≤ 900 đỉnh, chia kiểu người (nhanh, không trình duyệt)
 npm run test:people    # người đi bộ: 1 lưới mỗi hệ, kiểu đi / chạy / đứng, lề cầu, rời cầu khi bão, tắt/bật; đọc dist/
-npm run test:stroll:unit # đi dạo: bản đồ va chạm, chuyển động, nhân vật, cần gạt, phím (nhanh, không trình duyệt)
-npm run test:stroll    # đi dạo: một mình, không xuyên tòa nhà / lan can, camera, sảnh, ảnh, cảm ứng, 9 ngôn ngữ; đọc dist/
+npm run test:stroll:unit # đi dạo: bản đồ va chạm, chuyển động, trộn chuyển động theo tốc độ, nhân vật (bộ nạp giả), file glb, cần gạt, phím (nhanh, không trình duyệt)
+npm run test:stroll    # đi dạo: một mình, nhân vật có xương, không xuyên tòa nhà / lan can, camera, sảnh, ảnh, cảm ứng, 9 ngôn ngữ; đọc dist/
 npm run test:multi:unit   # dù lượn nhiều người: logic phòng, tên, nội suy, idle (nhanh, không trình duyệt)
 npm run test:multi:worker # Worker qua wrangler dev: kiểm Origin
 npm run test:multi        # dù lượn nhiều người: trình duyệt + bot qua wrangler dev cục bộ; đọc dist/
 npm run gen:voice      # sinh lại clip thuyết minh đã đổi (-- --force: tất cả)
+npm run gen:people     # sinh lại public/people/p0..p4.glb từ Microsoft Rocketbox (cần Blender 4.5, tải ~160 MB vào scripts/people/.cache/; sửa đường dẫn Blender trong package.json trên máy khác; chỉ khi đổi nhân vật)
 ```
 
 Test chạy Chromium CPU nên **chậm**: chạy test liên quan trực tiếp tới thay đổi; chạy đủ bộ trước khi báo xong một tính năng. Báo kết quả thật, kể cả khi lỗi hoặc không chạy được.

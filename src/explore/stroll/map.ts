@@ -2,7 +2,7 @@
    Thuần toán học: không import three, không import CONFIG, không đụng DOM. Task sau dựng vùng / vật cản từ cảnh rồi gọi các hàm ở đây.
    - Nhân vật là hình tròn bán kính `radius` trên mặt bằng (x, z). Tâm phải nằm trong một vùng mở (`StZone`) và cách mọi vật cản ít nhất `radius`.
    - Vùng chữ nhật, thứ tự mảng là thứ tự ưu tiên khi chồng nhau (vùng đầu tiên chứa điểm quyết định cao độ đứng). Vùng có `gate` thì cổng đóng coi như không có.
-   - Vật cản chữ nhật hoặc tròn; có `top` là tường thấp (chặn khi chân thấp hơn `top`, nhảy qua được), vắng `top` là tường cao vô hạn.
+   - Vật cản chữ nhật hoặc tròn; có `top` là tường thấp (chặn khi chân thấp hơn `top`; không còn nhảy nên chân chỉ cao hơn khi đang rơi), vắng `top` là tường cao vô hạn.
    - Chỉ mục lưới đều (ô STC m) để tra vật cản gần một điểm không phải quét hết ~8 000 nhà; vật cản phủ quá nhiều ô để riêng một danh sách "lớn", tra tuyến tính.
    - stMove / stValid chạy mỗi khung: không cấp phát (D-018). */
 

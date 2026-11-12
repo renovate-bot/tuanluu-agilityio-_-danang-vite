@@ -91,7 +91,7 @@ function renderRoster(): void {
   group(walkers, 'walk'); group(flyers, 'fly');
 }
 
-/* Người đi dạo hiện cho cả người bay: dựng nhân vật (lười, 1 lệnh vẽ khi có người) lần đầu phòng có người đi dạo */
+/* Người đi dạo hiện cho cả người bay: dựng nhóm nhân vật (lười) lần đầu phòng có người đi dạo; mô hình có xương nạp khi slot đầu tiên hiện */
 function stEnsureAvatars(): void {
   const mesh = stAvatars.build();
   if (!mesh.parent) scene.add(mesh);

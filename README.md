@@ -66,7 +66,14 @@ src/
   styles/main.css
 server/
   multi/             máy chủ dù lượn nhiều người (Cloudflare Worker + Durable Object, `npm --prefix server/multi run dev`)
+public/
+  people/            5 nhân vật đi dạo p0..p4.glb (có xương + chuyển động) và LICENSE-Rocketbox.txt
+  voice/             clip thuyết minh của Tour
+scripts/
+  people/            convert.py: chuyển Microsoft Rocketbox sang .glb (`npm run gen:people`, cần Blender 4.5)
 ```
+
+Nhân vật trong chế độ Đi dạo dùng mô hình và chuyển động của [Microsoft Rocketbox](https://github.com/microsoft/Microsoft-Rocketbox) (giấy phép MIT, commit `0943055db6ec570bcef9f2c8b41c9e5467c808f9`); xem `public/people/LICENSE-Rocketbox.txt`.
 
 ## Hầm vượt sông Hàn
 

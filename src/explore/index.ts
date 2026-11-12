@@ -11,6 +11,7 @@ import { exShowChooser } from './chooser';
 import { exNight, exNightBind, exNightStep } from './nightShows';
 import { exMulti } from './multi';
 import { stroll, setupStroll } from './stroll';
+import { stAvatars } from './stroll/avatars';
 import { exWatchShow, exWatchHide, exWatchRender, exFlyNotice } from './multi/watch';
 import { CONFIG } from '../config';
 import type { SwingController } from '../bridges/song-han/SwingController';
@@ -141,6 +142,9 @@ export function setupExplore(ctrl: SwingController): void {
   document.getElementById('btnExExit')?.addEventListener('click', () => explore.exit());
   if (q.get('explore') === 'glider') { explore.start(); return; }
   if (q.get('explore') === 'stroll') { stroll.start(); return; }   // đi dạo một mình, không qua slot
-  if (!q.has('test') || q.has('chooser')) exShowChooser((choice) => { if (choice === 'glider') explore.start(); else if (choice === 'walk') stroll.start(); },
-    (choice) => { if (choice === 'walk') stroll.startWatching(); else explore.startWatching(); });   // 'guided': màn chọn tự ẩn, giao diện cũ
+  if (!q.has('test') || q.has('chooser')) {
+    document.querySelector('button[data-pick="walk"]')?.addEventListener('click', () => stAvatars.preload(0));   // chọn thẻ Đi dạo: nạp nhân vật của mình ngay, trong lúc ở sảnh
+    exShowChooser((choice) => { if (choice === 'glider') explore.start(); else if (choice === 'walk') stroll.start(); },
+      (choice) => { if (choice === 'walk') stroll.startWatching(); else explore.startWatching(); });   // 'guided': màn chọn tự ẩn, giao diện cũ
+  }
 }

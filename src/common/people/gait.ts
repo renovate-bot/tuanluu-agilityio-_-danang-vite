@@ -30,10 +30,8 @@ export function ppStride(kind: PersonKind, scale: number): number {
   return kind === 'stand' ? 0 : 4 * P.legLength * scale * Math.sin(ppAmp(kind));
 }
 
-/* Góc khớp: root = hông / vai, joint = gối (≤ 0, gập về sau) / khuỷu (≥ 0, gập về trước). Không tính tư thế chụp ảnh (cờ 4, chỉ có trong shader).
-   jump = true (cờ 8, nhân vật đi dạo đang nhảy): tư thế cố định CONFIG.people.jump, không theo pha, hai bên như nhau; trong shader xét trước cờ chụp ảnh */
-export function ppAngles(part: PersonPart, amp: number, phase: number, jump = false): { root: number; joint: number } {
-  if (jump) { const J = P.jump; return part === 'legL' || part === 'legR' ? { root: J.hip, joint: J.knee } : { root: J.shoulder, joint: J.elbow }; }
+/* Góc khớp: root = hông / vai, joint = gối (≤ 0, gập về sau) / khuỷu (≥ 0, gập về trước). Không tính tư thế chụp ảnh (cờ 4, chỉ có trong shader). */
+export function ppAngles(part: PersonPart, amp: number, phase: number): { root: number; joint: number } {
   const A = amp, run = ppRunMix(A);
   if (part === 'legL' || part === 'legR') {
     const f = part === 'legL' ? phase : phase + Math.PI;

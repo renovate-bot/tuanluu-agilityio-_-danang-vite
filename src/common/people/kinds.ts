@@ -9,7 +9,7 @@ import type { PersonKind } from './gait';
    - Trẻ em: tỉ lệ childScale, luôn là người đi cùng. Người chụp ảnh: chỉ trong số người đứng.
    - flags = tổng cờ PP_FLAG (khớp aVar.z trong material.ts).
    ===================================================================== */
-export const PP_FLAG = { hat: 1, pack: 2, photo: 4, jump: 8 } as const;   // jump: chỉ nhân vật đi dạo bật (explore/stroll/avatars.ts), ppAssignKinds không bao giờ gán
+export const PP_FLAG = { hat: 1, pack: 2, photo: 4 } as const;
 export interface PersonInfo { kind: PersonKind; scale: number; flags: number; phase: number; follow: number /* chỉ số người mình đi cùng, −1 nếu không */ }
 
 /* Xáo trộn Fisher–Yates bằng bộ sinh r */

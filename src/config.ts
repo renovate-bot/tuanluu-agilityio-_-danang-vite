@@ -621,11 +621,10 @@ const strollBase = {
   run: 10,             // m/s — tốc độ chạy, giữ Shift / gạt hết cỡ: hết Cầu Rồng 666 m khoảng một phút (ước lượng)
   accel: 30,           // m/s² — gia tốc tiến tới tốc độ đích và hãm lại (ước lượng)
   turn: 12,            // 1/s — tốc độ nhân vật quay mặt về hướng đi (ước lượng)
-  jumpHeight: 1.2,     // m — độ cao nhảy của chân, đủ qua tường thấp lowMax (ước lượng)
-  gravity: 20,         // m/s² — gia tốc rơi khi nhảy, mạnh hơn 9,8 cho nhảy gọn (ước lượng)
+  gravity: 20,         // m/s² — gia tốc rơi khi bước khỏi bậc cao hơn stepMax, mạnh hơn 9,8 cho rơi gọn (ước lượng)
   radius: 0.35,        // m — bán kính hình tròn va chạm của nhân vật (ước lượng)
   stepMax: 0.35,       // m — bậc cao không quá số này thì tự bước lên (lề 0,25, dải phân cách 0,3), cộng sẵn vào cao độ vùng (ước lượng)
-  lowMax: 1.0,         // m — vật cao hơn stepMax và thấp hơn số này là tường thấp, nhảy qua được (gờ chắn xe Cầu Rồng 0,9) (ước lượng)
+  lowMax: 1.0,         // m — vật cao hơn stepMax và thấp hơn số này là tường thấp: không còn nhảy nên chỉ chặn (gờ chắn xe Cầu Rồng 0,9), chân luôn thấp hơn nó khi đứng trên đất (ước lượng)
   reach: 2.5,          // m — tầm người trên mặt đứng: kết cấu cầu thấp hơn mức này thì chặn (thân rồng, chân tháp, dây văng; spec §4) (ước lượng)
   dtMax: 0.1,          // s — trần dt mỗi khung của chuyển động; khung dài hơn thì chia nhỏ (ước lượng)
   spawn: { x: -240, z: 17.4, spread: 2.5 },   // m — điểm xuất phát trên lề phía Nam Cầu Rồng gần bờ Tây; lệch theo x spread × (slot − 2) (ước lượng)
@@ -650,7 +649,19 @@ const strollBase = {
   pants: 0x1d1d1f,     // màu quần nhân vật đi dạo (hex sRGB), một màu tối cho mọi slot; áo theo multiParams.colors[slot] (ước lượng)
   photoHold: 1.2,      // s — thời gian nhân vật giơ tay chụp ảnh (ước lượng)
   flashMs: 180,        // ms — thời gian chớp màn hình khi chụp (ước lượng)
-  photoUrlMs: 10000    // ms — thu hồi URL tạm của ảnh sau khi tải xong (ước lượng)
+  photoUrlMs: 10000,   // ms — thu hồi URL tạm của ảnh sau khi tải xong (ước lượng)
+  anim: {              // nhân vật có xương (explore/stroll/anim.ts, rig.ts); docs/superpowers/specs/2026-11-12-nguoi-di-dao-that-design.md §5
+    walkTo: 1.8,       // m/s — từ tốc độ này trở xuống là đi bộ thuần; trên đó trộn dần sang chạy bộ (ước lượng)
+    jogAt: 3.5,        // m/s — tại tốc độ này là chạy bộ thuần (bằng tốc độ đi CONFIG.stroll.walk) (ước lượng)
+    sprintFrom: 7.0,   // m/s — từ tốc độ này là chạy nhanh thuần; giữa jogAt và đây trộn chạy bộ với chạy nhanh (ước lượng)
+    rateMin: 0.6,      // hệ số tua đoạn di chuyển nhỏ nhất (tốc độ thật / tốc độ tự nhiên), không đơn vị, tránh chân lê chậm (ước lượng)
+    rateMax: 1.6,      // hệ số tua lớn nhất, không đơn vị, tránh chân quay quá nhanh khi chạy 10 m/s (ước lượng)
+    fade: 0.2,         // s — hằng thời gian làm mượt trọng số các đoạn khi đổi dáng (ước lượng)
+    fallMin: 0.1,      // m/s — dáng rơi (3) có tốc độ ngang dưới mức này thì đứng yên, trên mức này thì như đang chạy (ước lượng)
+    warmMs: 4000,      // ms — chờ biên dịch sẵn shader của mô hình vừa nạp tối đa chừng này, quá thì vẫn dùng mô hình (D-018; mất ngữ cảnh WebGL không treo) (ước lượng)
+    others: 4,         // số mô hình dành cho người khác (mô hình 1..others); mình luôn dùng mô hình 0 (ước lượng)
+    models: ['people/p0.glb', 'people/p1.glb', 'people/p2.glb', 'people/p3.glb', 'people/p4.glb']   // đường dẫn tương đối BASE_URL tới 5 mô hình có xương (scripts/people/convert.py)
+  }
 };
 
 /* ------------------------- Tàu thuyền sông Hàn ------------------------- */
@@ -778,7 +789,6 @@ const peopleBase = {
   bob: { walk: 0.022, run: 0.075 },                 // m — nhún: đi thấp nhất khi hai chân dang rộng (đỉnh–đỉnh 2 × 0,022), chạy bật lên giữa hai bước (ước lượng theo bản thử)
   sway: 0.018,                                      // m — lắc vai sang hai bên theo sin φ (ước lượng theo bản thử)
   photo: { shoulder: 1.0, elbow: 1.05 },            // rad — tư thế giơ tay phải chụp ảnh: góc vai, góc khuỷu (ước lượng theo bản thử)
-  jump: { hip: 0.55, knee: -1.15, shoulder: 1.25, elbow: 0.45 },   // rad — tư thế nhảy (cờ 8, chỉ nhân vật đi dạo): hông đưa trước, gối gập, hai vai đưa lên, khuỷu hơi gập (ước lượng)
   mix: {
     run: 0.12,                                      // phần người chạy bộ trên tổng số (ước lượng; bản thử 4/26)
     stand: 0.2,                                     // phần người đứng lan can trên tổng số (ước lượng; bản thử 6/26)
