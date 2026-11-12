@@ -9,14 +9,15 @@
    - Phanh / lùi: phanh khi đang tiến; |v| < sim.revV mà giữ phanh, không ga thì lùi dần tới reverseMax; đang lùi mà đạp ga thì phanh
      về 0 rồi mới tiến. Nhả hết thì chậm dần theo coast, không tự lùi. Phanh tay hãm handBrake, không trượt. Dốc không đổi gia tốc.
    - drStep chia dt thành bước ≤ sim.dt (tối đa sim.steps bước, phần dư bỏ); mỗi bước dời thân xe bằng drMove (collide.ts);
-     bị chặn thì v nhân phần quãng đã đi (đâm thẳng thì đứng hẳn, trượt dọc thì mất một phần).
+     bị chặn thì mất phần tốc độ hướng vào vật cản một lần (đâm thẳng thì đứng hẳn, cọ chéo còn phần chiếu dọc vật cản),
+     đang cọ thì hãm thêm perf.scrape (m/s²); kết quả không phụ thuộc tần số khung.
    Không cấp phát mỗi khung (D-018). Không import three. */
 import { CONFIG } from '../../config';
 import { drGround, type DrNet } from './net';
 import { drSpawnPose } from './roadData';
 import { drMove, type DrPose, type DrBox } from './collide';
 
-export interface DrState extends DrPose { pitch: number; v: number; steer: number; wheel: number; braking: boolean; evac: number }   // v: m/s có dấu; steer: rad; wheel: góc quay bánh tích lũy (rad)
+export interface DrState extends DrPose { pitch: number; v: number; steer: number; wheel: number; braking: boolean; evac: number; slide?: number; touch?: number }   // v: m/s có dấu; steer: rad; wheel: góc quay bánh tích lũy (rad); slide: phần tốc độ còn giữ trong lần chạm vật cản hiện tại (1 = không chạm, mặc định); touch: s còn coi là đang chạm (mặc định 0)
 export interface DrInput { gas: number; brake: number; steer: number; hand: boolean }   // gas, brake: 0..1; steer: −1..1
 
 const CAR = CONFIG.drive.car, P = CONFIG.drive.perf, SIM = CONFIG.drive.sim;
@@ -77,7 +78,7 @@ export function drCreate(net: DrNet, slot: number): DrState {
     if (p.gate !== undefined && net.closed.has(p.gate)) continue;
     y = Math.max(y, p.y(sp.x, sp.z));
   }
-  const s: DrState = { x: sp.x, y: Number.isFinite(y) ? y : CONFIG.roadY, z: sp.z, yaw: sp.yaw, pitch: 0, v: 0, steer: 0, wheel: 0, braking: false, evac: 0 };
+  const s: DrState = { x: sp.x, y: Number.isFinite(y) ? y : CONFIG.roadY, z: sp.z, yaw: sp.yaw, pitch: 0, v: 0, steer: 0, wheel: 0, braking: false, evac: 0, slide: 1, touch: 0 };
   drPitch(s, net);
   return s;
 }
@@ -111,7 +112,19 @@ function drStep1(s: DrState, inp: DrInput, net: DrNet, boxes: DrBox[], nBoxes: n
   /* dời thân xe */
   const dist = v * h, f = drMove(net, s, dist, dist * Math.tan(st) / L, boxes, nBoxes, MOVED);
   s.x = MOVED.x; s.y = MOVED.y; s.z = MOVED.z; s.yaw = MOVED.yaw;
-  if (f < 1) v *= f;
+  /* va chạm: phần quãng f là cos² góc giữa hướng trượt và hướng xe, nên √f là phần tốc độ chiếu theo hướng trượt.
+     Chỉ mất phần hướng vào vật cản khi √f xuống dưới mức nhỏ nhất đã mất trong lần chạm này (slide), không lặp lại mỗi bước
+     khi vẫn tì vào; đang cọ thì hãm thêm perf.scrape; không bị chặn quá sim.touch giây thì coi như đã rời vật cản. */
+  let slide = s.slide ?? 1, touch = s.touch ?? 0;
+  if (f < 1) {
+    if (touch > 0) v = drToward0(v, P.scrape * h);                   // đang cọ: hãm thêm
+    const q = f > 0 ? Math.sqrt(f) : 0;
+    if (q === 0) v = 0;                                              // đứng hẳn: đâm thẳng, hoặc tì thẳng vào mà vẫn đạp ga
+    else if (q < slide) v *= q / slide;
+    if (q < slide) slide = q;
+    touch = SIM.touch;
+  } else if (touch > 0) { touch -= h; if (touch <= 0) { touch = 0; slide = 1; } }
+  s.slide = slide; s.touch = touch;
   s.v = v; s.steer = st; s.braking = braking;
   s.wheel += dist * f / (CAR.wheelDia / 2);
   drPitch(s, net);

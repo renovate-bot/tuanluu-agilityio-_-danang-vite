@@ -5,7 +5,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { CONFIG } from '../../src/config.ts';
 import { deckY } from '../../src/bridges/dragon/profile.ts';
-import { drMakeNet, type DrPad, type DrSolid } from '../../src/explore/drive/net.ts';
+import { drMakeNet, drGround, type DrPad, type DrSolid } from '../../src/explore/drive/net.ts';
 import { drBuildPads, drSpawnPose } from '../../src/explore/drive/roadData.ts';
 import { drBuildSolids } from '../../src/explore/drive/solids.ts';
 import { drFits } from '../../src/explore/drive/collide.ts';
@@ -146,6 +146,52 @@ test('drCreate đặt xe trên mặt Cầu Rồng', () => {
   assert.equal(s.x, sp.x); assert.equal(s.z, sp.z); assert.equal(s.yaw, sp.yaw);
   assert.ok(Math.abs(s.y - deckY(s.x)) < 1e-9);
   assert.equal(s.v, 0); assert.equal(s.evac, 0);
+});
+
+/* Cọ chéo: xe 20 m/s, mũi chéo 20° vào tường dài (z = 10), góc xe cách tường 5 cm, không ga không phanh, chạy T giây ở bước dt */
+function scrape(dt: number, T: number): { v: number; x: number; s: DrState; net: ReturnType<typeof drMakeNet> } {
+  const th = 20 * Math.PI / 180, HW = CONFIG.drive.car.width / 2;
+  const net = drMakeNet([flatPad(-100, 3000, -20, 20)], [{ kind: 'rect', x0: -100, x1: 3000, z0: 10, z1: 11, y0: 2.6, y1: 4 }]);
+  const s = state(0, 10 - HL * Math.sin(th) - HW * Math.cos(th) - 0.05, -th, 20);
+  const n = Math.round(T / dt);
+  for (let i = 0; i < n; i++) drStep(s, inp(), net, [], 0, dt);
+  return { v: s.v, x: s.x, s, net };
+}
+
+test('cọ chéo không phụ thuộc tần số khung', () => {
+  const r = [1 / 30, 1 / 60, 1 / 144].map((dt) => scrape(dt, 1));
+  const vs = r.map((o) => o.v), xs = r.map((o) => o.x);
+  const spread = (a: number[]) => (Math.max(...a) - Math.min(...a)) / Math.max(...a);
+  assert.ok(spread(vs) <= 0.05, `v = ${vs.map((v) => v.toFixed(3)).join(' / ')}`);
+  assert.ok(spread(xs) <= 0.05, `x = ${xs.map((x) => x.toFixed(3)).join(' / ')}`);
+  for (const o of r) assert.ok(drFits(o.net, o.s, [], 0, new Uint8Array(1)), 'không xuyên tường');
+});
+
+test('cọ chéo 20° giữ lại phần lớn tốc độ', () => {
+  for (const dt of [1 / 30, 1 / 60, 1 / 144]) {
+    const a = scrape(dt, 0.1).v, b = scrape(dt, 1).v;
+    assert.ok(a >= 0.85 * 20 * Math.cos(20 * Math.PI / 180) - 0.05, `dt ${dt.toFixed(4)}: v(0,1 s) = ${a}`);
+    assert.ok(b > 10, `dt ${dt.toFixed(4)}: v(1 s) = ${b}`);
+  }
+});
+
+test('đâm thẳng thì dừng', () => {
+  const net = drMakeNet([flatPad(-100, 100, -50, 50)], [{ kind: 'rect', x0: -100, x1: 100, z0: 10, z1: 11, y0: 2.6, y1: 4 }]);
+  for (const dt of [1 / 30, 1 / 60, 1 / 144]) {
+    const s = state(0, 10 - HL - 1, -Math.PI / 2, 20);                // yaw = −π/2: mũi xe hướng +z, cách tường 1 m
+    for (let i = 0; i < Math.round(0.2 / dt); i++) drStep(s, inp(), net, [], 0, dt);
+    assert.ok(Math.abs(s.v) < 1, `dt ${dt.toFixed(4)}: v = ${s.v}`);
+    assert.ok(drFits(net, s, [], 0, new Uint8Array(1)) && s.z + HL <= 10 + 1e-6, `không xuyên (z = ${s.z})`);
+  }
+});
+
+test('mọi chỗ xuất phát đều hợp lệ', () => {
+  const net = drMakeNet(drBuildPads(), drBuildSolids());
+  for (let slot = 0; slot <= 4; slot++) {
+    const sp = drSpawnPose(slot), y = drGround(net, sp.x, sp.z, deckY(sp.x));
+    assert.ok(Number.isFinite(y), `slot ${slot}: có mặt đường`);
+    assert.ok(drFits(net, { x: sp.x, y, z: sp.z, yaw: sp.yaw }, [], 0, new Uint8Array(1)), `slot ${slot}: thân xe hợp lệ`);
+  }
 });
 
 test('mạng thật: giữ ga 30 s đi thẳng trên Cầu Rồng', () => {

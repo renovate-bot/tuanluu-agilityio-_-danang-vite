@@ -88,6 +88,37 @@ test('xe tự động chồng sẵn thì không chặn và lái ra được theo
   assert.ok(drMove(net, { ...out }, -6, 0, boxes, 1, back) < 1);
 });
 
+/* Xe mũi +x, đầu xe chồng 0,5 m vào khối (x 30..40) */
+const embed = () => ({ net: drMakeNet([pad('a', 0, 100, 0, 40, 2.6)], [wall(30, 40, 0, 40, 2.6, 4)]), p: pose(30 + 0.5 - HL, 2.6, 20, 0) });
+
+test('chồng sẵn vật cản tĩnh vẫn lái ra được', () => {
+  const { net, p } = embed(), out = pose(0, 0, 0, 0);
+  assert.ok(!drFits(net, p, NONE, 0, IGN), 'tư thế xuất phát đang chồng vật cản');
+  let cur = { ...p }, ok = false;
+  for (let i = 0; i < 5 && !ok; i++) {
+    const f = drMove(net, cur, -0.3, 0, NONE, 0, out);
+    assert.ok(f > 0, `lượt ${i}: lùi được`);
+    cur = { ...out }; ok = drFits(net, cur, NONE, 0, IGN);
+  }
+  assert.ok(ok, `đã ra khỏi vật cản (x = ${cur.x})`);
+  assert.ok(drMove(net, cur, 2, 0, NONE, 0, out) < 1 && out.x + HL <= 30 + 1e-6, 'ra rồi thì luật cũ: tiến lại bị chặn ở mép');
+  /* lùi kèm xoay cũng thoát được */
+  const g = drMove(net, p, -2, -0.3, NONE, 0, out);
+  assert.ok(g > 0 && drFits(net, out, NONE, 0, IGN), 'lùi chéo ra được');
+});
+
+test('đường thoát không thành lối xuyên', () => {
+  const { net, p } = embed(), out = pose(0, 0, 0, 0);
+  for (const [d, dy] of [[1, 0], [5, 0], [3, 0.3], [3, -0.3]] as const) {
+    drMove(net, p, d, dy, NONE, 0, out);
+    assert.ok(out.x <= p.x + 1e-6, `tiến ${d}, xoay ${dy}: không tiến sâu thêm (x = ${out.x})`);
+  }
+  /* nhiều lượt liền cũng không xuyên qua được khối */
+  let cur = { ...p };
+  for (let i = 0; i < 50; i++) { drMove(net, cur, 1, 0, NONE, 0, out); cur = { ...out }; }
+  assert.ok(cur.x <= p.x + 1e-6, `x = ${cur.x}`);
+});
+
 test('vật cản thêm lúc chạy vẫn chặn (chỉ mục lưới cập nhật)', () => {
   const net = drMakeNet([pad('a', 0, 100, 0, 40, 2.6)], [wall(80, 81, 0, 40, 2.6, 4)]);
   const p = pose(50, 2.6, 20, 0);

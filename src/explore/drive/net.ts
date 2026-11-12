@@ -13,6 +13,7 @@ const REACH_STEP = 2;                                               // m — bư
 export function drMakeNet(pads: DrPad[], solids: DrSolid[]): DrNet {
   return { pads, solids: solids.slice(), closed: new Set() };
 }
+/* net.solids chỉ được thêm bằng push (chỉ mục lưới của collide.ts dựa vào điều đó); barie Cầu sông Hàn chặn bằng cổng của ô, không thêm / xóa vật cản */
 export function drAddSolids(net: DrNet, more: DrSolid[]): void {
   for (const s of more) net.solids.push(s);
 }

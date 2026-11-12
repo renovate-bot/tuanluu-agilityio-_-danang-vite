@@ -687,14 +687,16 @@ const driveBase = {
     reverseMax: 5.56,  // m/s — tốc độ lùi tối đa 20 km/h (ước lượng)
     latMax: 5.9,       // m/s² — trần gia tốc ngang ≈ 0,6 g, giới hạn góc lái theo tốc độ (ước lượng)
     steerRate: 2.2,    // 1/s — tốc độ bẻ lái bằng phím, phần góc lái tối đa mỗi giây (ước lượng)
-    steerReturn: 3.5   // 1/s — tốc độ tự trả lái khi nhả phím, phần góc lái tối đa mỗi giây (ước lượng)
+    steerReturn: 3.5,  // 1/s — tốc độ tự trả lái khi nhả phím, phần góc lái tối đa mỗi giây (ước lượng)
+    scrape: 3          // m/s² — hãm thêm khi thân xe cọ dọc vật cản (sau khi đã mất phần tốc độ hướng vào vật cản) (ước lượng)
   },
   sim: {               // bước mô phỏng và va chạm (explore/drive/motion.ts, collide.ts)
     sub: 0.4,          // m — bước con lớn nhất khi dời thân xe (cả quãng góc xe quét khi xoay); nhỏ hơn thân xe nhiều nên không nhảy qua lan can mỏng (ước lượng)
     dt: 0.1,           // s — bước thời gian lớn nhất; khung dài hơn chia nhiều bước (ước lượng)
     steps: 60,         // số bước tối đa mỗi khung (6 s); phần dư của khung dài hơn bỏ (tab ẩn lâu) (ước lượng)
     revV: 0.3,         // m/s — dưới tốc độ này, giữ phanh mà không đạp ga thì xe lùi (ước lượng)
-    floor: 0.1         // m — vật cản thấp hơn mặt đường + số này không chặn thân xe (mép ô đã là bó vỉa) (ước lượng)
+    floor: 0.1,        // m — vật cản thấp hơn mặt đường + số này không chặn thân xe (mép ô đã là bó vỉa) (ước lượng)
+    touch: 0.2         // s — không bị chặn quá chừng này mới coi là đã rời vật cản (bỏ qua bước lẻ khép khe hở khi đang cọ) (ước lượng)
   },
   stepMax: 0.6,        // m — hai mặt đường chênh không quá số này coi là cùng tầng (đường ven sông dưới dốc cầu cách ≥ 2 m, nối ô chênh ≤ 0,1) (ước lượng)
   roads: {             // mạng đường lái được (spec §4); mặt cắt đường mới như đường ven sông streets.ts: hai dải 9 m, dải giữa 3 m

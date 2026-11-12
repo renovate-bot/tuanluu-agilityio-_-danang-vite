@@ -4,6 +4,7 @@
      không chồng vật cản nào có khoảng cao độ giao [y + sim.floor, y + chiều cao xe], không chồng hộp xe tự động cùng tầng (trừ hộp bỏ qua).
    - Luật xe tự động (spec §6): đầu mỗi drMove, hộp nào đã chồng tư thế xuất phát thì bỏ qua cả lượt đó; nhờ vậy xe tự động đâm tới
      thì đi xuyên, người chơi tự lao vào thì bị chặn, đã chồng thì vẫn lái ra được theo mọi hướng.
+   - Đường thoát: tư thế đầu lượt đã chồng vật cản tĩnh hoặc ra ngoài ô thì nhận bước con không làm tệ hơn (drBad), để không kẹt vĩnh viễn.
    - Vật cản tra qua chỉ mục lưới ô DRC m (mẫu stroll/map.ts), giữ ngoài DrNet trong một WeakMap; dựng lười, nối thêm khi drAddSolids
      push vật cản mới, dựng lại khi mảng bị thay. Vật cản phủ quá nhiều ô để riêng danh sách "lớn", tra tuyến tính.
    - drFits / drMove / drSegClear chạy mỗi khung: không cấp phát (D-018), trừ khi lưới nối thêm vật cản hoặc mảng bỏ qua phải nới.
@@ -65,6 +66,21 @@ function drHitSolid(sol: DrSolid, x: number, z: number, c: number, s: number): b
   if (Math.abs(dx * s + dz * c) >= HW + ex * as + ez * ac - EPS) return false;   // trục ngang
   return true;
 }
+/* Độ lấn của thân xe vào vật cản sol (m, ≤ 0 là không chồng): hộp lấy độ chồng nhỏ nhất trên 4 trục tách (SAT);
+   tròn lấy r − khoảng cách từ tâm tròn tới thân xe (tâm tròn nằm trong thân xe thì r + khoảng tới cạnh gần nhất). Chỉ dùng cho đường thoát */
+function drPenSolid(sol: DrSolid, x: number, z: number, c: number, s: number): number {
+  const ac = Math.abs(c), as = Math.abs(s);
+  if (sol.kind === 'circle') {
+    const dx = sol.cx - x, dz = sol.cz - z, lf = dx * c - dz * s, ln = dx * s + dz * c;
+    const ef = Math.abs(lf) - HL, en = Math.abs(ln) - HW;
+    if (ef <= 0 && en <= 0) return sol.r - Math.max(ef, en);
+    const qf = ef > 0 ? ef : 0, qn = en > 0 ? en : 0;
+    return sol.r - Math.hypot(qf, qn);
+  }
+  const ex = (sol.x1 - sol.x0) / 2, ez = (sol.z1 - sol.z0) / 2, dx = (sol.x0 + sol.x1) / 2 - x, dz = (sol.z0 + sol.z1) / 2 - z;
+  return Math.min(ex + HL * ac + HW * as - Math.abs(dx), ez + HL * as + HW * ac - Math.abs(dz),
+    HL + ex * ac + ez * as - Math.abs(dx * c - dz * s), HW + ex * as + ez * ac - Math.abs(dx * s + dz * c));
+}
 /* Thân xe chồng hộp xe tự động b không (cùng tầng: chân hai xe chênh < chiều cao xe) */
 function drHitBox(b: DrBox, x: number, y: number, z: number, c: number, s: number): boolean {
   if (Math.abs(b.y - y) >= CAR.height) return false;
@@ -100,17 +116,61 @@ export function drFits(net: DrNet, p: DrPose, boxes: DrBox[], nBoxes: number, ig
   return true;
 }
 
+/* ===== Đường thoát ===== */
+/* Mức "tệ" của tư thế p không hợp lệ, ghi vào BAD_N, BAD_D:
+   BAD_N = số điểm mẫu (trong 9) không có mặt đường cùng tầng; BAD_D = tổng độ lấn (drPenSolid > 0) vào các vật cản tĩnh cùng khoảng cao độ.
+   Đường thoát nhận bước con khi cả hai không tăng: lấn theo SAT tăng ngay khi đi sâu thêm, và chỉ giảm sau khi vượt quá nửa vật cản,
+   nên từ chỗ chồng nông không bao giờ đi xuyên qua được; đi vào vật cản mới thì tổng tăng. */
+let BAD_N = 0, BAD_D = 0;
+function drBad(net: DrNet, p: DrPose): void {
+  const yRef = p.y, c = Math.cos(p.yaw), s = Math.sin(p.yaw);
+  let n = 0, d = 0;
+  for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++) {
+    const lf = i * HL, ln = j * HW;
+    if (Number.isNaN(drGround(net, p.x + lf * c + ln * s, p.z - lf * s + ln * c, yRef))) n++;
+  }
+  const ya = yRef + SIM.floor, yb = yRef + CAR.height, sol = net.solids, g = drGrid(net), big = g.big;
+  for (let i = 0; i < big.length; i++) { const o = sol[big[i]]; if (o.y1 > ya && o.y0 < yb) { const q = drPenSolid(o, p.x, p.z, c, s); if (q > 0) d += q; } }
+  const R = HL * Math.abs(c) + HW * Math.abs(s), Rz = HL * Math.abs(s) + HW * Math.abs(c);
+  const ix0 = Math.floor((p.x - R) / DRC), ix1 = Math.floor((p.x + R) / DRC), iz0 = Math.floor((p.z - Rz) / DRC), iz1 = Math.floor((p.z + Rz) / DRC);
+  for (let ix = ix0; ix <= ix1; ix++) for (let iz = iz0; iz <= iz1; iz++) {
+    const list = g.cells.get(drKey(ix, iz));
+    if (!list) continue;
+    for (let k = 0; k < list.length; k++) {
+      const i = list[k], o = sol[i];
+      /* vật cản phủ nhiều ô được gặp nhiều lần: chỉ cộng ở ô đầu tiên (ô thấp nhất) mà nó và khung bao thân xe cùng có */
+      if (!(o.y1 > ya && o.y0 < yb)) continue;
+      const cx0 = o.kind === 'circle' ? o.cx - o.r : o.x0, cz0 = o.kind === 'circle' ? o.cz - o.r : o.z0;
+      if (ix !== Math.max(ix0, Math.floor(cx0 / DRC)) || iz !== Math.max(iz0, Math.floor(cz0 / DRC))) continue;
+      const q = drPenSolid(o, p.x, p.z, c, s); if (q > 0) d += q;
+    }
+  }
+  BAD_N = n; BAD_D = d;
+}
+
 /* ===== Dời thân xe ===== */
 let IGN = new Uint8Array(16);                                        // hộp bỏ qua trong lượt drMove hiện tại
 const CUR: DrPose = { x: 0, y: 0, z: 0, yaw: 0 }, CAND: DrPose = { x: 0, y: 0, z: 0, yaw: 0 };
 let mNet: DrNet, mBoxes: DrBox[], mN = 0;                            // tham số của lượt drMove hiện tại (tránh truyền lại / tạo closure)
+let mEsc = false, mBadN = 0, mBadD = 0;                              // đang ở đường thoát (CUR không hợp lệ) và mức tệ của CUR
+const BAD_TOL = 1e-6;                                                // m — dung sai làm tròn khi so tổng độ lấn
 
-/* Thử đặt thân xe tại CAND (cao độ lấy lại theo mặt đường tại tâm); được thì chép sang CUR */
+/* Thử đặt thân xe tại CAND (cao độ lấy lại theo mặt đường tại tâm); được thì chép sang CUR.
+   CUR hợp lệ: CAND phải hợp lệ (luật thường). CUR không hợp lệ (đường thoát): CAND hợp lệ, hoặc không chạm hộp xe tự động
+   chưa bỏ qua và mức tệ (drBad) không tăng; tâm không có mặt đường thì giữ cao độ cũ. */
 function drTry(): boolean {
-  const y = drGround(mNet, CAND.x, CAND.z, CUR.y);
-  if (Number.isNaN(y)) return false;
+  let y = drGround(mNet, CAND.x, CAND.z, CUR.y);
+  if (Number.isNaN(y)) { if (!mEsc) return false; y = CUR.y; }
   CAND.y = y;
-  if (!drFits(mNet, CAND, mBoxes, mN, IGN)) return false;
+  if (drFits(mNet, CAND, mBoxes, mN, IGN)) mEsc = false;
+  else {
+    if (!mEsc) return false;
+    const c = Math.cos(CAND.yaw), s = Math.sin(CAND.yaw);
+    for (let i = 0; i < mN; i++) if (!IGN[i] && drHitBox(mBoxes[i], CAND.x, y, CAND.z, c, s)) return false;
+    drBad(mNet, CAND);
+    if (BAD_N > mBadN || BAD_D > mBadD + BAD_TOL) return false;
+    mBadN = BAD_N; mBadD = BAD_D;
+  }
   CUR.x = CAND.x; CUR.y = CAND.y; CUR.z = CAND.z; CUR.yaw = CAND.yaw;
   return true;
 }
@@ -128,7 +188,8 @@ function drTryShift(dx: number, dz: number): boolean {
 
 /* Dời thân xe từ p quãng dist (m, âm = lùi; quãng của trục sau) và xoay dyaw (rad), kết quả vào out (out có thể là p).
    Chia bước con ≤ sim.sub (tính cả quãng góc xe quét khi xoay). Bước con bị chặn thì thử: chỉ tịnh tiến (bỏ xoay), chỉ thành phần X,
-   chỉ thành phần Z (trượt dọc vật cản thẳng trục); không được thì dừng. Trả phần quãng đã đi theo hướng định đi:
+   chỉ thành phần Z (trượt dọc vật cản thẳng trục); không được thì dừng. Tư thế đầu lượt đã chồng vật cản tĩnh / ra ngoài ô
+   (chỗ xuất phát đặt sai, vật cản thêm đè lên xe) thì đi theo đường thoát của drTry cho tới khi hợp lệ trở lại. Trả phần quãng đã đi theo hướng định đi:
    1 = trọn; trượt theo một trục tính bằng bình phương cos góc giữa trục đó và hướng định đi; 0 = đứng hẳn. */
 export function drMove(net: DrNet, p: DrPose, dist: number, dyaw: number, boxes: DrBox[], nBoxes: number, out: DrPose): number {
   if (IGN.length < nBoxes) IGN = new Uint8Array(Math.max(nBoxes, IGN.length * 2));
@@ -136,7 +197,9 @@ export function drMove(net: DrNet, p: DrPose, dist: number, dyaw: number, boxes:
   for (let i = 0; i < nBoxes; i++) IGN[i] = drHitBox(boxes[i], p.x, p.y, p.z, c0, s0) ? 1 : 0;
   mNet = net; mBoxes = boxes; mN = nBoxes;
   CUR.x = p.x; CUR.y = p.y; CUR.z = p.z; CUR.yaw = p.yaw;
-  const n = Math.max(1, Math.ceil((Math.abs(dist) + Math.abs(dyaw) * REACH) / SIM.sub));
+  mEsc = !drFits(net, CUR, boxes, nBoxes, IGN);                      // hộp chồng sẵn đã bỏ qua: không hợp lệ chỉ vì vật cản tĩnh / ra ngoài ô
+  if (mEsc) { drBad(net, CUR); mBadN = BAD_N; mBadD = BAD_D; }
+  const n =Math.max(1, Math.ceil((Math.abs(dist) + Math.abs(dyaw) * REACH) / SIM.sub));
   const sd = dist / n, sy = dyaw / n;
   let done = 0;
   for (let k = 0; k < n; k++) {
