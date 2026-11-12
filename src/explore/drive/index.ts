@@ -125,7 +125,7 @@ function watchStep(dt: number): void {
     drCamPlace(camera, w, camS, net!, dt, !chased); chased = true;
     controls.target.set(w.x, w.y, w.z);
     _ws.x = w.x; _ws.z = w.z; _ws.yaw = w.yaw; _ws.v = w.v;
-    drHudUpdate(_ws, exDrivers.dots());
+    drHudUpdate(_ws, exDrivers.dots(w));
   }
   exNightStep(dt, false);
 }

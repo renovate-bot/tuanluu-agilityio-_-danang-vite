@@ -28,13 +28,14 @@ interface DSlot {
   live: boolean;              // đã có mẫu và đang hiện
   px: number; py: number; pz: number;   // vị trí lúc đo độ nghiêng gần nhất
   absV: number;               // |v| khung trước (suy đèn phanh)
+  lastMs: number;             // giờ khách nhận gói gần nhất (ms), để biết mẫu cuối đã cũ (gói ngừng tới thì v về 0, bánh thôi quay)
 }
 
 const slots: DSlot[] = Array.from({ length: M.drive.slots }, (_, i) => ({
   name: null, tr: new ExTrack(), tv: new ExTrack(), pose: { x: 0, y: 0, z: 0, yaw: 0, bank: 0 }, vp: { x: 0, y: 0, z: 0, yaw: 0, bank: 0 },
   place: { x: 0, y: 0, z: 0, yaw: 0, pitch: 0, steer: 0, wheel: 0, braking: false },
   state: { x: 0, y: 0, z: 0, yaw: 0, v: 0 }, dot: { x: 0, z: 0, color: M.colors[i % M.colors.length] },
-  live: false, px: 0, py: 0, pz: 0, absV: 0
+  live: false, px: 0, py: 0, pz: 0, absV: 0, lastMs: 0
 }));
 const _a: number[] = [0, 0, 0, 0, 0, 0, 0];   // [slot, x, y, z, yaw, st, giờ gửi] cho tr
 const _b: number[] = [0, 0, 0, 0, 0, 0, 0];   // [slot, v, 0, 0, 0, 0, giờ gửi] cho tv
@@ -89,7 +90,7 @@ export const exDrivers = {
       _a[0] = _b[0] = i;
       _a[1] = e[1]; _a[2] = e[2]; _a[3] = e[3]; _a[4] = e[4]; _a[5] = e[6]; _a[6] = e[7];
       _b[1] = e[5]; _b[6] = e[7];
-      s.tr.feed(_a, nowMs, M); s.tv.feed(_b, nowMs, M);
+      s.tr.feed(_a, nowMs, M); s.tv.feed(_b, nowMs, M); s.lastMs = nowMs;
     }
   },
 
@@ -100,7 +101,7 @@ export const exDrivers = {
       const s = slots[i];
       if (s.name === null || i === selfSlot) continue;
       if (!s.tr.sample(t, s.pose) || !s.tv.sample(t, s.vp)) continue;
-      const p = s.pose, v = s.vp.x, pl = s.place, av = Math.abs(v);
+      const p = s.pose, v = nowMs - s.lastMs > R.staleMs ? 0 : s.vp.x, pl = s.place, av = Math.abs(v);
       if (!s.live) {
         s.live = true; s.px = p.x; s.py = p.y; s.pz = p.z; pl.pitch = 0; pl.wheel = 0; s.absV = av;
         drCars.show(i, true);
@@ -128,11 +129,11 @@ export const exDrivers = {
   },
   name(slot: number): string | null { const s = slots[slot]; return s ? s.name : null; },
 
-  /* Chấm xe người khác cho bản đồ nhỏ (mảng và phần tử tái dùng, chỉ xe đã hiện) */
-  dots(): DrMapDot[] {
+  /* Chấm xe người khác cho bản đồ nhỏ (mảng và phần tử tái dùng, chỉ xe đã hiện); except: trạng thái xe đang được xem (đã có mũi tên của bản đồ nên bỏ chấm) */
+  dots(except?: ExDriverState | null): DrMapDot[] {
     let n = 0;
     for (const s of slots) {
-      if (s.name === null || !s.live) continue;
+      if (s.name === null || !s.live || s.state === except) continue;
       const d = s.dot; d.x = s.state.x; d.z = s.state.z;
       _dots[n++] = d;
     }

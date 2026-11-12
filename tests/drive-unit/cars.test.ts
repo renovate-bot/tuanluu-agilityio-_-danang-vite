@@ -71,12 +71,28 @@ test('drCars: count / show / remove theo slot; sync thêm và bớt xe theo danh
   assert.equal(drCars.count, 0); assert.equal(carNodes().length, 0);
 });
 
-test('không có người lái thì group không có xe nào, chỉ còn nhóm bánh chung (ẩn)', () => {
+test('thêm xe rồi bớt hết thì group không còn xe nào, callback onCars(0) gỡ group khỏi cảnh', () => {
   fresh();
-  assert.equal(carNodes().length, 0);
+  const seen: number[] = []; exDrivers.onCars = (n) => seen.push(n);
+  exDrivers.sync([{ slot: 1, name: 'An' }, { slot: 2, name: 'Binh' }], -1);
+  assert.equal(carNodes().length, 2); assert.equal(seen[seen.length - 1], 2);
+  exDrivers.sync([], -1);
+  assert.equal(carNodes().length, 0, 'không còn con nào mang tên drive-car');
+  assert.equal(drCars.count, 0);
+  assert.equal(seen[seen.length - 1], 0, 'onCars(0) để gỡ group khỏi cảnh');
   assert.deepEqual(drCars.group.children.map((c) => c.name), ['drive-wheels']);
-  assert.equal(drWheels.group.visible, false);
-  assert.equal(drCars.group.parent, null, 'test không gắn group vào cảnh nào');
+});
+
+test('gói ngừng tới: v dùng quay bánh về 0 khi mẫu cuối cũ hơn staleMs (xe đứng, bánh thôi quay)', () => {
+  fresh();
+  exDrivers.sync([{ slot: 2, name: 'Binh' }], -1);
+  play(pk(2, 20, 0, 8), 0, 600, 1400, 50);
+  assert.ok(Math.abs(exDrivers.slotState(2)!.v - 20) < 1e-9, 'còn gói tới thì v giữ nguyên');
+  const last = 7 * 1000 / P.sendHz, S = CONFIG.drive.remote.staleMs;
+  exDrivers.update(last + S - 50, 0.05);
+  assert.ok(Math.abs(exDrivers.slotState(2)!.v - 20) < 1e-9, 'chưa quá staleMs thì chưa đổi');
+  exDrivers.update(last + S + 50, 0.05);
+  assert.equal(exDrivers.slotState(2)!.v, 0, 'quá staleMs: v về 0');
 });
 
 test('exDrivers.sync: dựng xe theo danh sách trừ slot của mình, báo số xe qua onCars; trống thì 0', () => {
@@ -161,4 +177,15 @@ test('gói của slot mình, slot trống hoặc ngoài khoảng bị bỏ; dots
   assert.equal(d[0].color, P.colors[1]);
   assert.equal(exDrivers.dots(), d, 'cùng một mảng');
   assert.equal(exDrivers.slotState(0), null);
+});
+
+test('dots(except): bỏ chấm của xe đang được xem (bản đồ nhỏ đã vẽ mũi tên cho xe đó)', () => {
+  fresh();
+  exDrivers.sync([{ slot: 1, name: 'Ban' }, { slot: 2, name: 'Chi' }], -1);
+  play([...pk(1, 5, 0, 8), ...pk(2, 5, 0, 8)].sort((a, b) => a[7] - b[7]), 0, 600, 1400, 50);
+  assert.equal(exDrivers.dots().length, 2);
+  const w = exDrivers.slotState(1)!;
+  const d = exDrivers.dots(w);
+  assert.equal(d.length, 1);
+  assert.equal(d[0].color, P.colors[2]);
 });

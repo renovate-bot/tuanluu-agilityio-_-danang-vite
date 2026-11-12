@@ -731,7 +731,8 @@ const driveBase = {
     brakeDecel: 3,     // m/s² — tốc độ |v| giảm nhanh hơn mức này thì coi là đang phanh, bật đèn phanh; cao hơn coast (1,5) để nhả ga không sáng đèn (ước lượng)
     pitchTau: 0.15,    // s — hằng số thời gian làm mượt độ nghiêng dọc suy từ cao độ nội suy giữa hai khung (ước lượng)
     pitchMax: 0.5,     // rad — độ nghiêng dọc lớn nhất của xe người khác, kẹp để một bước nhảy vị trí không dựng xe thẳng đứng (ước lượng)
-    pitchMinMove: 0.05 // m — một khung dời ngang ít hơn chừng này thì giữ độ nghiêng cũ (xe đứng yên, tránh nhiễu) (ước lượng)
+    pitchMinMove: 0.05, // m — một khung dời ngang ít hơn chừng này thì giữ độ nghiêng cũ (xe đứng yên, tránh nhiễu) (ước lượng)
+    staleMs: 1000      // ms — quá chừng này không nhận gói mới thì coi v = 0 (bánh thôi quay, đèn phanh tắt); ExTrack kẹp ở mẫu cuối nên xe đứng nhưng v cũ vẫn giữ (ước lượng)
   },
   evac: {              // sơ tán xe khỏi nhịp quay Cầu sông Hàn khi cầu rời CLOSED (explore/drive/motion.ts drEvacStep)
     speed: 15,         // m/s — tốc độ trượt mong muốn (≈ 54 km/h): từ giữa nhịp (x = 0) ra ngoài barie ≈ 70 m mất ≈ 4,7 s (ước lượng)

@@ -333,7 +333,7 @@ try {
     check(`đi dạo ${tag}: Cần gạt, 📷 hiện; không còn #stJump (${await page.evaluate(() => !!document.getElementById('stJump'))})`, hud.length === 2 && !(await page.evaluate(() => !!document.getElementById('stJump'))));
     check(`đi dạo ${tag}: mỗi nút ≥ 44 × 44 px`, hud.every((b) => b.width >= 44 && b.height >= 44));
     check(`đi dạo ${tag}: nằm trọn trong khung nhìn`, hud.every((b) => b.left >= 0 && b.top >= 0 && b.right <= W && b.bottom <= H));
-    check(`đi dạo ${tag}: không chồng nút Thoát và danh sách người chơi`, avoid.length === 2 && noOverlap([...hud, ...avoid]));
+    check(`đi dạo ${tag}: không chồng nút Thoát và danh sách người chơi / hai thông báo`, avoid.length === 2 && noOverlap([...hud, ...avoid]));
     check(`đi dạo ${tag}: cả hai nút không bị lớp khác che`, (await Promise.all(STH.map((s) => topAtCenter(page, s)))).every(Boolean));
     return hud;
   };
@@ -425,16 +425,20 @@ try {
   /* Danh sách người chơi giả đầy nhất (đầu + 5 người lái) để thử chồng lấn ở chỗ xấu nhất; không đổi trạng thái chế độ */
   const fillDriveRoster = (page) => page.evaluate(() => {
     const r = document.getElementById('exMpRoster');
-    r.innerHTML = '<div class="ex-mp-head">Lái xe 5/5 · Đi dạo 5/5 · Bay 5/5</div>' + Array.from({ length: 5 }, (_, i) => `<div class="ex-mp-row drive"><i></i>Tài xế ${i}</div>`).join('');
+    r.innerHTML = '<div class="ex-mp-head">Вождение 5/5 · Прогулка 5/5 · Полёт 5/5 (наблюдение)</div>' + Array.from({ length: 5 }, (_, i) => `<div class="ex-mp-row drive"><i></i>Tài xế ${i}</div>`).join('');
     r.hidden = false;
+    /* hai thông báo chuỗi dài tiếng Nga: phải không đè danh sách / bản đồ nhỏ */
+    const n = document.getElementById('exMpNotice'), idle = document.getElementById('exMpIdle');
+    n.textContent = 'Игрок вышел из игры, освободилось место для вас'; n.hidden = false;
+    idle.textContent = 'Вы будете отключены через 15 секунд из-за бездействия'; idle.hidden = false;
   });
   const driveLayout = async (page, W, H, tag) => {
     await fillDriveRoster(page); await frames(page, 2);
-    const hud = await rects(page, DH), avoid = await rects(page, ['#btnExExit', '#drMap', '#drSpeed', '#exMpRoster']);
+    const hud = await rects(page, DH), avoid = await rects(page, ['#btnExExit', '#drMap', '#drSpeed', '#exMpRoster', '#exMpNotice', '#exMpIdle']);
     check(`lái xe ${tag}: cần gạt, GA, PHANH hiện`, hud.length === 3);
     check(`lái xe ${tag}: mỗi nút ≥ 44 × 44 px`, hud.every((b) => b.width >= 44 && b.height >= 44));
     check(`lái xe ${tag}: nằm trọn trong khung nhìn`, hud.every((b) => b.left >= 0 && b.top >= 0 && b.right <= W && b.bottom <= H));
-    check(`lái xe ${tag}: ba điều khiển không chồng nhau và không chồng Thoát / bản đồ nhỏ / đồng hồ / danh sách người chơi`, avoid.length === 4 && noOverlap([...hud, ...avoid]));
+    check(`lái xe ${tag}: ba điều khiển không chồng nhau và không chồng Thoát / bản đồ nhỏ / đồng hồ / danh sách người chơi / hai thông báo`, avoid.length === 6 && noOverlap([...hud, ...avoid]));
     check(`lái xe ${tag}: danh sách người chơi nằm trọn trong khung nhìn`, avoid.filter((b) => b.sel === '#exMpRoster').every((b) => b.left >= 0 && b.top >= 0 && b.right <= W && b.bottom <= H));
     check(`lái xe ${tag}: không bị lớp khác che`, (await Promise.all(DH.map((s) => topAtCenter(page, s)))).every(Boolean));
     const g = hud.find((b) => b.sel === '#drGas'), br = hud.find((b) => b.sel === '#drBrake'), st = hud.find((b) => b.sel === '#drSteer');
@@ -482,14 +486,14 @@ try {
   check('bản đồ nhỏ: chú thích Hầm (phương án đề xuất) dịch sang ar', !!arTunnel && (await CP.page.evaluate(() => document.getElementById('drMapNote').textContent)) === arTunnel);
   allErrors.push(...CP.errors); await CP.page.close();
 
-  /* Máy tính 1280×720 (có chuột): cần gạt, GA, PHANH ẩn; đồng hồ (dưới phải), danh sách (trên phải), ô FPS (có khi ?test), bản đồ nhỏ (dưới trái) và nút Thoát không chồng nhau; ar vẫn vậy */
+  /* Máy tính 1280×720 (có chuột): cần gạt, GA, PHANH ẩn; đồng hồ (dưới phải), danh sách (trên phải), hai thông báo (giữa), ô FPS (có khi ?test), bản đồ nhỏ (dưới trái) và nút Thoát không chồng nhau; ar vẫn vậy */
   const CK = await openApp(browser, srv.url + '?explore=drive', { width: 1280, height: 720 });
   CK.page.setDefaultTimeout(180000);
   const deskLayout = async (tag) => {
     await fillDriveRoster(CK.page); await frames(CK.page, 2);
-    const all = await rects(CK.page, ['#btnExExit', '#drMap', '#drSpeed', '#exMpRoster', '.stats']);
+    const all = await rects(CK.page, ['#btnExExit', '#drMap', '#drSpeed', '#exMpRoster', '.stats', '#exMpNotice', '#exMpIdle']);
     check(`lái xe ${tag}: máy tính ẩn cần gạt, GA, PHANH`, await hiddenAll(CK.page, DH));
-    check(`lái xe ${tag}: đồng hồ, danh sách, ô FPS, bản đồ nhỏ, Thoát đều hiện (${all.length}/5) và không chồng nhau`, all.length === 5 && noOverlap(all));
+    check(`lái xe ${tag}: đồng hồ, danh sách, ô FPS, bản đồ nhỏ, Thoát đều hiện (${all.length}/7) và không chồng nhau`, all.length === 7 && noOverlap(all));
     check(`lái xe ${tag}: danh sách nằm trọn trong khung nhìn 1280×720`, all.filter((b) => b.sel === '#exMpRoster').every((b) => b.left >= 0 && b.top >= 0 && b.right <= 1280 && b.bottom <= 720));
   };
   await deskLayout('máy tính 1280×720');
