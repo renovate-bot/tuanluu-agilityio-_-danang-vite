@@ -356,6 +356,15 @@ body.drive.ex-watching #drSteer,body.drive.ex-watching #drGas,body.drive.ex-watc
 @media (hover:none){
   body.drive.ex-watching #drSpeed{display:none;}   /* đồng hồ giữa trên đè dòng "Đang xem" */
 }
+/* Nút tiếng xe 🔊 / 🔇 (explore/drive/sound.ts): vùng chạm 44 px. Máy tính: giữa đáy (bản đồ nhỏ trái, đồng hồ phải). Cảm ứng: trên cần gạt (đáy trái;
+   đáy giữa ở 390 px chỉ còn ≈ 32 px giữa cần gạt và PHANH). #drHud dir="ltr" nên ar không lật. Chế độ xem: không có xe của mình nên ẩn */
+#drSoundBtn{display:none;}
+body.drive:not(.ex-watching) #drSoundBtn{display:flex;align-items:center;justify-content:center;position:fixed;pointer-events:auto;left:50%;transform:translateX(-50%);bottom:calc(14px + env(safe-area-inset-bottom,0px));width:44px;height:44px;margin:0;padding:0;box-sizing:border-box;font-size:20px;line-height:1;color:var(--text);background:var(--panel);border:1px solid var(--panel-line);border-radius:50%;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
+body.drive #drSoundBtn[aria-pressed="true"]{border-color:var(--gold);}
+body.drive #drSoundBtn:focus-visible{outline:2px solid var(--gold);outline-offset:2px;}
+@media (hover:none){
+  body.drive:not(.ex-watching) #drSoundBtn{left:calc(16px + env(safe-area-inset-left,0px));transform:none;bottom:calc(36px + var(--dr-pad-h,72px) + env(safe-area-inset-bottom,0px));}
+}
 body.drive #scene{cursor:grab;}
 body.drive #scene:active{cursor:grabbing;}
 /* Cảm ứng (hover:none): ngón trái cần gạt ngang dưới trái; ngón phải GA (to) và PHANH (nhỏ hơn, bên trái GA) dưới phải; vuốt vùng trống xoay camera.

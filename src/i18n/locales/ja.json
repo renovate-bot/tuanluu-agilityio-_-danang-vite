@@ -509,5 +509,6 @@
   "drLost": "接続が切れました。一人で運転を続けられます。",
   "drCreditLabel": "車の3Dモデル",
   "drCreditMod": "改変あり",
-  "drCreditTm": "VinFast、VF 3 は所有者の商標です。説明用のモデルで、公式製品ではありません。"
+  "drCreditTm": "VinFast、VF 3 は所有者の商標です。説明用のモデルで、公式製品ではありません。",
+  "drSound": "車の音"
 }

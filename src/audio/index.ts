@@ -15,6 +15,7 @@ interface AudioState {
   waterSrc: AudioBufferSourceNode | null; waterGain: GainNode | null; lastFire: boolean; lastWater: boolean; distGain: number;
   master?: GainNode; tone?: BiquadFilterNode; music?: GainNode; sfx?: GainNode; verb?: ConvolverNode; verbSend?: GainNode;
   droneGain?: GainNode; riverGain?: GainNode; motorGain?: GainNode; swingGain?: number; ducked?: boolean; nightSet?: number;
+  ext?: GainNode; extOn?: boolean;   // cổng riêng của tiếng xe khi chưa bật âm thanh chung (extPort)
   wxDuck: number; rainGain?: GainNode; windGain?: GainNode; windBp?: BiquadFilterNode; wxRain: number; wxWind: number; wxIndoors: number; patterAt: number;   // thời tiết (GĐ7)
 }
 type AudioCtor = typeof AudioContext;
@@ -242,7 +243,7 @@ export function createAudio() {
       if (!A.ctx) return;
       A.on = false; clearInterval(A.timer);
       A.master.gain.setTargetAtTime(0, A.ctx.currentTime, 0.25);
-      setTimeout(() => { if (!A.on) A.ctx.suspend(); }, 1200);
+      setTimeout(() => { if (!A.on && !A.extOn) A.ctx.suspend(); }, 1200);
     },
     setVolume(v) { A.volume = v; if (A.ctx && A.on) A.master.gain.setTargetAtTime(v, A.ctx.currentTime, 0.08); },
     duck(on) { A.ducked = on; if (A.music) A.music.gain.setTargetAtTime(musicLevel(), A.ctx.currentTime, 0.3); },
@@ -271,8 +272,20 @@ export function createAudio() {
     /* Cổng cho hiệu ứng ngoài (tiếng xe của chế độ lái): ngữ cảnh + nút hiệu ứng, chỉ khi người xem đã bấm phát ít nhất một lần (chưa có ngữ cảnh thì null: không tạo ở đây).
        Nút tắt tiếng chung (master) vẫn chặn mọi thứ nối vào đây; `on` cho biết tiếng đang bật */
     sfxPort() { return A.ctx && A.sfx ? { ctx: A.ctx, out: A.sfx as AudioNode, on: A.on } : null; },
-    pause() { if (A.ctx && A.on) { clearInterval(A.timer); A.ctx.suspend(); } },
-    resume() { if (A.ctx && A.on) { A.ctx.resume(); A.nextTime = Math.max(A.nextTime, A.ctx.currentTime + 0.1); A.timer = window.setInterval(schedule, 60); } },
+    /* Cổng riêng cho tiếng xe khi người xem bật bằng nút 🔊 của chế độ lái mà CHƯA bật âm thanh chung (nút nhạc ẩn trong chế độ khám phá).
+       Gọi trong thao tác của người xem (bấm): tạo ngữ cảnh nếu chưa có (master vẫn 0, không lên lịch nhạc ⇒ không phát nhạc / tiếng nền), resume,
+       trả nút ra riêng nối thẳng loa với âm lượng chung. on = false: thả cổng, âm thanh chung đang tắt thì ngưng ngữ cảnh. Chưa ai gọi thì không đổi gì */
+    extPort(on = true) {
+      A.extOn = on;
+      if (!on) { if (A.ctx && !A.on) A.ctx.suspend(); return null; }
+      if (!A.ctx) build();
+      A.ctx.resume();
+      if (!A.ext) { A.ext = A.ctx.createGain(); A.ext.connect(A.ctx.destination); }
+      A.ext.gain.value = A.volume;
+      return { ctx: A.ctx, out: A.ext as AudioNode };
+    },
+    pause() { if (A.ctx && A.on) { clearInterval(A.timer); A.ctx.suspend(); } else if (A.ctx && A.extOn) A.ctx.suspend(); },
+    resume() { if (A.ctx && A.on) { A.ctx.resume(); A.nextTime = Math.max(A.nextTime, A.ctx.currentTime + 0.1); A.timer = window.setInterval(schedule, 60); } else if (A.ctx && A.extOn) A.ctx.resume(); },
     /* Gọi mỗi khung hình: ngày/đêm, trạng thái trình diễn, khoảng cách camera tới đầu rồng */
     /* Cầu sông Hàn: còi báo khi quay, tiếng động cơ mâm xoay; to nhỏ theo khoảng cách camera */
     setSwingDistance(d) { A.swingGain = Math.max(0.08, Math.min(1, 160 / Math.max(d, 1))); },

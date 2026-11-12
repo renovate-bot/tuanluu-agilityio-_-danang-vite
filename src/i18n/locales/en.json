@@ -509,5 +509,6 @@
   "drLost": "Connection lost. You can still drive, but alone.",
   "drCreditLabel": "Car model",
   "drCreditMod": "modified",
-  "drCreditTm": "VinFast and VF 3 are trademarks of their owner; illustrative model, not an official product."
+  "drCreditTm": "VinFast and VF 3 are trademarks of their owner; illustrative model, not an official product.",
+  "drSound": "Car sound"
 }

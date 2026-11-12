@@ -509,5 +509,6 @@
   "drLost": "连接已断开。你仍可独自驾驶。",
   "drCreditLabel": "汽车模型",
   "drCreditMod": "已修改",
-  "drCreditTm": "VinFast、VF 3 是其所有者的商标；模型仅作示意，并非官方产品。"
+  "drCreditTm": "VinFast、VF 3 是其所有者的商标；模型仅作示意，并非官方产品。",
+  "drSound": "汽车声音"
 }

@@ -434,11 +434,13 @@ try {
   });
   const driveLayout = async (page, W, H, tag) => {
     await fillDriveRoster(page); await frames(page, 2);
-    const hud = await rects(page, DH), avoid = await rects(page, ['#btnExExit', '#drMap', '#drSpeed', '#exMpRoster', '#exMpNotice', '#exMpIdle']);
+    const hud = await rects(page, DH), avoid = await rects(page, ['#btnExExit', '#drMap', '#drSpeed', '#exMpRoster', '#exMpNotice', '#exMpIdle', '#drSoundBtn']);
+    const snd = avoid.find((b) => b.sel === '#drSoundBtn');   // nút tiếng xe 🔊 / 🔇 (sửa cuối D-034)
     check(`lái xe ${tag}: cần gạt, GA, PHANH hiện`, hud.length === 3);
-    check(`lái xe ${tag}: mỗi nút ≥ 44 × 44 px`, hud.every((b) => b.width >= 44 && b.height >= 44));
-    check(`lái xe ${tag}: nằm trọn trong khung nhìn`, hud.every((b) => b.left >= 0 && b.top >= 0 && b.right <= W && b.bottom <= H));
-    check(`lái xe ${tag}: ba điều khiển không chồng nhau và không chồng Thoát / bản đồ nhỏ / đồng hồ / danh sách người chơi / hai thông báo`, avoid.length === 6 && noOverlap([...hud, ...avoid]));
+    check(`lái xe ${tag}: mỗi nút ≥ 44 × 44 px (cả nút tiếng xe)`, hud.every((b) => b.width >= 44 && b.height >= 44) && !!snd && snd.width >= 44 && snd.height >= 44);
+    check(`lái xe ${tag}: nằm trọn trong khung nhìn (cả nút tiếng xe)`, [...hud, ...(snd ? [snd] : [])].every((b) => b.left >= 0 && b.top >= 0 && b.right <= W && b.bottom <= H));
+    check(`lái xe ${tag}: ba điều khiển + nút tiếng xe không chồng nhau và không chồng Thoát / bản đồ nhỏ / đồng hồ / danh sách người chơi / hai thông báo`, avoid.length === 7 && noOverlap([...hud, ...avoid]));
+    check(`lái xe ${tag}: nút tiếng xe không bị lớp khác che, có aria-label, aria-pressed`, (await topAtCenter(page, '#drSoundBtn')) && (await page.evaluate(() => { const b = document.getElementById('drSoundBtn'); return !!b.getAttribute('aria-label') && ['true', 'false'].includes(b.getAttribute('aria-pressed')); })));
     check(`lái xe ${tag}: danh sách người chơi nằm trọn trong khung nhìn`, avoid.filter((b) => b.sel === '#exMpRoster').every((b) => b.left >= 0 && b.top >= 0 && b.right <= W && b.bottom <= H));
     check(`lái xe ${tag}: không bị lớp khác che`, (await Promise.all(DH.map((s) => topAtCenter(page, s)))).every(Boolean));
     const g = hud.find((b) => b.sel === '#drGas'), br = hud.find((b) => b.sel === '#drBrake'), st = hud.find((b) => b.sel === '#drSteer');
@@ -491,9 +493,10 @@ try {
   CK.page.setDefaultTimeout(180000);
   const deskLayout = async (tag) => {
     await fillDriveRoster(CK.page); await frames(CK.page, 2);
-    const all = await rects(CK.page, ['#btnExExit', '#drMap', '#drSpeed', '#exMpRoster', '.stats', '#exMpNotice', '#exMpIdle']);
+    const all = await rects(CK.page, ['#btnExExit', '#drMap', '#drSpeed', '#exMpRoster', '.stats', '#exMpNotice', '#exMpIdle', '#drSoundBtn']);
     check(`lái xe ${tag}: máy tính ẩn cần gạt, GA, PHANH`, await hiddenAll(CK.page, DH));
-    check(`lái xe ${tag}: đồng hồ, danh sách, ô FPS, bản đồ nhỏ, Thoát đều hiện (${all.length}/7) và không chồng nhau`, all.length === 7 && noOverlap(all));
+    check(`lái xe ${tag}: đồng hồ, danh sách, ô FPS, bản đồ nhỏ, Thoát, nút tiếng xe đều hiện (${all.length}/8) và không chồng nhau`, all.length === 8 && noOverlap(all));
+    check(`lái xe ${tag}: nút tiếng xe ≥ 44 × 44 px, không bị che`, all.filter((b) => b.sel === '#drSoundBtn').every((b) => b.width >= 44 && b.height >= 44) && await topAtCenter(CK.page, '#drSoundBtn'));
     check(`lái xe ${tag}: danh sách nằm trọn trong khung nhìn 1280×720`, all.filter((b) => b.sel === '#exMpRoster').every((b) => b.left >= 0 && b.top >= 0 && b.right <= 1280 && b.bottom <= 720));
   };
   await deskLayout('máy tính 1280×720');

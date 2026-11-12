@@ -260,6 +260,7 @@ export function setupDrive(c: SwingController, onExit: () => void): void {
   /* Tab ẩn hoặc mất tiêu điểm: vòng khung có thể dừng nên tắt còi ngay (phím đã nhả ở drBindDrop, cảm ứng tự reset trong touch.ts) */
   window.addEventListener('blur', () => drSound.horn(false));
   document.addEventListener('visibilitychange', () => { if (document.hidden) drSound.horn(false); });
+  drSound.bind(document.getElementById('drSoundBtn'));   // nút 🔊 / 🔇: cách duy nhất bật tiếng xe khi chưa bật âm thanh chung (nút nhạc ẩn trong chế độ khám phá)
   const hud = document.getElementById('drHud');
   if (hud) touch = drTouchBind(hud, {
     look: (dx, dy) => { if (active()) drCamDrag(camS, dx, dy); },

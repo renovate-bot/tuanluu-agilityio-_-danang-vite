@@ -2,7 +2,8 @@
    Khóa: drSpeedUnit (đơn vị đồng hồ), drHint (dòng gợi ý phím, máy tính), drGas / drBrake (nút bàn đạp cảm ứng), drRoster (tên chế độ trong danh sách người chơi),
    drMapTunnel (chú thích Hầm trên bản đồ nhỏ: công trình CHƯA XÂY nên luôn ghi "phương án đề xuất"), drLostChooser (màn chọn sau khi mất kết nối lúc xem), drWatch (đang xem xe của người khác).
    drCardDesc đã có từ Task 7 (bỏ qua nếu khóa đã tồn tại, không ghi đè). Tên thẻ "Ô tô" dùng khóa exCar có sẵn.
-   Khóa thêm theo từng khóa (bảng X, sửa cuối D-034): drCreditLabel / drCreditMod / drCreditTm (dòng ghi công CC BY 4.0 của mô hình VF 3 ở màn chọn, nội dung theo public/car/LICENSE-VF3.txt).
+   Khóa thêm theo từng khóa (bảng X, sửa cuối D-034): drCreditLabel / drCreditMod / drCreditTm (dòng ghi công CC BY 4.0 của mô hình VF 3 ở màn chọn, nội dung theo public/car/LICENSE-VF3.txt),
+   drSound (aria-label nút bật / tắt tiếng xe 🔊 / 🔇 trong #drHud).
    Bản dịch 8 ngôn ngữ ngoài tiếng Việt do người làm viết, cần người bản ngữ duyệt. `ar` là RTL.
    node scripts/add-drive-locales.mjs */
 import { readFile, writeFile } from 'node:fs/promises';
@@ -25,6 +26,7 @@ const T = {
 /* Khóa thêm sau Task 9: { khóa: { mã ngôn ngữ: bản dịch } } — đủ 9 ngôn ngữ */
 const X = {
   drCreditLabel: { vi: 'Mô hình xe', en: 'Car model', ko: '자동차 모델', ja: '車の3Dモデル', zh: '汽车模型', th: 'โมเดลรถ', ar: 'نموذج السيارة', hi: 'कार मॉडल', ru: 'Модель автомобиля' },
+  drSound: { vi: 'Tiếng xe', en: 'Car sound', ko: '자동차 소리', ja: '車の音', zh: '汽车声音', th: 'เสียงรถ', ar: 'صوت السيارة', hi: 'कार की आवाज़', ru: 'Звук машины' },
   drCreditMod: { vi: 'đã chỉnh sửa', en: 'modified', ko: '수정됨', ja: '改変あり', zh: '已修改', th: 'มีการดัดแปลง', ar: 'معدّل', hi: 'संशोधित', ru: 'изменена' },
   drCreditTm: {
     vi: 'VinFast, VF 3 là nhãn hiệu của chủ sở hữu; mô hình minh hoạ, không phải sản phẩm chính thức.',
