@@ -1,6 +1,6 @@
 # Đám đông người đi bộ dạng người thật (D-032): thiết kế
 
-_Ngày: 2026-11-12 · Trạng thái: đã xây (commit `3f46eb4`, `06cdaa0`, `b436841`, `6e8a0dc`; các test nặng cuối nhánh xem plan), PR-CHO-DIEN · Nhánh: `feature/dam-dong-nguoi-that` (đã duyệt hướng: người dùng xem demo D-030 và bảo làm tiếp, không hỏi lại)_
+_Ngày: 2026-11-12 · Trạng thái: đã xây (commit `3f46eb4`, `06cdaa0`, `b436841`, `6e8a0dc`; các test nặng cuối nhánh xem plan), PR #29 · Nhánh: `feature/dam-dong-nguoi-that` (đã duyệt hướng: người dùng xem demo D-030 và bảo làm tiếp, không hỏi lại)_
 
 ## 1. Ý định
 

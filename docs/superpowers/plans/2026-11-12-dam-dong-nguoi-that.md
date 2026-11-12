@@ -136,7 +136,7 @@ export interface People { list: Walker[]; mesh: THREE.InstancedMesh | THREE.Batc
 
 ### Task 4 (Sonnet): tài liệu
 
-- [x] `.github/memory-bank/decisions.md` (D-032), `systemPatterns.md` (BatchedMesh r165: cạm bẫy ở spec §5; cách thêm nhân vật qua `gen:crowd`; đường lùi), `activeContext.md`, `progress.md` (ghi luôn D-030 đã merge PR #28), `.github/copilot-instructions.md` (§3 mục 5: ngoại lệ gồm cả đám đông; §5: `gen:crowd`, mô tả `test:people*`), `.github/instructions/*` áp cho `src/common/**` / `tests/**` nếu có quy tắc mới, `README.md` (Cấu trúc, ghi nguồn), trạng thái spec, ô plan. Chỉ ghi kết quả test có thật; chỗ chờ số PR ghi `PR-CHO-DIEN`.
+- [x] `.github/memory-bank/decisions.md` (D-032), `systemPatterns.md` (BatchedMesh r165: cạm bẫy ở spec §5; cách thêm nhân vật qua `gen:crowd`; đường lùi), `activeContext.md`, `progress.md` (ghi luôn D-030 đã merge PR #28), `.github/copilot-instructions.md` (§3 mục 5: ngoại lệ gồm cả đám đông; §5: `gen:crowd`, mô tả `test:people*`), `.github/instructions/*` áp cho `src/common/**` / `tests/**` nếu có quy tắc mới, `README.md` (Cấu trúc, ghi nguồn), trạng thái spec, ô plan. Chỉ ghi kết quả test có thật; chỗ chờ số PR ghi `PR #29`.
 
 ---
 
@@ -192,5 +192,5 @@ export interface People { list: Walker[]; mesh: THREE.InstancedMesh | THREE.Batc
 
 ### Task 4 (tài liệu)
 
-- Đã cập nhật memory bank (`decisions.md` D-032, `systemPatterns.md`, `activeContext.md`, `progress.md`), `copilot-instructions.md` (§3 mục 5, §5), `threejs-scene.instructions.md`, `tests.instructions.md`, `README.md` (Cấu trúc), trạng thái spec. Số PR ghi `PR-CHO-DIEN`, điền sau khi mở PR.
+- Đã cập nhật memory bank (`decisions.md` D-032, `systemPatterns.md`, `activeContext.md`, `progress.md`), `copilot-instructions.md` (§3 mục 5, §5), `threejs-scene.instructions.md`, `tests.instructions.md`, `README.md` (Cấu trúc), trạng thái spec. Số PR ghi `PR #29`, điền sau khi mở PR.
 - Hạn chế / việc mở cho người dùng: nhân vật Rocketbox nét Âu và quần áo kiểu Âu (chỉ nón lá là nét địa phương); người lái xe tay ga và người treo dù vẫn hình khối; người không đổ bóng; tư thế chụp ảnh tĩnh; bàn tay lệch vài cm khi chạy; mỗi lượt mở trang tải thêm 1,31 MB và khung đầu chậm hơn đúng bằng thời gian tải; máy thiếu `WEBGL_multi_draw` thấy hình khối (chưa thử trình duyệt thật thiếu phần mở rộng này); `Female_Adult_08` chìm chân 2,0–2,2 cm ở vài khung khi đi (ngưỡng test nới 3 cm); mặt cận cảnh `Female_Adult_08` (đường nối miệng) và `Female_Adult_12` (khuyên môi có sẵn trong nguồn) có lỗi nhỏ; `uTime` float32 giảm chính xác sau khoảng 24 giờ chạy liên tục (cả `ppMaterial` cũ); gốc pháp tuyến dài 0 ở `crowd.py` chưa sửa (đang vá lúc đọc); `convert.py` có sửa nhỏ không đổi hành vi, `gen:people` chưa chạy lại. Chưa chạy: `test:tour`, `test:voice`, `test:weather`, `test:sunwheel`, `test:citynight`, `test:tunnel`, `test:riverfront`, `test:boats`, `test:traffic`, `test:trees`, `test:explore`, `test:multi*`; chưa đo điện thoại thật.
