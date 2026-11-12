@@ -81,11 +81,18 @@ test('có đủ nút vf3, body, wheel_fl, wheel_fr, wheel_rl, wheel_rr; bốn b�
   assert.ok(c.fl[0] - c.rl[0] > 0 && Math.abs(c.fl[2] - c.fr[2]) > 1.2 && Math.abs(c.fl[2] - c.fr[2]) < 1.9, 'vết bánh ngoài khoảng');
   const bs = worldBoxes(j).filter(b => b.node.startsWith('wheel_'));
   for (const b of bs) assert.ok(b.tris > 0, `${b.node} rỗng`);
-  for (const k of ['fl', 'fr', 'rl', 'rr']) {
-    const t = bs.filter(b => b.node === 'wheel_' + k).reduce((s, b) => s + b.tris, 0);
-    const t0 = bs.filter(b => b.node === 'wheel_fl').reduce((s, b) => s + b.tris, 0);
-    assert.equal(t, t0, `bánh ${k} khác số tam giác với bánh fl`);
-  }
+  /* bốn nút dùng chung một lưới; bánh phải xoay 180 độ quanh Y (nên bánh phải quay ngược góc, xem convert.py) */
+  const w = Object.fromEntries(['fl', 'fr', 'rl', 'rr'].map(k => [k, nodeByName(j, 'wheel_' + k).n]));
+  for (const k of ['fr', 'rl', 'rr']) assert.equal(w[k].mesh, w.fl.mesh, `wheel_${k} khác lưới với wheel_fl`);
+  const rot = (n: any): number[] => n.rotation ?? [0, 0, 0, 1];
+  for (const k of ['fl', 'rl']) assert.ok(rot(w[k]).slice(0, 3).every((x: number) => Math.abs(x) < 1e-3) && Math.abs(Math.abs(rot(w[k])[3]) - 1) < 1e-3, `wheel_${k} không được xoay`);
+  for (const k of ['fr', 'rr']) { const q = rot(w[k]); assert.ok(Math.abs(q[0]) < 1e-3 && Math.abs(q[2]) < 1e-3 && Math.abs(Math.abs(q[1]) - 1) < 1e-3 && Math.abs(q[3]) < 1e-3, `wheel_${k} phải xoay 180 độ quanh Y: ${q}`); }
+});
+
+test('thân xe ≤ 5 primitive, mesh bánh ≤ 3 primitive (số lệnh vẽ)', () => {
+  const j = glbJson(FILE);
+  assert.ok(j.meshes[nodeByName(j, 'body').n.mesh].primitives.length <= 5, `body ${j.meshes[nodeByName(j, 'body').n.mesh].primitives.length} primitive`);
+  assert.ok(j.meshes[nodeByName(j, 'wheel_fl').n.mesh].primitives.length <= 3, 'mesh bánh > 3 primitive');
 });
 
 test('có vật liệu paint, lamp_head, lamp_tail', () => {

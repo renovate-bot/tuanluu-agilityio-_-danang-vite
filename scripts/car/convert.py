@@ -3,7 +3,8 @@
 Cách chạy (máy người phát triển, không cần cho build):
     npm run gen:car
     # tức: node scripts/people/blender.mjs scripts/car/convert.py   (Blender 4.5; không ở đường dẫn mặc định thì đặt biến BLENDER)
-    # bỏ ảnh xem trước:  npm run gen:car -- --no-preview   (hoặc đặt "-- --no-preview" sau tên script)
+    # bỏ ảnh xem trước:  npm run gen:car -- -- --no-preview   (npm nuốt dấu -- đầu; blender.mjs chuyển phần còn lại sau tên script
+    #                    cho Blender, nên tham số của script phải đứng sau dấu -- thứ hai; hoặc: node scripts/people/blender.mjs scripts/car/convert.py -- --no-preview)
 
 Nguồn: scripts/car/vinfast_vf3.glb (tải từ Sketchfab, tác giả Hoàng Huy, CC-BY-4.0; ghi nguồn ở public/car/LICENSE-VF3.txt).
 Mô hình thô: 10 lưới, mũi xe hướng -Y (Blender, sau khi nạp glb), 2,41 m dài; bánh là lưới vật liệu BANH (4 nhóm cụm rời)
@@ -19,7 +20,12 @@ Material.004) dán ảnh JPEG 2 MB mỗi tấm. Script làm:
        (mặt đèn sau). Nguồn không có vật liệu đèn riêng ngoài hai tấm này: mỗi tấm là ảnh dán chứa cả đèn, logo V và (sau) chữ
        VF3, nên lamp_* gồm cả logo (người dùng giữ logo);
     6. gọn dung lượng: cạnh dài ảnh <= 1024; ảnh có alpha giữ PNG, ảnh còn lại JPEG chất lượng 85; bỏ bộ UV thứ hai (lightmap nguồn);
-       bốn bánh giống hệt nhau nên dùng chung một lưới (bánh bên phải xoay 180 độ quanh trục đứng).
+       bốn bánh giống hệt nhau nên dùng chung một lưới (bánh bên phải xoay 180 độ quanh trục đứng);
+    7. gộp hai vật liệu đen giống hệt nhau (Material, DEN_NHAM: đen, metallic 0, roughness 0,5) thành DEN_NHAM trước khi tách,
+       để `body` còn <= 5 primitive (= lệnh vẽ) và mỗi lưới bánh <= 3.
+Giao diện cho bên dùng (Task 6, chiều quay bánh): wheel_fl, wheel_rl không xoay; wheel_fr, wheel_rr xoay 180 độ quanh Y (dùng chung
+lưới), nên Z cục bộ của hai bánh phải hướng -Z thế giới. Cùng một góc quay quanh Z cục bộ làm bánh phải lăn NGƯỢC: bánh trái
+quay góc +theta thì bánh phải phải quay góc -theta (xe tiến thì theta = quãng đường / bán kính theo chiều đã chọn cho bánh trái).
 Cuối script nạp lại chính file glb đầu ra, in bảng (tam giác, byte, hộp bao từng nút) và vẽ ảnh xem trước vào
 scripts/car/.cache/preview/{front,rear,side,night}.png.
 """
@@ -39,10 +45,33 @@ JPEG_Q = 85                 # chất lượng JPEG
 PLATE_MATS = ('Material.004', 'Material.005')     # hai biển số (Object_13, Object_12)
 RENAME = {'Material.001': 'paint', 'TRUOC': 'lamp_head', 'material': 'lamp_tail'}
 WHEEL_PAD = 0.03            # m, nới hộp bánh quanh hộp bao các cụm BANH (đơn vị thô, trước phóng)
-NO_PREVIEW = '--no-preview' in sys.argv
+ARGV = sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else []     # tham số của script: chỉ phần sau dấu --
+NO_PREVIEW = '--no-preview' in ARGV
 
 
 # ===== Nạp, bỏ biển số, gộp =====
+def bsdf(m):
+    nd = [n for n in m.node_tree.nodes if n.type == 'BSDF_PRINCIPLED']
+    assert len(nd) == 1 and not nd[0].inputs['Base Color'].links, f'vật liệu {m.name} không đơn giản'
+    i = nd[0].inputs
+    return tuple(i['Base Color'].default_value) + (i['Metallic'].default_value, i['Roughness'].default_value) + tuple(i['Emission Color'].default_value) + (i['Emission Strength'].default_value, i['Alpha'].default_value)
+
+
+def merge_blacks():
+    """Gán mặt dùng `Material` sang `DEN_NHAM` khi hai vật liệu cùng thông số (không thì dừng)"""
+    a, b = bpy.data.materials['Material'], bpy.data.materials['DEN_NHAM']
+    pa, pb = bsdf(a), bsdf(b)
+    assert all(abs(x - y) < 1e-4 for x, y in zip(pa, pb)), f'Material và DEN_NHAM khác thông số, không gộp được: {pa} / {pb}'
+    for o in bpy.data.objects:
+        if o.type != 'MESH' or a.name not in [m.name if m else '' for m in o.data.materials]: continue
+        ia = [m.name if m else '' for m in o.data.materials].index('Material')
+        if 'DEN_NHAM' not in [m.name if m else '' for m in o.data.materials]: o.data.materials.append(b)
+        ib = [m.name if m else '' for m in o.data.materials].index('DEN_NHAM')
+        for p in o.data.polygons:
+            if p.material_index == ia: p.material_index = ib
+    print('  gop Material -> DEN_NHAM', pa)
+
+
 def load_and_join():
     bpy.ops.wm.read_factory_settings(use_empty=True)
     bpy.ops.import_scene.gltf(filepath=SRC)
@@ -50,6 +79,7 @@ def load_and_join():
         bpy.data.objects.remove(o, do_unlink=True)
     for n in PLATE_MATS: bpy.data.materials.remove(bpy.data.materials[n])
     for im in [im for im in bpy.data.images if im.users == 0]: bpy.data.images.remove(im)
+    merge_blacks()
     meshes = [o for o in bpy.data.objects if o.type == 'MESH']
     for o in meshes:                                           # bỏ cha, giữ vị trí thế giới
         mw = o.matrix_world.copy(); o.parent = None; o.matrix_world = mw
