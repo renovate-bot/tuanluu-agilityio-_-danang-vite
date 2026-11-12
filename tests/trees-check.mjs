@@ -27,7 +27,7 @@ const check = (ok, msg) => { console.log(`${ok ? 'ĐẠT ' : 'LỖI '} ${msg}`);
 // Tán dừa không có ở đây vì vị trí của nó dời lên đỉnh thân cong (kiểm riêng theo thân dừa).
 const MAIN_TREE_POS = {"trees-shade-trunk":{"count":890,"sum":-3857311.434},"trees-shade-crown":{"count":890,"sum":-3857311.434},"trees-palm-trunk":{"count":246,"sum":1318102.245},"tp-trees-trunk":{"count":128,"sum":420346.507},"tp-trees-crown":{"count":128,"sum":420346.507}};
 // Mốc đo trên code CHƯA sửa hầm (88ff1e5): số InstancedMesh, Mesh con của hr.group và số tam giác của hr-concrete
-const MAIN_TUNNEL = { inst: 0, mesh: 4, tris: 25104 };
+const MAIN_TUNNEL = { inst: 0, mesh: 4, tris: 25104 - 72 };   // − 72: dải giữa cỏ + vỉa hè gạch hầm chia đoạn tại nút giao / đường dọc mới của chế độ lái (D-034), ít đoạn bentBox hơn
 const MAIN_PAIRS = 3;             // __app.weather.fallen.state().pairs
 const MAIN_CLEARED = { "trees-shade-crown": 26, "trees-palm-crown": 2, "tp-trees-crown": 0 };        // { tên lưới tán: số instance scale 0 }
 // Mốc đo trên main 43cec90 (chép từ tests/traffic-check.mjs): speed của 7 tàu chạy chung

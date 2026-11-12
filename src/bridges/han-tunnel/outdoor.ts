@@ -7,7 +7,7 @@ import { prepColored, extrudeAlongX, fillBlock, bentBox, boxAt, roadStrip, shado
 import { addLampPosts } from '../../common/deck';
 import { trPalmStaticGeo } from '../../common/trees/shapes';
 import { HR, hrRoadY } from './profile';
-import { drOnNewRoad } from '../../environment/driveRoadGeo';
+import { drOnNewRoad, drCutAlongX } from '../../environment/driveRoadGeo';
 import type { HanTunnel } from './HanTunnel';
 
 /* [outdoor] Phần nhìn thấy trên mặt đất: máng hầm hở (sàn, tường, dải giữa), đoạn gờ chắn ngập, mái lam che nắng mưa,
@@ -98,12 +98,12 @@ function hrBuildSurface(bridge: HanTunnel) {
   }
   const road = shadowed(new THREE.Mesh(mergeGeometries(roads), bridge.mats.roadOut), false, true);
   road.name = 'hr-road'; bridge.group.add(road); bridge.noReflect.push(road); bridge.farHide.push(road);
-  // dải giữa cỏ (4,2 m) và vỉa hè gạch (3 m) hai bên đường mặt phố
+  // dải giữa cỏ (4,2 m) và vỉa hè gạch (3 m) hai bên đường mặt phố; chia đoạn tại nút giao / đường dọc mới của chế độ lái (D-034)
   const med: THREE.BufferGeometry[] = [], paver: THREE.BufferGeometry[] = [];
   for (const [x0, x1] of [[-1900, -c], [c, 1480]]) {
-    const len = x1 - x0, xc = (x0 + x1) / 2, segs = Math.ceil(len / 8);
-    med.push(bentBox(len, 0.3, HR.tubeNear * 2, xc, 0.15, 0, segs, hrRoadY));
-    for (const z of [-1, 1]) paver.push(bentBox(len, 0.2, 3, xc, 0.1, z * (HR.tubeFar + 1.5), segs, hrRoadY));
+    const segs = Math.ceil((x1 - x0) / 8);
+    med.push(...drCutAlongX(x0, x1, HR.z, HR.tubeNear, segs, (len, xc, n) => bentBox(len, 0.3, HR.tubeNear * 2, xc, 0.15, 0, n, hrRoadY)));
+    for (const z of [-1, 1]) paver.push(...drCutAlongX(x0, x1, HR.z + z * (HR.tubeFar + 1.5), 1.5, segs, (len, xc, n) => bentBox(len, 0.2, 3, xc, 0.1, z * (HR.tubeFar + 1.5), n, hrRoadY)));
   }
   bridge.concreteParts.push(...med.map((g) => prepColored(g, () => [0.4, 0.58, 0.3])), ...paver.map((g) => prepColored(g, () => [0.8, 0.72, 0.6])));
   const xs: number[] = []; for (let x = 760; x <= 1460; x += 40) xs.push(x, -x);

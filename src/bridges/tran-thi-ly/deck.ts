@@ -6,6 +6,7 @@ import { addDeckEdges, addJoints, addLampPosts } from '../../common/deck';
 import { flatY } from '../dragon/profile';
 import { TTL, ttlRoadY } from './profile';
 import type { TranThiLyBridge } from './TranThiLyBridge';
+import { drCutAlongX } from '../../environment/driveRoadGeo';
 
 /* [deck] dầm hộp 34,5 m, 6 làn, dải phân cách 5,5 m, lề, lan can, đèn, dải LED */
 export function ttlBuildDeck(bridge: TranThiLyBridge) {
@@ -23,7 +24,7 @@ export function ttlBuildDeck(bridge: TranThiLyBridge) {
   // Dải phân cách giữa 5,5 m (mang tháp và neo dây trước) + phân cách trên bờ
   bridge.concreteParts.push(prepColored(bentBox(xr1 - xr0, 0.35, TTL.median, (xr0 + xr1) / 2, 0.17, 0, 500, ttlRoadY), () => 0.88));
   const med = [bentBox(xr1 - xr0, 0.06, TTL.median - 0.8, (xr0 + xr1) / 2, 0.37, 0, 500, ttlRoadY)];
-  for (const [a, b] of [[-1900, xr0], [xr1, 1480]]) med.push(bentBox(b - a, 0.3, TTL.median, (a + b) / 2, 0.15, 0, 4, flatY));
+  for (const [a, b] of [[-1900, xr0], [xr1, 1480]]) med.push(...drCutAlongX(a, b, TTL.z, TTL.median / 2, 4, (len, xc, n) => bentBox(len, 0.3, TTL.median, xc, 0.15, 0, n, flatY)));   // mở tại nút giao chế độ lái (D-034)
   const mm = shadowed(new THREE.Mesh(mergeGeometries(med), MAT.grass), false, true); bridge.group.add(mm); bridge.noReflect.push(mm); bridge.farHide.push(mm);
   // Lề, gờ, lan can, khe co giãn modular, cột đèn trên dải phân cách (hệ dùng chung common/)
   addDeckEdges(bridge, { x0: xr0, x1: xr1, segs: 500, profile: ttlRoadY, hw, sidewalk: TTL.sidewalk });

@@ -7,7 +7,11 @@ import * as THREE from 'three';
 import { CONFIG } from '../../src/config.ts';
 import { rand, rng } from '../../src/common/math.ts';
 import { drBuildPads } from '../../src/explore/drive/roadData.ts';
-import { drRoadGeos, drCutRects, drNewRects } from '../../src/environment/driveRoadGeo.ts';
+import { drRoadGeos, drCutRects, drNewRects, drCutSpans } from '../../src/environment/driveRoadGeo.ts';
+import { SH } from '../../src/bridges/song-han/profile.ts';
+import { TTL } from '../../src/bridges/tran-thi-ly/profile.ts';
+import { HR } from '../../src/bridges/han-tunnel/profile.ts';
+import { TP } from '../../src/bridges/thuan-phuoc/profile.ts';
 
 const R = CONFIG.drive.roads;
 const pads = drBuildPads();
@@ -97,4 +101,54 @@ test('không dùng rand', () => {
   drRoadGeos(); drCutRects({ x0: -1900, x1: -333, z0: -3, z1: 3 }); drNewRects();
   assert.equal(next(), ref(), 'drRoadGeos() lần 2 đã gọi rand()');
   assert.equal(used, 3);
+});
+
+test('không có mặt nào nổi trên ô đường', () => {
+  /* xe bám cao độ phẳng của ô: mọi đỉnh hình học mới nằm trong ô (trừ cầu / hầm) không cao hơn pad.y quá 0,02 m (không còn tấm phủ trên dải giữa cũ) */
+  const open = pads.filter((p) => p.kind !== 'bridge' && p.kind !== 'tunnel');
+  const E = 1e-3, bad: string[] = [];
+  /* đỉnh và trọng tâm tam giác (đỉnh của tấm nằm đúng trên mép ô, trọng tâm thì ở trong) */
+  const pts: THREE.Vector3[] = [];
+  for (const t of tris([...geos.roads2, ...geos.medians])) pts.push(...t, t[0].clone().add(t[1]).add(t[2]).divideScalar(3));
+  for (const { x, y, z } of pts) for (const p of open) if (x > p.x0 + E && x < p.x1 - E && z > p.z0 + E && z < p.z1 - E && y > p.y(x, z) + 0.02 + 1e-4) bad.push(`${p.id} (${x}, ${y}, ${z}) > ${p.y(x, z)}`);
+  assert.equal(bad.length, 0, `đỉnh nổi trên ô đường: ${bad.slice(0, 5).join('; ')}`);
+});
+
+test('dải giữa / vỉa hè trên bờ của các trục cầu chia đoạn tại ô, chỗ mở có mặt đường phẳng', () => {
+  /* [tên, đoạn x trên bờ, tim z, nửa bề ngang] như song-han/fixedSpans.ts, tran-thi-ly/deck.ts, han-tunnel/outdoor.ts, thuan-phuoc/deck.ts */
+  const shW = SH.westEnd - 30, shE = SH.eastEnd + 63, tpE = TP.endX + TP.embankment;
+  const strips: [string, number, number, number, number][] = [
+    ['songHan', -1900, shW, SH.z, SH.median / 2], ['songHan', shW, -SH.fixedStart, SH.z, SH.median / 2], ['songHan', SH.fixedStart, shE, SH.z, SH.median / 2], ['songHan', shE, 1480, SH.z, SH.median / 2],
+    ['ttl', -1900, -470, TTL.z, TTL.median / 2], ['ttl', 450, 1480, TTL.z, TTL.median / 2],
+    ['thuanPhuoc', -1500, -tpE, TP.z, TP.median / 2], ['thuanPhuoc', tpE, 1480, TP.z, TP.median / 2]
+  ];
+  for (const [a, b] of [[-1900, -HR.rampHalf], [HR.rampHalf, 1480]]) {
+    strips.push(['tunnel', a, b, HR.z, HR.tubeNear]);
+    for (const s of [-1, 1]) strips.push(['tunnelPaver', a, b, HR.z + s * (HR.tubeFar + 1.5), 1.5]);
+  }
+  const open = pads.filter((p) => p.kind !== 'bridge' && p.kind !== 'tunnel');
+  let cuts = 0;
+  for (const [name, x0, x1, zc, hw] of strips) {
+    const spans = drCutSpans(x0, x1, zc, hw), hits = open.filter((p) => p.z0 < zc + hw - 1e-6 && p.z1 > zc - hw + 1e-6 && p.x1 > x0 && p.x0 < x1);
+    for (const [a, b] of spans) {
+      assert.ok(a >= x0 - 1e-9 && b <= x1 + 1e-9 && b > a, `${name}: khúc [${a}, ${b}] ngoài đoạn [${x0}, ${x1}]`);
+      for (const p of hits) assert.ok(b <= p.x0 + 1e-6 || a >= p.x1 - 1e-6, `${name}: khúc [${a}, ${b}] lấn ô ${p.id} [${p.x0}, ${p.x1}]`);
+    }
+    /* chiều dài còn lại = đoạn trừ phần ô phủ (không bỏ thừa dải giữa ngoài ô) */
+    const covered = hits.map((p): [number, number] => [Math.max(x0, p.x0), Math.min(x1, p.x1)]).sort((u, v) => u[0] - v[0]);
+    let gap = 0, end = -Infinity;
+    for (const [u, v] of covered) { if (v > end) { gap += v - Math.max(u, end); end = v; } }
+    assert.ok(Math.abs(spans.reduce((t, [u, v]) => t + v - u, 0) - (x1 - x0 - gap)) < 1e-6, `${name}: chiều dài khúc còn lại sai`);
+    /* chỗ mở có mặt đường mới ở cao độ ô */
+    for (const p of hits) {
+      /* ô nút giao với đường ven sông: hai chiều làn đã có mặt đường cũ (streets.ts), mảnh mới lấp phần dải giữa ven sông ở tim x = ±riverX */
+      let x = (Math.max(x0, p.x0) + Math.min(x1, p.x1)) / 2;
+      if (Math.abs(Math.abs(x) - R.riverX) <= 10.5) x = Math.sign(x) * R.riverX;
+      const z = Math.min(Math.max(zc, p.z0 + 0.01), p.z1 - 0.01), py = p.y(x, z);
+      const ys = roadTris.map((t) => yAt(t, x, z)).filter((y) => !Number.isNaN(y));
+      assert.ok(ys.some((y) => Math.abs(y - py) <= 0.05), `${name}: chỗ mở trong ô ${p.id} (${x}, ${z}) không có mặt đường cao ${py} (có: ${ys.join(', ')})`);
+      cuts++;
+    }
+  }
+  assert.ok(cuts >= 4 * 5 + 4, `quá ít chỗ mở (${cuts})`);   // mỗi trục cầu ít nhất 2 đầu + 2 đường dọc; vỉa hè hầm: 4 đường dọc cắt ngang
 });

@@ -7,6 +7,7 @@ import { addDeckEdges, addJoints, addLampPosts } from '../../common/deck';
 import { flatY } from '../dragon/profile';
 import { SH, shRoadY } from './profile';
 import type { SongHanBridge } from './SongHanBridge';
+import { drCutAlongX } from '../../environment/driveRoadGeo';
 
 /* [fixedSpans] 11 nhịp BTCT 33 m, trụ (InstancedMesh), trụ đón, mố, đường đắp */
 export function shBuildFixedSpans(bridge: SongHanBridge) {
@@ -49,10 +50,12 @@ export function shBuildFixedSpans(bridge: SongHanBridge) {
     roadStrip(F, 1480, SH.laneWidth, zc, 0.03, 600, shRoadY), roadStrip(F, 1480, SH.laneWidth, -zc, 0.03, 600, shRoadY, true)
   ]), M.road);
   road.receiveShadow = true; bridge.group.add(road); bridge.noReflect.push(road); bridge.farHide.push(road);
-  bridge.concreteParts.push(prepColored(bentBox(-F - W + 30, 0.3, SH.median, (W - 30 - F) / 2, 0.15, 0, 200, shRoadY), () => 0.9));
-  bridge.concreteParts.push(prepColored(bentBox(E + 63 - F, 0.3, SH.median, (E + 63 + F) / 2, 0.15, 0, 200, shRoadY), () => 0.9));
+  // dải giữa trên bờ chia đoạn tại các ô nút giao của chế độ lái (D-034): chỗ mở dải giữa lát mặt đường phẳng (environment/driveRoadGeo.ts)
+  const cut = (a: number, b: number, segs: number, prof: (x: number) => number) => drCutAlongX(a, b, SH.z, SH.median / 2, segs, (len, xc, n) => bentBox(len, 0.3, SH.median, xc, 0.15, 0, n, prof));
+  bridge.concreteParts.push(...cut(W - 30, -F, 200, shRoadY).map((g) => prepColored(g, () => 0.9)));
+  bridge.concreteParts.push(...cut(F, E + 63, 200, shRoadY).map((g) => prepColored(g, () => 0.9)));
   const gm = [];
-  for (const [a, b] of [[-1900, W - 30], [E + 63, 1480]]) gm.push(bentBox(b - a, 0.3, SH.median, (a + b) / 2, 0.15, 0, 4, flatY));
+  for (const [a, b] of [[-1900, W - 30], [E + 63, 1480]]) gm.push(...cut(a, b, 4, flatY));
   const gmm = shadowed(new THREE.Mesh(mergeGeometries(gm), MAT.grass), false, true); bridge.group.add(gmm); bridge.noReflect.push(gmm); bridge.farHide.push(gmm);
   // lề, lan can, cột đèn, khe co giãn (phần cố định)
   for (const [a, b] of [[-290, -F], [F, 290]]) addDeckEdges(bridge, { x0: a, x1: b, segs: 160, profile: shRoadY, hw, sidewalk: SH.sidewalk });
