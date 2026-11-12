@@ -136,7 +136,7 @@ export interface People { list: Walker[]; mesh: THREE.InstancedMesh | THREE.Batc
 
 ### Task 4 (Sonnet): tài liệu
 
-- [ ] `.github/memory-bank/decisions.md` (D-032), `systemPatterns.md` (BatchedMesh r165: cạm bẫy ở spec §5; cách thêm nhân vật qua `gen:crowd`; đường lùi), `activeContext.md`, `progress.md` (ghi luôn D-030 đã merge PR #28), `.github/copilot-instructions.md` (§3 mục 5: ngoại lệ gồm cả đám đông; §5: `gen:crowd`, mô tả `test:people*`), `.github/instructions/*` áp cho `src/common/**` / `tests/**` nếu có quy tắc mới, `README.md` (Cấu trúc, ghi nguồn), trạng thái spec, ô plan. Chỉ ghi kết quả test có thật; chỗ chờ số PR ghi `PR-CHO-DIEN`.
+- [x] `.github/memory-bank/decisions.md` (D-032), `systemPatterns.md` (BatchedMesh r165: cạm bẫy ở spec §5; cách thêm nhân vật qua `gen:crowd`; đường lùi), `activeContext.md`, `progress.md` (ghi luôn D-030 đã merge PR #28), `.github/copilot-instructions.md` (§3 mục 5: ngoại lệ gồm cả đám đông; §5: `gen:crowd`, mô tả `test:people*`), `.github/instructions/*` áp cho `src/common/**` / `tests/**` nếu có quy tắc mới, `README.md` (Cấu trúc, ghi nguồn), trạng thái spec, ô plan. Chỉ ghi kết quả test có thật; chỗ chờ số PR ghi `PR-CHO-DIEN`.
 
 ---
 
@@ -179,3 +179,18 @@ export interface People { list: Walker[]; mesh: THREE.InstancedMesh | THREE.Batc
 - **Ngưỡng `feet` (tôi đặt, không có trong plan):** đi / đứng chấm mọi khung, chạy chỉ khung chạm đất; lơ lửng > 2 cm hoặc chìm > 3 cm là lỗi; chìm 2–3 cm chỉ in ra. Dữ liệu thật: `Female_Adult_08` `walk` chìm 2,0–2,2 cm ở vài khung (12 người dùng), trẻ em `jog` bay 3,7 cm ở khung thấp nhất (trẻ em không chạy nên không dùng). Muốn chặt ±2 cm thì phải sửa chuyển động trong `crowd.py`.
 - **Chưa chạy** (theo phạm vi lần này): `test:stroll`, `test:mobile`, `test:drawcalls`, `test:perf -- --strict`, `test:gpu`; chưa cập nhật `tests/KET-QUA.md`. Kiểm "chân đúng mặt lề" vẫn chấm gốc hình (ma trận) như cũ, chặt hơn ±0,02 m. Bộ đèn `day` / `night` (D-031) vẫn chưa kiểm được trên SwiftShader.
 - **Môi trường:** máy này thiếu `node_modules/.bin` nên `npm run build` / `typecheck` báo "'tsc' is not recognized"; đã chạy trực tiếp `node node_modules/typescript/bin/tsc --noEmit` và `node node_modules/vite/bin/vite.js build`. Trong lúc làm có người khác sửa `src/config.ts` (`strollBase.walk` 3,5 → 1,6, chưa commit) làm `test:stroll:unit` hỏng 1 ("hướng theo camYaw"); không thuộc task này, không commit, bản build dùng cho `test:people` có thay đổi đó (không đụng người đi bộ).
+
+### Sửa sau review (`6e8a0dc`, 2026-11-12)
+
+- Làm nóng vật liệu hình khối của Đi dạo khi ba hệ dùng người thật (lưới `stroll-blocky` ẩn có sẵn trong cảnh trước `prewarm`); `prewarm` tạm tắt cắt từng id của `BatchedMesh` (`bmUncull`, đặt cả `_visibilityChanged`) khi vẽ làm nóng.
+- Thiếu `WEBGL_multi_draw`: `main.ts` không tải `crowd.*`, không chờ, `console.info`. `rateMaxChild` 2,1 cho trẻ em. `crowdLoad` hủy yêu cầu còn lại khi lỗi, đóng `ImageBitmap` thừa. `crowdParse` từ chối chỉ số / đoạn chuyển động ngoài khoảng. `BridgeBase.dispose` giải phóng texture riêng của `BatchedMesh`. Sửa comment `uTime` và comment đầu `crowd.py`.
+- Số đo tại `6e8a0dc`: `typecheck`, `build` đạt (chunk `index` 605,75 kB, `three` 635,00 kB; trên `main` 593,62 và 621,61), `test:people:unit` 35/35, `test:stroll:unit` 87/87. `test:people` chưa chạy lại sau commit này (136 kiểm ĐẠT là tại `b436841`).
+
+### Task 3, Bước 2 đến 4 (test nặng cuối nhánh)
+
+- Kết quả `test:people`, `test:stroll`, `test:mobile`, `test:perf -- --strict`, `test:drawcalls`, `test:gpu` tại `6e8a0dc`: **không chạy** theo lời người dùng ("không cần chạy test nặng", 2026-11-12); riêng `test:people` đã bắt đầu rồi bị dừng giữa chừng sau 44 kiểm đạt của lượt người thật, chưa kiểm nào trượt. Chưa cập nhật `tests/KET-QUA.md` (mục D-032).
+
+### Task 4 (tài liệu)
+
+- Đã cập nhật memory bank (`decisions.md` D-032, `systemPatterns.md`, `activeContext.md`, `progress.md`), `copilot-instructions.md` (§3 mục 5, §5), `threejs-scene.instructions.md`, `tests.instructions.md`, `README.md` (Cấu trúc), trạng thái spec. Số PR ghi `PR-CHO-DIEN`, điền sau khi mở PR.
+- Hạn chế / việc mở cho người dùng: nhân vật Rocketbox nét Âu và quần áo kiểu Âu (chỉ nón lá là nét địa phương); người lái xe tay ga và người treo dù vẫn hình khối; người không đổ bóng; tư thế chụp ảnh tĩnh; bàn tay lệch vài cm khi chạy; mỗi lượt mở trang tải thêm 1,31 MB và khung đầu chậm hơn đúng bằng thời gian tải; máy thiếu `WEBGL_multi_draw` thấy hình khối (chưa thử trình duyệt thật thiếu phần mở rộng này); `Female_Adult_08` chìm chân 2,0–2,2 cm ở vài khung khi đi (ngưỡng test nới 3 cm); mặt cận cảnh `Female_Adult_08` (đường nối miệng) và `Female_Adult_12` (khuyên môi có sẵn trong nguồn) có lỗi nhỏ; `uTime` float32 giảm chính xác sau khoảng 24 giờ chạy liên tục (cả `ppMaterial` cũ); gốc pháp tuyến dài 0 ở `crowd.py` chưa sửa (đang vá lúc đọc); `convert.py` có sửa nhỏ không đổi hành vi, `gen:people` chưa chạy lại. Chưa chạy: `test:tour`, `test:voice`, `test:weather`, `test:sunwheel`, `test:citynight`, `test:tunnel`, `test:riverfront`, `test:boats`, `test:traffic`, `test:trees`, `test:explore`, `test:multi*`; chưa đo điện thoại thật.

@@ -1,6 +1,6 @@
 # Đám đông người đi bộ dạng người thật (D-032): thiết kế
 
-_Ngày: 2026-11-12 · Trạng thái: đã duyệt hướng (người dùng xem demo D-030 và bảo làm tiếp, không hỏi lại), chưa xây · Nhánh: `feature/dam-dong-nguoi-that`_
+_Ngày: 2026-11-12 · Trạng thái: đã xây (commit `3f46eb4`, `06cdaa0`, `b436841`, `6e8a0dc`; các test nặng cuối nhánh xem plan), PR-CHO-DIEN · Nhánh: `feature/dam-dong-nguoi-that` (đã duyệt hướng: người dùng xem demo D-030 và bảo làm tiếp, không hỏi lại)_
 
 ## 1. Ý định
 
@@ -67,6 +67,16 @@ Các mục đánh dấu (tôi quyết) là lựa chọn của người viết sp
 - Test đơn vị: đọc được `crowd.bin`; 10 nhân vật; mỗi lưới ≤ 1 600 tam giác, chân |y| < 0,02, cao 0,9–1,95 m, mũi giày ở phía +X; đủ 4 đoạn, tốc độ tự nhiên `walk` < `jog`; trần dung lượng; chọn nhân vật tất định, trẻ em nhận nhân vật trẻ em, người đi cùng không trùng; nhịp phát nằm trong khoảng kẹp.
 - `test:people` (trình duyệt): ba hệ là người thật, mỗi hệ 1 lưới và 1 lệnh vẽ; người vẫn di chuyển trong lề, đứng sát lan can, rời cầu khi bão rồi trở lại; bật / tắt; `dragon-people` không tốn lệnh vẽ khi quay lưng lại cầu và khi ở xa; chuỗi `rand()` giữ nguyên (tốc độ 7 tàu); không lỗi console. Chạy lại toàn bộ với `?crowd=off` và với yêu cầu `people/crowd.*` bị chặn: hình khối như cũ.
 - Cuối nhánh, mỗi lệnh một lần: `test:drawcalls` (bảng không đổi), `test:perf -- --strict` (+0 program ở mọi thao tác), `test:gpu` (G3), `test:stroll`, `test:mobile`.
+
+## 6b. Khác với thiết kế ban đầu (khi xây)
+
+- Nhân vật mới: `Male_Adult_09`, `Female_Adult_17`, `Female_Adult_08`, `Male_Child_01`, `Female_Child_01`; trẻ em dùng được (bộ xương `Bip02` đổi tên `Bip01`, chuyển động người lớn thu theo tỉ lệ cao hông), không phải dùng đường lùi §4.2. `crowd.bin` 1 045 904 byte, `crowd.jpg` 266 630 byte (trong trần §4.7).
+- Nạp (§4.8): `main.ts` chỉ gọi `await crowdLoad()` khi renderer có `WEBGL_multi_draw`; thiếu thì không tải, không chờ, `console.info`. Preload trong `index.html` đều `as="fetch"` + `crossorigin` (không phải `as="image"` cho jpg) và vẫn chạy ở máy thiếu `WEBGL_multi_draw`.
+- Nhịp phát (§4.5): trẻ em có trần riêng `rateMaxChild` 2,1 (người lớn vẫn kẹp `[rateMin 0,6, rateMax 1,6]`).
+- Dữ liệu: `crowdParse` vá pháp tuyến dài 0 (`crFixNormals`, 5 đỉnh ở `Female_Adult_03` làm ảnh đêm đen kịt vì NaN) và từ chối tệp có chỉ số xương / đoạn chuyển động ngoài khoảng.
+- Một texture thông số dùng chung cả ba hệ (một vật liệu), chỉ mục người ở kênh alpha của `_colorsTexture` (trường nội bộ r165). `perObjectFrustumCulled` bật ở cả ba hệ nên có góc nhìn giảm 1 lệnh vẽ (không tăng); làm nóng phải qua `bmUncull` (`core/prewarm.ts`).
+- Khi ba hệ dùng người thật, `main.ts` thêm sẵn lưới `stroll-blocky` ẩn vào cảnh trước `prewarm` vì hình tạm của Đi dạo vẫn dùng vật liệu `peopleWalk`.
+- `gen:crowd` và `gen:people` chạy qua `scripts/people/blender.mjs` (npm 11 trên Windows không gọi được đường dẫn exe có dấu cách trong `package.json`); `convert.py` có sửa nhỏ không đổi hành vi, chưa chạy lại.
 
 ## 7. Rủi ro đã biết
 
