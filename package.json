@@ -35,7 +35,8 @@
     "test:people:unit": "tsx --test tests/people-unit/*.test.ts",
     "test:people": "node tests/people-check.mjs",
     "test:stroll:unit": "tsx --test tests/stroll-unit/*.test.ts",
-    "test:stroll": "node tests/stroll-check.mjs"
+    "test:stroll": "node tests/stroll-check.mjs",
+    "test:drive:unit": "tsx --test tests/drive-unit/*.test.ts"
   },
   "dependencies": {
     "three": "^0.165.0"

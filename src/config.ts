@@ -664,6 +664,56 @@ const strollBase = {
   }
 };
 
+/* ------------------------- Lái xe VinFast VF 3 -------------------------
+   Chế độ lái xe (docs/superpowers/specs/2026-11-12-lai-xe-oto-design.md, D-034). Mạng đường dựng ở explore/drive/roadData.ts.
+   Số liệu xe: spec §5.1 và §12 (VinFast, Bonbanh, VnExpress, auto-data.net, vinfastauto.id, Autofun). */
+const driveBase = {
+  car: {
+    length: 3.19,      // m — chiều dài (VinFast / Bonbanh / VnExpress)
+    width: 1.679,      // m — chiều rộng (như trên)
+    height: 1.622,     // m — chiều cao (như trên)
+    wheelbase: 2.075,  // m — chiều dài cơ sở (như trên)
+    wheelDia: 0.669,   // m — đường kính ngoài bánh, tính từ cỡ lốp 175/75 R16 (Bonbanh)
+    clearance: 0.191   // m — khoảng sáng gầm (VnExpress; nguồn khác ghi 0,175)
+  },
+  perf: {
+    vMax: 27.78,       // m/s — tốc độ tối đa 100 km/h (auto-data.net, Bonbanh)
+    t50: 5.3,          // s — 0–50 km/h (vinfastauto.id)
+    t100: 19.3,        // s — 0–100 km/h (Bonbanh bản Eco 2026, Autofun)
+    turnRadius: 4.05,  // m — bán kính quay vòng tối thiểu (Bonbanh bản Plus 2026)
+    coast: 1.5,        // m/s² — giảm tốc khi nhả ga, mô phỏng hãm tái sinh (ước lượng)
+    brake: 7,          // m/s² — phanh (ước lượng)
+    handBrake: 9,      // m/s² — phanh tay, không gây trượt (ước lượng)
+    reverseMax: 5.56,  // m/s — tốc độ lùi tối đa 20 km/h (ước lượng)
+    latMax: 5.9,       // m/s² — trần gia tốc ngang ≈ 0,6 g, giới hạn góc lái theo tốc độ (ước lượng)
+    steerRate: 2.2,    // 1/s — tốc độ bẻ lái bằng phím, phần góc lái tối đa mỗi giây (ước lượng)
+    steerReturn: 3.5   // 1/s — tốc độ tự trả lái khi nhả phím, phần góc lái tối đa mỗi giây (ước lượng)
+  },
+  stepMax: 0.6,        // m — hai mặt đường chênh không quá số này coi là cùng tầng (đường ven sông dưới dốc cầu cách ≥ 2 m, nối ô chênh ≤ 0,1) (ước lượng)
+  roads: {             // mạng đường lái được (spec §4); mặt cắt đường mới như đường ven sông streets.ts: hai dải 9 m, dải giữa 3 m
+    westX: -1064,      // m — tim đường dọc mới bờ Tây, cột lưới bỏ trống ix = −30 của buildCity (hành lang không nhà x −1082,5..−1045,5) (ước lượng)
+    eastX: 1096,       // m — tim đường dọc mới bờ Đông, cột ix = 30 (hành lang x 1077,5..1114,5) (ước lượng)
+    half: 9,           // m — bề rộng mặt đường mỗi chiều của đường mới (2 làn), bằng đường ven sông (ước lượng)
+    median: 3,         // m — dải giữa đường mới, bằng đường ven sông; tổng 21 m ≤ 24 m để lọt hành lang (ước lượng)
+    riverX: 299,       // m — |x| tim đường ven sông Bạch Đằng / Trần Hưng Đạo, mặt cắt như đường mới (streets.ts, thuan-phuoc/site.ts)
+    linkWestZ: -2560,  // m — tim đường nối Bạch Đằng – đường dọc Tây, trong dải trống giữa khu phố và nhà quanh Thuận Phước (ước lượng)
+    linkEastZ: -2260,  // m — tim đường nối Trần Hưng Đạo – đường dọc Đông (ước lượng)
+    southZ: 1400,      // m — đường ven sông phía Nam Trần Thị Lý dừng ở đây (ranh mềm) (ước lượng)
+    northW: -3170,     // m — đầu Bắc đường ven sông bờ Tây (mặt đường site.ts tới −3210), ô cuối là chỗ quay đầu (ước lượng)
+    northE: -3620,     // m — đầu Bắc đường ven sông bờ Đông (mặt đường tới −3660) (ước lượng)
+    axisX0: -1900,     // m — đầu Tây các trục ngang z = 0, −1080, +1300, −1700 (streets.ts, song-han/fixedSpans.ts, tran-thi-ly/deck.ts, han-tunnel/outdoor.ts)
+    axisX1: 1480,      // m — đầu Đông các trục ngang (như trên, cả thuan-phuoc/deck.ts)
+    tpX0: -1500,       // m — đầu Tây trục Thuận Phước (thuan-phuoc/deck.ts)
+    endLen: 24,        // m — ô nút giao chỗ quay đầu ở cuối mỗi đường cụt, phủ cả hai chiều và dải giữa (ước lượng)
+    slipDragon: { zIn: 21, zOut: 30, jLen: 21 },   // m — nhánh rẽ chân Cầu Rồng: |z| mép trong / mép ngoài (mép gờ mặt cầu |z| = 19), chiều dài ô nút giao ngay ngoài |x| = 333 (ước lượng)
+    slipTtl: { zIn: 20, zOut: 29, jLen: 21 }       // m — nhánh rẽ chân Trần Thị Lý: |z − 1300| mép trong / mép ngoài (mép đường đắp 17,25), chiều dài ô nút giao ngay ngoài x = −470 / +450 (ước lượng)
+  },
+  spawn: { x: -150, lane: 8.625, gap: 9 },   // m — chỗ xuất phát trên Cầu Rồng: x giữa, |z| tim làn giữa chiều đi Đông, các slot cách nhau gap theo x (ước lượng)
+  cam: {},             // camera sau xe (task sau điền)
+  hud: {},             // đồng hồ, bản đồ nhỏ (task sau điền)
+  sound: {}            // tiếng mô tơ, còi (task sau điền)
+};
+
 /* ------------------------- Tàu thuyền sông Hàn ------------------------- */
 /* docs/superpowers/specs/2026-11-10-tau-thuyen-song-han-design.md — mọi số là ước lượng (không có số liệu công bố cho từng tàu) */
 export type BoatTypeId = 'A' | 'B' | 'C' | 'D' | 'E';
@@ -845,6 +895,7 @@ export const CONFIG = {
   tourAll: tourAllBase,
   explore: { ...exploreBase, multi: multiParams },
   stroll: strollBase,
+  drive: driveBase,
   vehicles: vehiclesBase,
   trees: treesBase,
   people: peopleBase
