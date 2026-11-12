@@ -27,7 +27,7 @@ Memory bank ghi **cái code không tự nói ra được**: lý do, trạng thá
 2. **Draw call.** Bảng chuẩn ở `tests/KET-QUA.md`. Góc nhìn cũ không được tăng quá ngưỡng mà spec của tính năng cho phép (mặc định: 0). Gộp hình học (`mergeGeometries`), dùng `InstancedMesh`, LOD, `noReflect`/layer 1.
 3. **Mọi thông số ở `src/config.ts`.** Mỗi dòng: chú thích tiếng Việt, đơn vị, `(ước lượng)` nếu không có nguồn. Số đã công bố thì ghi nguồn.
 4. **i18n đủ 9 ngôn ngữ.** Khóa mới phải có trong cả `src/i18n/locales/{vi,en,ko,ja,zh,th,ar,hi,ru}.json`. `ar` là RTL.
-5. **Không thêm thư viện runtime, không thêm ảnh ngoài.** Texture vẽ bằng canvas. **Ngoại lệ duy nhất (D-030):** mô hình và texture ngoài cho *nhân vật người* của chế độ Đi dạo (`public/people/*.glb`, Microsoft Rocketbox, MIT), điều kiện giấy phép cho để trong repo công khai và ghi nguồn; không mở cho thứ khác. Không thêm `PointLight`/`SpotLight` mới; đèn đêm làm bằng emissive, đọc `shared.uNight`.
+5. **Không thêm thư viện runtime, không thêm ảnh ngoài.** Texture vẽ bằng canvas. **Ngoại lệ duy nhất (D-030):** mô hình và texture ngoài cho *nhân vật người* của chế độ Đi dạo (`public/people/*.glb`, Microsoft Rocketbox, MIT), điều kiện giấy phép cho để trong repo công khai và ghi nguồn; không mở cho thứ khác. Không thêm `PointLight`/`SpotLight` mới; đèn đêm làm bằng emissive, đọc `shared.uNight`. Đèn cường độ 0 vẫn tốn shader mọi điểm ảnh: đèn hiện có thuộc ba bộ `day` / `night` / `full` của `core/lights.ts` (D-031), không ẩn / hiện đèn ở chỗ khác.
 6. **Công trình chưa xây phải nói rõ là "phương án đề xuất"** trong UI và thuyết minh.
 
 ## 4. Hệ tọa độ
@@ -49,6 +49,7 @@ npm run test:voice
 npm run test:weather
 npm run test:sunwheel
 npm run test:perf      -- [--strict]   # khung dài nhất, số shader biên dịch thêm
+npm run test:gpu       # đo thời gian GPU thật (không SwiftShader): ngày / đêm, bộ đèn thật so với ép full, hâm nền; không chấm theo ms; đọc dist/
 npm run test:explore   # chế độ tự khám phá (dù lượn); đọc dist/
 npm run test:mobile    # giao diện điện thoại — chạy khi đổi index.html / styles / ui
 npm run test:citynight # đèn đêm tòa nhà + vệt trên sông; cần `-- --baseline` trên bản chưa sửa để có mốc chuẩn

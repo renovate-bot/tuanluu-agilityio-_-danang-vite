@@ -21,3 +21,5 @@ description: Quy ước viết script kiểm tra Playwright
 - `wrangler dev` cổng 8799 bị bỏ lại sẽ làm `test:multi` / `test:multi:worker` hỏng: kiểm tiến trình `wrangler` mồ côi cùng lúc với `*-check.mjs`.
 - Viết file test bằng công cụ sửa file, không dán mã có dấu `>` vào lệnh shell: trên máy này đã sinh file rỗng lạc ở gốc repo (`0`, `hi`, `o.msg.t`…).
 - Không chạy hai test cùng lúc. Trước mỗi lần chạy, kiểm không còn tiến trình `*-check.mjs`/`drawcalls.mjs` mồ côi (PowerShell: `Get-CimInstance Win32_Process`): một test bị bỏ dở có thể làm test sau treo hàng giờ.
+- `?test` tắt bộ đèn theo trạng thái (luôn `full`, D-031) để bảng draw call chuẩn giữ nguyên; test cần bộ đèn mở thêm `lightsets=sync` (như `perf-check.mjs`) hoặc `lightsets=bg` (như `gpu-time.mjs`) và đọc `__app.lights` (`set`, `ready`, `mode`).
+- `npm run test:gpu` chạy trên GPU thật, không chấm theo ms; không chạy cùng lúc với test SwiftShader (số đo nhiễu).

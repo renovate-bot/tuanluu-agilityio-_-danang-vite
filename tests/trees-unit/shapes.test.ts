@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import { CONFIG } from '../../src/config.ts';
-import { trShadeTrunkGeo, trShadeCrownGeo, trPalmTrunkGeo, trPalmCrownGeo, trPalmStaticGeo } from '../../src/common/trees/shapes.ts';
+import { trShadeTrunkGeo, trShadeCrownGeo, trShadeCrownLodGeo, trPalmTrunkGeo, trPalmCrownGeo, trPalmStaticGeo } from '../../src/common/trees/shapes.ts';
 
 const tris = (g: THREE.BufferGeometry) => (g.index ? g.index.count : g.getAttribute('position').count) / 3;
 const pts = (g: THREE.BufferGeometry) => { const p = g.getAttribute('position'), out: THREE.Vector3[] = []; for (let i = 0; i < p.count; i++) out.push(new THREE.Vector3().fromBufferAttribute(p, i)); return out; };
@@ -38,6 +38,20 @@ test('tán bóng mát nằm trong cầu đơn vị và dẹt rộng', () => {
   const c = g.getAttribute('color'); let lo = 1, hi = 0;
   for (let i = 0; i < c.count; i++) { lo = Math.min(lo, c.getY(i)); hi = Math.max(hi, c.getY(i)); }
   assert.ok(hi >= 0.9 && lo <= 0.5 && lo >= 0.3, `độ sáng tán ${lo}..${hi}`);
+});
+
+test('tán bản thưa (D-031): ≤ 200 tam giác, hộp bao sát bản đầy đủ, hình học gộp đếm đúng', () => {
+  assert.equal(tris(trShadeCrownGeo()), 640, 'mặc định (detail 1) phải giữ 640 tam giác');
+  const full = trShadeCrownGeo(), lod = trShadeCrownGeo(CONFIG.trees.shade.lodDetail), bf = bbox(full), bl = bbox(lod);
+  assert.ok(tris(lod) <= 200, `bản thưa ${tris(lod)} tam giác`);
+  for (const k of ['x', 'y', 'z'] as const) for (const e of ['min', 'max'] as const) assert.ok(Math.abs(bl[e][k] - bf[e][k]) <= 0.12, `hộp bao ${e}.${k}: ${bl[e][k]} vs ${bf[e][k]}`);
+  const L = trShadeCrownLodGeo(), pos = L.geo.getAttribute('position');
+  assert.equal(L.fullCount, full.getAttribute('position').count, 'fullCount = số đỉnh bản đầy đủ');
+  assert.equal(L.lodCount, lod.getAttribute('position').count, 'lodCount = số đỉnh bản thưa');
+  assert.equal(pos.count, L.fullCount + L.lodCount, 'buffer gộp = đầy đủ + thưa');
+  assert.ok(!L.geo.index, 'không index (drawRange tính theo đỉnh)');
+  const pf = full.getAttribute('position');
+  for (let i = 0; i < pf.count * 3; i++) assert.equal((pos.array as Float32Array)[i], (pf.array as Float32Array)[i], 'phần đầu buffer giống từng đỉnh bản đầy đủ');
 });
 
 test('tán có ≥ 8 cụm: mép không tròn trơn', () => {

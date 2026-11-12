@@ -18,3 +18,5 @@ description: Quy tắc chung khi viết code Three.js trong src/
 - **Dispose:** mọi geometry/material/`CanvasTexture` tự tạo phải giải phóng được (theo `BridgeBase.dispose()`).
 - Comment tiếng Việt; khối tiêu đề `/* ===== ... ===== */` mô tả công trình/vị trí ở đầu file chính.
 - Sau khi sửa: `npm run typecheck`.
+- **Đèn (D-031):** không đặt `visible` của đèn ngoài `core/lights.ts`; cường độ ghi trước `stepLights()` trong `animate()`. Đèn cường độ 0 vẫn tốn shader mọi điểm ảnh.
+- **Lưới nặng có đổ bóng / phản chiếu:** cân nhắc bản thưa qua `core/passLod.ts` thay vì vẽ đủ chi tiết ở cả ba lượt (bóng, phản chiếu, chính).
