@@ -506,5 +506,8 @@
   "drInviteGo": "運転に参加",
   "drLate": "他の人が先でした。",
   "drReleased": "枠を譲りました。",
-  "drLost": "接続が切れました。一人で運転を続けられます。"
+  "drLost": "接続が切れました。一人で運転を続けられます。",
+  "drCreditLabel": "車の3Dモデル",
+  "drCreditMod": "改変あり",
+  "drCreditTm": "VinFast、VF 3 は所有者の商標です。説明用のモデルで、公式製品ではありません。"
 }

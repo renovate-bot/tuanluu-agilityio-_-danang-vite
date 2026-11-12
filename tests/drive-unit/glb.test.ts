@@ -126,3 +126,22 @@ test('LICENSE-VF3.txt ghi tác giả, giấy phép, nguồn Sketchfab và các t
   const t = readFileSync(f, 'utf8');
   for (const s of ['Hoàng Huy', 'CC-BY-4.0', 'sketchfab.com/3d-models/vinfast-vf3-6a2caea4505347d18c47ef4d47840859', 'biển số', 'bánh']) assert.ok(t.includes(s), `thiếu "${s}"`);
 });
+
+/* Ghi công CC BY 4.0 người dùng trang thấy được (màn chọn / sảnh, #drCredit trong index.html): tác giả, tên mô hình, liên kết nguồn,
+   liên kết giấy phép, "đã chỉnh sửa" trỏ tới LICENSE-VF3.txt; chữ dịch đủ 9 ngôn ngữ, tên riêng và "CC BY 4.0" giữ nguyên */
+test('index.html ghi công mô hình VF 3 (CC BY 4.0) và đủ 9 locale', () => {
+  const html = readFileSync(join(DIR, '../../index.html'), 'utf8');
+  const m = html.match(/<p id="drCredit"[^]*?<\/p>/);
+  assert.ok(m, 'thiếu dòng ghi công #drCredit trong index.html');
+  const p = m[0];
+  for (const s of ['Hoàng Huy', 'Vinfast Vf3', 'CC BY 4.0', 'https://sketchfab.com/3d-models/vinfast-vf3-6a2caea4505347d18c47ef4d47840859',
+    'creativecommons.org/licenses/by/4.0/', 'href="car/LICENSE-VF3.txt"', 'data-i18n="drCreditMod"', 'data-i18n="drCreditTm"', 'data-i18n="drCreditLabel"']) assert.ok(p.includes(s), `#drCredit thiếu "${s}"`);
+  const lic = readFileSync(join(DIR, 'LICENSE-VF3.txt'), 'utf8');
+  assert.ok(lic.includes('http://creativecommons.org/licenses/by/4.0/') && lic.includes('https://sketchfab.com/danghoanghuy69'), 'liên kết trong trang phải khớp LICENSE-VF3.txt');
+  assert.ok(p.includes('https://sketchfab.com/danghoanghuy69'), '#drCredit thiếu liên kết tác giả');
+  for (const code of ['vi', 'en', 'ko', 'ja', 'zh', 'th', 'ar', 'hi', 'ru']) {
+    const j = JSON.parse(readFileSync(join(DIR, `../../src/i18n/locales/${code}.json`), 'utf8'));
+    for (const k of ['drCreditLabel', 'drCreditMod', 'drCreditTm']) assert.ok(typeof j[k] === 'string' && j[k].length > 0, `${code}: thiếu ${k}`);
+    assert.ok(j.drCreditTm.includes('VinFast') && j.drCreditTm.includes('VF 3'), `${code}: drCreditTm phải giữ tên VinFast, VF 3`);
+  }
+});

@@ -259,6 +259,9 @@ body.compact #swStormNote{top:calc(124px + env(safe-area-inset-top,0px));max-wid
 .ex-card:disabled{opacity:.55;cursor:not-allowed;}
 .ex-card:disabled .ex-note{color:var(--gold);}
 .ex-card:focus-visible{outline:2px solid var(--gold);outline-offset:2px;}
+/* Ghi công mô hình VF 3 (CC BY 4.0, public/car/LICENSE-VF3.txt): dòng nhỏ cuối hộp, hiện cả ở màn chọn lẫn sảnh */
+.ex-credit{margin:14px 0 0;font-size:11px;line-height:1.45;color:var(--muted);}
+.ex-credit a{color:inherit;text-decoration:underline;text-underline-offset:2px;}
 /* Bước chọn slot + nhập tên (dù lượn nhiều người): thay các thẻ trong cùng hộp thoại */
 .ex-cards[hidden],.ex-mp-lobby [hidden],.ex-mp-lobby[hidden]{display:none;}
 .ex-mp-lobby{display:flex;flex-direction:column;gap:10px;min-width:min(340px,100%);}

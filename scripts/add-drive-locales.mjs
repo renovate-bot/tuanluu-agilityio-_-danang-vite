@@ -2,6 +2,7 @@
    Khóa: drSpeedUnit (đơn vị đồng hồ), drHint (dòng gợi ý phím, máy tính), drGas / drBrake (nút bàn đạp cảm ứng), drRoster (tên chế độ trong danh sách người chơi),
    drMapTunnel (chú thích Hầm trên bản đồ nhỏ: công trình CHƯA XÂY nên luôn ghi "phương án đề xuất"), drLostChooser (màn chọn sau khi mất kết nối lúc xem), drWatch (đang xem xe của người khác).
    drCardDesc đã có từ Task 7 (bỏ qua nếu khóa đã tồn tại, không ghi đè). Tên thẻ "Ô tô" dùng khóa exCar có sẵn.
+   Khóa thêm theo từng khóa (bảng X, sửa cuối D-034): drCreditLabel / drCreditMod / drCreditTm (dòng ghi công CC BY 4.0 của mô hình VF 3 ở màn chọn, nội dung theo public/car/LICENSE-VF3.txt).
    Bản dịch 8 ngôn ngữ ngoài tiếng Việt do người làm viết, cần người bản ngữ duyệt. `ar` là RTL.
    node scripts/add-drive-locales.mjs */
 import { readFile, writeFile } from 'node:fs/promises';
@@ -21,12 +22,30 @@ const T = {
   hi: ['किमी/घं', 'W A S D या तीर: चलाएँ · Space: हैंडब्रेक · H: हॉर्न · माउस खींचें: कैमरा घुमाएँ · Esc: बाहर', 'गैस', 'ब्रेक', 'ड्राइविंग', 'सुरंग (प्रस्तावित योजना)', 'कनेक्शन टूट गया। दोबारा जुड़ने के लिए कार चुनें।', 'देख रहे हैं: {name}'],
   ru: ['км/ч', 'W A S D или стрелки: ехать · Space: ручной тормоз · H: сигнал · перетащить мышью: повернуть камеру · Esc: выход', 'ГАЗ', 'ТОРМОЗ', 'За рулём', 'Тоннель (предлагаемый проект)', 'Связь потеряна. Выберите «Автомобиль», чтобы подключиться снова.', 'Наблюдаете: {name}']
 };
+/* Khóa thêm sau Task 9: { khóa: { mã ngôn ngữ: bản dịch } } — đủ 9 ngôn ngữ */
+const X = {
+  drCreditLabel: { vi: 'Mô hình xe', en: 'Car model', ko: '자동차 모델', ja: '車の3Dモデル', zh: '汽车模型', th: 'โมเดลรถ', ar: 'نموذج السيارة', hi: 'कार मॉडल', ru: 'Модель автомобиля' },
+  drCreditMod: { vi: 'đã chỉnh sửa', en: 'modified', ko: '수정됨', ja: '改変あり', zh: '已修改', th: 'มีการดัดแปลง', ar: 'معدّل', hi: 'संशोधित', ru: 'изменена' },
+  drCreditTm: {
+    vi: 'VinFast, VF 3 là nhãn hiệu của chủ sở hữu; mô hình minh hoạ, không phải sản phẩm chính thức.',
+    en: 'VinFast and VF 3 are trademarks of their owner; illustrative model, not an official product.',
+    ko: 'VinFast, VF 3는 해당 소유자의 상표입니다. 설명용 모델이며 공식 제품이 아닙니다.',
+    ja: 'VinFast、VF 3 は所有者の商標です。説明用のモデルで、公式製品ではありません。',
+    zh: 'VinFast、VF 3 是其所有者的商标；模型仅作示意，并非官方产品。',
+    th: 'VinFast และ VF 3 เป็นเครื่องหมายการค้าของเจ้าของ โมเดลนี้ใช้เพื่อประกอบภาพ ไม่ใช่ผลิตภัณฑ์อย่างเป็นทางการ',
+    ar: 'VinFast وVF 3 علامتان تجاريتان لمالكهما؛ نموذج توضيحي وليس منتجًا رسميًا.',
+    hi: 'VinFast और VF 3 उनके स्वामी के ट्रेडमार्क हैं; यह चित्रण के लिए मॉडल है, आधिकारिक उत्पाद नहीं।',
+    ru: 'VinFast и VF 3 — товарные знаки их владельца; модель иллюстративная, не официальный продукт.'
+  }
+};
+for (const [k, tr] of Object.entries(X)) if (Object.keys(tr).length !== Object.keys(T).length) throw new Error(`${k}: thiếu ngôn ngữ`);
 for (const [code, vals] of Object.entries(T)) {
   if (vals.length !== K.length) throw new Error(`${code}: ${vals.length} bản dịch, cần ${K.length}`);
   const file = join(dir, `${code}.json`);
   const json = JSON.parse(await readFile(file, 'utf8'));
   let added = 0;
   K.forEach((k, i) => { if (!(k in json)) { json[k] = vals[i]; added++; } });
+  for (const [k, tr] of Object.entries(X)) if (!(k in json)) { json[k] = tr[code]; added++; }
   await writeFile(file, JSON.stringify(json, null, 2) + '\n');
   console.log(code, added, 'khóa mới');
 }

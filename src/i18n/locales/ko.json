@@ -506,5 +506,8 @@
   "drInviteGo": "운전 참가",
   "drLate": "다른 사람이 더 빨랐습니다.",
   "drReleased": "자리를 양보했습니다.",
-  "drLost": "연결이 끊어졌습니다. 혼자서는 계속 운전할 수 있습니다."
+  "drLost": "연결이 끊어졌습니다. 혼자서는 계속 운전할 수 있습니다.",
+  "drCreditLabel": "자동차 모델",
+  "drCreditMod": "수정됨",
+  "drCreditTm": "VinFast, VF 3는 해당 소유자의 상표입니다. 설명용 모델이며 공식 제품이 아닙니다."
 }

@@ -506,5 +506,8 @@
   "drInviteGo": "Vào lái",
   "drLate": "Đã có người nhanh hơn.",
   "drReleased": "Bạn đã nhường chỗ.",
-  "drLost": "Mất kết nối. Bạn vẫn lái được, nhưng một mình."
+  "drLost": "Mất kết nối. Bạn vẫn lái được, nhưng một mình.",
+  "drCreditLabel": "Mô hình xe",
+  "drCreditMod": "đã chỉnh sửa",
+  "drCreditTm": "VinFast, VF 3 là nhãn hiệu của chủ sở hữu; mô hình minh hoạ, không phải sản phẩm chính thức."
 }
