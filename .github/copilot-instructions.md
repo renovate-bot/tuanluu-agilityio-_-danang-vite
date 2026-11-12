@@ -5,7 +5,7 @@ File này là **điểm vào chung** cho mọi agent (Claude Code qua `CLAUDE.md
 
 ## 1. Dự án trong một đoạn
 
-Mô hình 3D các công trình trên sông Hàn, Đà Nẵng: Cầu Rồng, Thuận Phước, Trần Thị Lý, Cầu sông Hàn (cầu quay) và Hầm vượt sông Hàn (phương án đề xuất, chưa xây), cùng hai bờ sông, ngày/đêm, Tour có thuyết minh, giao diện 9 ngôn ngữ.
+Mô hình 3D các công trình trên sông Hàn, Đà Nẵng: Cầu Rồng, Thuận Phước, Trần Thị Lý, Cầu sông Hàn (cầu quay) và Hầm vượt sông Hàn (phương án đề xuất, chưa xây), cùng hai bờ sông, ngày/đêm, Tour có thuyết minh, các chế độ tự khám phá (dù lượn, đi dạo, lái xe VinFast VF 3), giao diện 9 ngôn ngữ.
 Vite 6 + TypeScript 5.9 + three@0.165, **không dùng framework UI**. Chuyển từ một file HTML ~4 600 dòng (`tests/original/index.html`) và phải giữ nguyên hành vi lẫn draw call của bản gốc.
 
 ## 2. Quy trình Memory Bank (bắt buộc)
@@ -27,7 +27,7 @@ Memory bank ghi **cái code không tự nói ra được**: lý do, trạng thá
 2. **Draw call.** Bảng chuẩn ở `tests/KET-QUA.md`. Góc nhìn cũ không được tăng quá ngưỡng mà spec của tính năng cho phép (mặc định: 0). Gộp hình học (`mergeGeometries`), dùng `InstancedMesh`, LOD, `noReflect`/layer 1.
 3. **Mọi thông số ở `src/config.ts`.** Mỗi dòng: chú thích tiếng Việt, đơn vị, `(ước lượng)` nếu không có nguồn. Số đã công bố thì ghi nguồn.
 4. **i18n đủ 9 ngôn ngữ.** Khóa mới phải có trong cả `src/i18n/locales/{vi,en,ko,ja,zh,th,ar,hi,ru}.json`. `ar` là RTL.
-5. **Không thêm thư viện runtime.** **Mô hình và texture ngoài được phép cho mọi loại vật thể (D-033, thay giới hạn "chỉ nhân vật người" của D-030 / D-032)**, với điều kiện: giấy phép cho để trong repo công khai và phân phối lại; ghi nguồn + giấy phép trong README và tệp `LICENSE-*` cạnh tài nguyên trong `public/`; nạp bằng addon có sẵn của `three` (`GLTFLoader`…); spec của tính năng ghi trần dung lượng / tam giác và có test kiểm; có hình tạm hoặc đường lùi khi tải chậm / lỗi. Đang có: nhân vật Đi dạo (`public/people/*.glb`) và đám đông người đi bộ (`public/people/crowd.bin`, `crowd.jpg`), từ Microsoft Rocketbox, MIT. Phần cảnh dựng bằng code vẫn vẽ texture bằng canvas, không thay hàng loạt khi không có yêu cầu. Không thêm `PointLight`/`SpotLight` mới; đèn đêm làm bằng emissive, đọc `shared.uNight`. Đèn cường độ 0 vẫn tốn shader mọi điểm ảnh: đèn hiện có thuộc ba bộ `day` / `night` / `full` của `core/lights.ts` (D-031), không ẩn / hiện đèn ở chỗ khác.
+5. **Không thêm thư viện runtime.** **Mô hình và texture ngoài được phép cho mọi loại vật thể (D-033, thay giới hạn "chỉ nhân vật người" của D-030 / D-032)**, với điều kiện: giấy phép cho để trong repo công khai và phân phối lại; ghi nguồn + giấy phép trong README và tệp `LICENSE-*` cạnh tài nguyên trong `public/`; nạp bằng addon có sẵn của `three` (`GLTFLoader`…); spec của tính năng ghi trần dung lượng / tam giác và có test kiểm; có hình tạm hoặc đường lùi khi tải chậm / lỗi. Đang có: nhân vật Đi dạo (`public/people/*.glb`) và đám đông người đi bộ (`public/people/crowd.bin`, `crowd.jpg`), từ Microsoft Rocketbox, MIT. Xe người chơi chế độ Lái xe (`public/car/vf3.glb`, "Vinfast Vf3" của Hoàng Huy, Sketchfab, CC BY 4.0, đã chỉnh sửa; ghi công trong README, `public/car/LICENSE-VF3.txt` và `#drCredit` ở màn chọn / sảnh). Phần cảnh dựng bằng code vẫn vẽ texture bằng canvas, không thay hàng loạt khi không có yêu cầu. Không thêm `PointLight`/`SpotLight` mới; đèn đêm làm bằng emissive, đọc `shared.uNight`. Đèn cường độ 0 vẫn tốn shader mọi điểm ảnh: đèn hiện có thuộc ba bộ `day` / `night` / `full` của `core/lights.ts` (D-031), không ẩn / hiện đèn ở chỗ khác.
 6. **Công trình chưa xây phải nói rõ là "phương án đề xuất"** trong UI và thuyết minh.
 
 ## 4. Hệ tọa độ
@@ -66,7 +66,10 @@ npm run test:stroll    # đi dạo: một mình, nhân vật có xương, không
 npm run test:multi:unit   # dù lượn nhiều người: logic phòng, tên, nội suy, idle (nhanh, không trình duyệt)
 npm run test:multi:worker # Worker qua wrangler dev: kiểm Origin
 npm run test:multi        # dù lượn nhiều người: trình duyệt + bot qua wrangler dev cục bộ; đọc dist/
+npm run test:drive:unit # lái xe: mạng đường (ô, cao độ, liên thông), vật cản, va chạm, chuyển động theo số liệu VF 3, sơ tán nhịp quay, camera, mô hình glb (trần dung lượng / tam giác, giấy phép, ghi công), hình xe + bánh + đèn, HUD, âm thanh, khóa i18n, giao thức nhiều người (nhanh, không trình duyệt)
+npm run test:drive     # lái xe: vào bằng thẻ Ô tô / `?explore=drive`, lái qua 4 cầu + 2 ống hầm, đâm lan can / tường hầm / thân rồng, gầm Cầu Rồng, barie Cầu sông Hàn khi quay, ảnh hầm, đèn ngày / đêm / phanh, chặn / làm chậm `vf3.glb` (hình tạm), HUD 9 ngôn ngữ, thoát sang Đi dạo, lệnh vẽ; đọc dist/; một lượt chạy rất nặng (SwiftShader)
 npm run gen:voice      # sinh lại clip thuyết minh đã đổi (-- --force: tất cả)
+npm run gen:car        # sinh lại public/car/vf3.glb từ scripts/car/vinfast_vf3.glb (Blender 4.5, chạy qua `scripts/people/blender.mjs`, biến môi trường `BLENDER`; chỉ khi đổi mô hình hoặc cách xử lý xe)
 npm run gen:people     # sinh lại public/people/p0..p4.glb từ Microsoft Rocketbox (cần Blender 4.5, tải ~160 MB vào scripts/people/.cache/; chạy qua `scripts/people/blender.mjs`, Blender không ở `C:/Program Files/Blender Foundation/Blender 4.5/` thì đặt biến môi trường `BLENDER`; chỉ khi đổi nhân vật)
 npm run gen:crowd      # sinh lại public/people/crowd.bin + crowd.jpg (10 nhân vật đám đông người đi bộ, D-032) từ Microsoft Rocketbox; cùng yêu cầu Blender / `BLENDER` / thư mục `.cache/` như gen:people; ảnh xem trước ở `scripts/people/.cache/preview-crowd/`; chỉ khi đổi nhân vật hoặc chuyển động
 ```

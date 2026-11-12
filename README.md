@@ -59,6 +59,7 @@ src/
   explore/           tự khám phá bằng dù lượn: mô hình bay thuần, dù, camera bám, màn chọn phương tiện, điều phối
     stroll/          đi dạo (camera sau lưng): bản đồ va chạm 2D thuần, vùng đi được, chuyển động, nhân vật, camera, cần gạt cảm ứng, chụp ảnh
     multi/           dù lượn nhiều người (5 chỗ): giao thức + thông số dùng chung với máy chủ, phiên, sảnh, dù người khác, nhãn, chế độ xem, rời máy
+    drive/           lái xe VF 3 (camera sau xe): mạng đường nhiều tầng (`net`, `roadData`), vật cản, va chạm, chuyển động theo số liệu thật, xe + bánh + đèn, xe tự động chặn / sơ tán nhịp quay, HUD, bàn đạp cảm ứng, tiếng xe
   views/             góc nhìn có sẵn, flyTo, Tour (đường cong + điểm dừng)
   audio/             nhạc, còi, tiếng xe; narration.ts phát giọng thuyết trình của Tour
   ui/                bảng điều khiển, nút quay cầu, âm thanh, chất lượng hình, chế độ gọn cho điện thoại (compactUI.ts)

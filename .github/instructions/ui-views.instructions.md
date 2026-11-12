@@ -26,3 +26,4 @@ description: Quy ước giao diện, góc nhìn và Tour
 - Chữ hướng dẫn có hai bản: `.hint-mouse` và `.hint-touch` (khóa i18n riêng, vd. `tourExitTouch`). Hiệu ứng hover đặt trong `@media (hover:hover)`.
 - Hàng chip `.seg` cuộn ngang khi gọn, có mờ cạnh (`.more-start`/`.more-end`, lật theo RTL); `.views` không được tràn ngang.
 - Đổi giao diện thì chạy `npm run test:mobile` (dọc 390×844, ngang 844×390, tràn chữ 9 ngôn ngữ, RTL, bấm được khi sheet mở).
+- Chế độ Lái xe (D-034): `body.explore.drive`; `#drLook` phủ màn hình ở z-index 4 (roster, lời mời, thông báo phải nằm trên); `#drHud` đặt `dir="ltr"` nên bàn đạp / cần gạt không lật khi `ar` (đừng "sửa" cho RTL); nút 🔊 `#drSoundBtn` ≥ 44 px không được chồng đồng hồ, bản đồ nhỏ, cần gạt (ở 1280×720, 390×844, 844×390, `ar`); đổi bố cục HUD thì chạy `test:mobile` Mục 7. Khóa `dr*` thêm bằng `scripts/add-drive-locales.mjs`, đủ 9 locale.
